@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Apply Leave - FieldTrack</title>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px",
+                        "safe-bottom": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }]
+                    },
+                    "boxShadow": {
+                        "level-1": "0 4px 8px -2px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02)",
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface-bright dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 text-on-surface-variant dark:text-surface-variant">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">
+            FieldTrack
+        </div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 text-on-surface-variant dark:text-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-[72px] pb-[100px] px-margin max-w-md mx-auto flex flex-col gap-stack-lg">
+<!-- Page Header -->
+<section>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Apply Leave</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Submit your time off request below.</p>
+</section>
+<!-- Status Tracker -->
+<section class="bg-surface-container-lowest border border-surface-container-highest rounded-xl p-4 shadow-level-1 relative z-0">
+<div class="flex items-center justify-between relative">
+<!-- Connecting Line Base -->
+<div class="absolute top-[14px] left-[10%] w-[80%] h-[2px] bg-surface-container-high -z-10"></div>
+<!-- Connecting Line Active (Progress) -->
+<div class="absolute top-[14px] left-[10%] w-[0%] h-[2px] bg-primary -z-10 transition-all duration-500"></div>
+<!-- Step 1: Submitted (Active) -->
+<div class="flex flex-col items-center gap-2 w-1/3">
+<div class="w-[28px] h-[28px] rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary text-center">Submitted</span>
+</div>
+<!-- Step 2: Under Review (Pending) -->
+<div class="flex flex-col items-center gap-2 w-1/3">
+<div class="w-[28px] h-[28px] rounded-full bg-surface-container-highest flex items-center justify-center text-outline-variant">
+<span class="material-symbols-outlined text-[16px]">pending</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center">Under Review</span>
+</div>
+<!-- Step 3: Approved (Pending) -->
+<div class="flex flex-col items-center gap-2 w-1/3">
+<div class="w-[28px] h-[28px] rounded-full bg-surface-container-highest flex items-center justify-center text-outline-variant">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-center">Approved</span>
+</div>
+</div>
+</section>
+<!-- Leave Form -->
+<section class="bg-surface-container-lowest border border-surface-container-highest rounded-xl p-4 shadow-level-1">
+<form class="flex flex-col gap-stack-md" onsubmit="event.preventDefault();">
+<!-- Leave Type Dropdown -->
+<div>
+<label class="font-label-md text-label-md text-on-surface block mb-stack-sm" for="leave_type">Leave Type</label>
+<div class="relative">
+<select class="w-full h-touch-target-min bg-surface-bright border border-outline-variant rounded-lg px-3 appearance-none font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors cursor-pointer" id="leave_type">
+<option disabled="" selected="" value="">Select a type...</option>
+<option value="sick">Sick Leave</option>
+<option value="casual">Casual Leave</option>
+<option value="annual">Annual Leave</option>
+<option value="unpaid">Unpaid Leave</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<!-- Date Pickers Grid -->
+<div class="grid grid-cols-2 gap-gutter">
+<div>
+<label class="font-label-md text-label-md text-on-surface block mb-stack-sm" for="date_from">From</label>
+<input class="w-full h-touch-target-min bg-surface-bright border border-outline-variant rounded-lg px-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" id="date_from" type="date"/>
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface block mb-stack-sm" for="date_to">To</label>
+<input class="w-full h-touch-target-min bg-surface-bright border border-outline-variant rounded-lg px-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" id="date_to" type="date"/>
+</div>
+</div>
+<!-- Reason Text Area -->
+<div>
+<label class="font-label-md text-label-md text-on-surface block mb-stack-sm" for="leave_reason">Reason</label>
+<textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-3 font-body-md text-body-md text-on-surface resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" id="leave_reason" placeholder="Briefly describe the reason for your leave..." rows="4"></textarea>
+</div>
+<!-- Submit Button -->
+<button class="w-full h-[48px] mt-2 bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-xl flex items-center justify-center hover:bg-primary-container/90 active:scale-[0.98] transition-all duration-200" type="submit">
+                    Submit Request
+                </button>
+</form>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline shadow-lg fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe rounded-t-xl">
+<!-- Inactive Item: Home -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl w-[20%]" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<!-- Inactive Item: Tasks -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl w-[20%]" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-sm text-label-sm mt-1">Tasks</span>
+</a>
+<!-- Inactive Item: Map -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl w-[20%]" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-sm text-label-sm mt-1">Map</span>
+</a>
+<!-- Active Item: Attendance (Semantic match for Leave) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 w-[20%]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Attendance</span>
+</a>
+<!-- Inactive Item: Profile -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl w-[20%]" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

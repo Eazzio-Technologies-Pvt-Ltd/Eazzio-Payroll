@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FieldTrack - My Work Zone</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom animation for the location dot ping */
+        @keyframes customPing {
+            0% { transform: scale(1); opacity: 0.5; }
+            70% { transform: scale(2.5); opacity: 0; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        .animate-custom-ping {
+            animation: customPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased h-screen w-screen overflow-hidden relative selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<nav aria-label="Top App Bar" class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright dark:bg-inverse-surface shadow-sm">
+<div class="flex items-center gap-3">
+<button aria-label="Go back" class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant p-1 rounded-full active:scale-95 transition-all duration-200" data-icon="arrow_back">arrow_back</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim tracking-tight">FieldTrack</h1>
+</div>
+<button aria-label="Notifications" class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant p-1 rounded-full active:scale-95 transition-all duration-200" data-icon="notifications">notifications</button>
+</nav>
+<!-- Map Canvas Area -->
+<main class="absolute inset-0 pt-14 pb-[72px] z-0 overflow-hidden bg-surface-dim">
+<!-- Contextual Screen Title Overlay -->
+<div class="absolute top-[72px] left-4 z-40 bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant shadow-sm px-4 py-2 rounded-full">
+<span class="font-label-lg text-label-lg text-on-surface">My Work Zone</span>
+</div>
+<!-- Map Background Image -->
+<div class="absolute inset-0 w-full h-full">
+<img alt="Map view" class="w-full h-full object-cover object-center opacity-80" data-alt="A highly detailed, top-down view of a modern city map interface, displaying urban grids, main arterial roads, and subtle natural features. The map uses a very light, desaturated color palette with soft greys, white thoroughfares, and muted green parks, aligning perfectly with a corporate enterprise application's light-mode aesthetic. The lighting is neutral and even, ensuring maximum legibility of the geographic information without distracting details. The overall mood is functional, precise, and technologically advanced." data-location="Mumbai North" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrIEaD5dILi52x3-DoFymfDNA4ZIrHtzTHGZeYuXMDhCwyZkBbKv5ckDbSVm5dwYaUB1C1IsGh7zIRSBUoK8xWYQdESCiurVCgwOU68f13fOlUlczMa0JMPoDbNAt-Ucp8k8Kybu6lFxr0aykV0S3QEZwlVVrY-_MQpWBlnWNu_1SG14L04_hIhK-uj6G_ttQQMENP4RgeY5HuKcJsbMvjCiaD7joo5CUe9FABSctlbaQ__fPahWowij3qG-Pz3e6zPXMkSUK94VzN"/>
+</div>
+<!-- Geofence Polygon (SVG Overlay) -->
+<svg class="absolute inset-0 w-full h-full z-10 pointer-events-none drop-shadow-md" preserveaspectratio="xMidYMid slice" viewbox="0 0 400 800">
+<!-- Simulated Mumbai North Zone Polygon -->
+<polygon fill="rgba(37, 99, 235, 0.15)" points="40,250 280,180 340,450 120,580" stroke="#2563eb" stroke-dasharray="6,4" stroke-linejoin="round" stroke-width="2.5"></polygon>
+</svg>
+<!-- Current Location Marker -->
+<!-- Positioned relative to the viewport for demonstration within the polygon -->
+<div class="absolute top-[400px] left-[180px] z-20 flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2">
+<!-- Pulse Effect -->
+<div class="absolute w-14 h-14 bg-primary-container rounded-full animate-custom-ping"></div>
+<!-- Core Dot -->
+<div class="w-5 h-5 bg-primary rounded-full border-[3px] border-on-primary shadow-sm z-10"></div>
+</div>
+<!-- Zoom Controls (Contextual UI) -->
+<div class="absolute right-4 top-[88px] z-30 flex flex-col gap-2">
+<button aria-label="Zoom in" class="w-10 h-10 bg-surface-container-lowest text-on-surface-variant rounded-full shadow-sm border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<button aria-label="Zoom out" class="w-10 h-10 bg-surface-container-lowest text-on-surface-variant rounded-full shadow-sm border border-outline-variant flex items-center justify-center hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+</div>
+</main>
+<!-- Info Card Overlay (Bottom) -->
+<div class="absolute bottom-[88px] left-4 right-4 z-40">
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant p-4">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Mumbai North Zone</h2>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="square_foot">square_foot</span>
+<p class="font-body-md text-body-md text-on-surface-variant">Area: 14.2 km²</p>
+</div>
+</div>
+<!-- Status Badge -->
+<div class="bg-secondary-container text-on-secondary-container px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 border border-secondary-fixed">
+<span class="font-label-md text-label-md uppercase tracking-wider">Inside</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="h-[1px] w-full bg-surface-variant mb-4"></div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="person_check">person_check</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-outline uppercase tracking-wider mb-0.5">Assigned By</p>
+<p class="font-label-lg text-label-lg text-on-surface">Rahul Kumar</p>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav aria-label="Bottom Navigation" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container dark:bg-surface-container-highest shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<!-- Home -->
+<button aria-label="Home" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<!-- Tasks -->
+<button aria-label="Tasks" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="assignment">assignment</span>
+<span class="font-label-sm text-label-sm">Tasks</span>
+</button>
+<!-- Map (ACTIVE) -->
+<button aria-current="page" aria-label="Map" class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="map" data-weight="fill" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-label-sm text-label-sm">Map</span>
+</button>
+<!-- Attendance -->
+<button aria-label="Attendance" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-sm text-label-sm">Attendance</span>
+</button>
+<!-- Profile -->
+<button aria-label="Profile" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+</body></html>

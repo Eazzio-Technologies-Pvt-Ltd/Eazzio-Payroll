@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Task Detail - FieldTrack</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px",
+                        "safe-bottom": "env(safe-area-inset-bottom)"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+          font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for web view */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-[calc(72px+env(safe-area-inset-bottom))] antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm transition-all duration-200">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim absolute left-1/2 -translate-x-1/2">Task Detail</h1>
+<button aria-label="Notifications" class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[24px]">more_vert</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-14 px-margin w-full max-w-3xl mx-auto flex flex-col gap-stack-lg mt-stack-md">
+<!-- Task Header -->
+<div class="flex flex-col gap-stack-sm">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center px-2 py-1 rounded bg-error-container text-on-error-container font-label-md text-label-md uppercase tracking-wider">High Priority</span>
+<span class="text-outline font-label-sm text-label-sm">ID: TS-9021</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Inspect HVAC Unit 4B - Rooftop Sector</h2>
+</div>
+<!-- Task Details Grid -->
+<div class="grid grid-cols-2 gap-gutter bg-surface-container-lowest p-stack-md rounded-xl border border-surface-container-high shadow-[0_4px_8px_-2px_rgba(0,0,0,0.02)]">
+<div class="flex flex-col">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Assigned By</span>
+<div class="flex items-center gap-2 mt-1">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">person</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Sarah Jenkins</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Due Date</span>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-[18px] text-primary">event</span>
+<span class="font-body-md text-body-md text-on-surface">Today, 2:00 PM</span>
+</div>
+</div>
+<div class="flex flex-col col-span-2">
+<span class="text-on-surface-variant font-label-sm text-label-sm">Location</span>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-[18px] text-error">location_on</span>
+<span class="font-body-md text-body-md text-on-surface">Downtown Office Complex, Building A</span>
+</div>
+</div>
+</div>
+<!-- Location Map Preview -->
+<div class="w-full h-40 bg-surface-container rounded-xl overflow-hidden relative border border-surface-container-high shadow-[0_4px_8px_-2px_rgba(0,0,0,0.02)]">
+<img alt="Map Location" class="w-full h-full object-cover" data-alt="A top-down digital map view showing city streets and building footprints in a modern, clean interface style. The map has a light color palette with soft greys, whites, and subtle blue accents. A prominent red map pin marks a specific location on a building rooftop. The aesthetic is functional, precise, and professional." data-location="Downtown Office Complex Map" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuEBKpeKAI86wvSlYvewLjbeEaeXumK3iT44miCrZSE-AITwv75AMJSzDYmED6hzuP-VoyIWYJCJjFaHII6Z96_wp_huJ_RKnVRUw_TQXo8Yj5aXkDDzNUFH0WjSQ22epcaIds9WlMLEk2swgl7gYtyrE2S1Is0U3tKeaL65ZAyoUIeO6iGTpBew8gRzona_oo7ugaVdq2n6MHEIDM1WaL_LHfBDHJzXZnjK6vJaIh536imo-8YmnhXnk6kfT5FbSHPpFuTe2Ohnx6"/>
+<button class="absolute bottom-2 right-2 bg-surface-container-lowest/90 backdrop-blur text-primary px-3 py-1.5 rounded-lg font-label-md text-label-md shadow-sm border border-outline-variant flex items-center gap-1 hover:bg-surface-container-lowest transition-colors">
+<span class="material-symbols-outlined text-[16px]">directions</span>
+                Navigate
+            </button>
+</div>
+<!-- Description -->
+<div class="flex flex-col gap-stack-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Description</h3>
+<p class="font-body-md text-body-md text-on-surface-variant bg-surface-container-lowest p-stack-md rounded-xl border border-surface-container-high shadow-[0_4px_8px_-2px_rgba(0,0,0,0.02)]">
+                Routine quarterly inspection required for rooftop HVAC unit 4B. Check filter status, measure refrigerant levels, and ensure proper drainage. Report any abnormal vibrations or sounds from the compressor. Customer reported minor cooling inefficiency yesterday.
+            </p>
+</div>
+<!-- Actions & Status -->
+<div class="flex flex-col gap-stack-md mt-2">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant ml-1" for="status">Current Status</label>
+<div class="relative">
+<select class="w-full h-[48px] appearance-none bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-xl px-4 focus:ring-2 focus:ring-primary focus:border-primary transition-shadow" id="status">
+<option value="pending">Pending</option>
+<option selected="" value="in_progress">In Progress</option>
+<option value="completed">Completed</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<button class="w-full h-[48px] bg-surface-container-lowest border border-primary text-primary font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+                Upload Proof
+            </button>
+<button class="w-full h-[48px] bg-primary text-on-primary font-label-lg text-label-lg rounded-xl shadow-sm hover:bg-on-primary-fixed-variant transition-colors active:scale-[0.98] mt-2">
+                Submit Report
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline shadow-lg rounded-t-xl transition-all duration-200 md:hidden">
+<a aria-label="Home" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<a aria-current="page" aria-label="Tasks" class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px] filled">assignment</span>
+<span class="font-label-sm text-label-sm mt-1 font-semibold">Tasks</span>
+</a>
+<a aria-label="Map" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">map</span>
+<span class="font-label-sm text-label-sm mt-1">Map</span>
+</a>
+<a aria-label="Attendance" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Attendance</span>
+</a>
+<a aria-label="Profile" class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

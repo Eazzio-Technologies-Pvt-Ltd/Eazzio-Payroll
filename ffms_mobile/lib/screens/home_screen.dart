@@ -1,0 +1,1586 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:battery_plus/battery_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import '../providers/auth_provider.dart';
+import '../utils/image_upload_util.dart';
+import '../providers/task_provider.dart';
+import '../providers/attendance_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/travel_provider.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/user_avatar.dart';
+import '../core/theme/app_theme.dart';
+import '../core/utils/storage_helper.dart';
+import '../core/utils/constants.dart';
+import 'permissions_screen.dart';
+import 'request_advance_screen.dart';
+
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isInit = true;
+  Timer? _countUpTimer;
+  String _travelFilter = '7'; // Default to 7 Days
+  DateTimeRange? _customDateRange;
+
+  // ─────────────────────────── Time-based Greeting ─────────────────────────────
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) return 'Good Morning';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon';
+    if (hour >= 17 && hour < 21) return 'Good Evening';
+    return 'Good Night';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Count-up timer removed — punch times now show real clock time, not elapsed duration
+    // A lightweight 1-minute ticker keeps the "Hours Worked" calculation fresh without
+    // flooding setState every second.
+    _countUpTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+      _isInit = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _countUpTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+    final travelProvider = Provider.of<TravelProvider>(context, listen: false);
+
+    await Future.wait([
+      taskProvider.fetchMyTasks(),
+      attendanceProvider.fetchTodayState(),
+      notificationProvider.fetchNotifications(),
+      travelProvider.fetchTodayTravel(),
+      travelProvider.fetchMonthlySummary(),
+      travelProvider.fetchTravelHistory(limit: 30),
+    ]);
+    // NOTE: retrieveLostData() removed — it was re-triggering punch-in flows
+    // when the camera app returned, causing the splash-screen-like blank refresh.
+  }
+
+  Future<void> _handleAttendanceAction() async {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+
+    final permission = await GeolocatorPlatform.instance.checkPermission();
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PermissionsScreen(
+              onPermissionsGranted: () {
+                Navigator.pop(context);
+                _handleAttendanceAction();
+              },
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fetching current GPS coordinates...')),
+      );
+    }
+
+    try {
+      String? base64Selfie;
+      final bool wasPunchedIn = attendanceProvider.isPunchedIn;
+
+      if (!wasPunchedIn) {
+        final battery = Battery();
+        final batteryLevel = await battery.batteryLevel;
+        if (batteryLevel < 40) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Battery must be 40%+ to Punch In. Current: $batteryLevel%'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
+        final result = await ImageUploadUtil.pickAndCompressImage(
+          context,
+          cameraOnly: true,
+          preferredCameraDevice: CameraDevice.front,
+        );
+        if (result == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Selfie photo is required to Punch In.')),
+            );
+          }
+          return;
+        }
+
+        base64Selfie = result.base64String;
+      }
+
+      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+      bool success;
+      if (wasPunchedIn) {
+        success = await attendanceProvider.punchOut(position);
+        if (success) {
+          await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
+          await StorageHelper.clearPunchInTime();
+        }
+      } else {
+        success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+        if (success) {
+          await StorageHelper.savePunchInTime(DateTime.now().toIso8601String());
+          await StorageHelper.clearPunchOutTime();
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? (wasPunchedIn ? 'Punched Out Successfully!' : 'Punched In Successfully!')
+                : (attendanceProvider.errorMessage ?? 'Operation failed')),
+            backgroundColor: success ? AppColors.secondary : AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get GPS: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authUser = Provider.of<AuthProvider>(context).currentUser;
+    final attendanceProvider = Provider.of<AttendanceProvider>(context);
+    final notifProvider = Provider.of<NotificationProvider>(context);
+    final travelProvider = Provider.of<TravelProvider>(context);
+
+    final todayDate = DateFormat('EEEE, MMMM d').format(DateTime.now());
+    final greeting = _getGreeting();
+
+    // Today's punch info from sessions
+    final sessions = attendanceProvider.todaySessions;
+    DateTime? firstPunchIn = sessions.isNotEmpty ? sessions.first.punchInTime : null;
+    if (firstPunchIn == null && attendanceProvider.isPunchedIn) {
+      final storedIn = StorageHelper.getPunchInTime();
+      if (storedIn != null) {
+        firstPunchIn = DateTime.tryParse(storedIn);
+      }
+    }
+
+    DateTime? lastPunchOut = sessions.isNotEmpty && sessions.last.punchOutTime != null 
+        ? sessions.last.punchOutTime 
+        : null;
+    if (lastPunchOut == null) {
+      final storedOut = StorageHelper.getPunchOutTime();
+      if (storedOut != null) {
+        lastPunchOut = DateTime.tryParse(storedOut);
+      }
+    }
+
+    double totalHours = 0.0;
+    if (sessions.isNotEmpty) {
+      totalHours = sessions.fold<double>(0.0, (sum, s) {
+        if (s.punchOutTime != null) {
+          return sum + (s.totalWorkingHours ?? 0.0);
+        } else {
+          final pTime = s.punchInTime ?? firstPunchIn;
+          if (pTime != null) {
+            final diff = DateTime.now().difference(pTime.toLocal());
+            final hours = diff.inMinutes / 60.0;
+            return sum + (hours > 0 ? hours : 0.0);
+          }
+          return sum;
+        }
+      });
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'FieldTrack',
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+        ),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () => Navigator.pushNamed(context, '/notifications'),
+              ),
+              if (notifProvider.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '${notifProvider.unreadCount}',
+                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+        backgroundColor: AppColors.surface,
+        elevation: 0.5,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Header Greeting ────────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$greeting, ${authUser?.name.split(' ').first ?? 'Employee'} 👋',
+                          style: Theme.of(context).textTheme.headlineLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(todayDate, style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                  // Profile photo shown in greeting — fetched from logged-in user session
+                  UserAvatar(
+                    photoUrl: authUser?.profileImage,
+                    name: authUser?.name ?? 'Employee',
+                    radius: 24,
+                    onTap: () => Navigator.pushNamed(context, '/profile'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // ─── Punch Action Button ─────────────────────────────────
+              (() {
+                final isDayComplete = attendanceProvider.isDayComplete;
+                if (isDayComplete) {
+                  return Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A).withOpacity(0.1),
+                        border: Border.all(color: const Color(0xFF16A34A), width: 1.5),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Day Complete',
+                            style: TextStyle(
+                              color: Color(0xFF16A34A),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final isPunchedIn = attendanceProvider.isPunchedIn;
+                final sessionCount = sessions.length;
+                String buttonText;
+                IconData buttonIcon;
+
+                if (!isPunchedIn && sessionCount == 0) {
+                  buttonText = 'Punch In (Session 1)';
+                  buttonIcon = Icons.how_to_reg;
+                } else if (isPunchedIn && sessionCount == 1) {
+                  buttonText = 'Punch Out (Session 1)';
+                  buttonIcon = Icons.logout;
+                } else if (!isPunchedIn && sessionCount == 1) {
+                  buttonText = 'Punch In (Session 2)';
+                  buttonIcon = Icons.how_to_reg;
+                } else {
+                  buttonText = 'Punch Out (Session 2)';
+                  buttonIcon = Icons.logout;
+                }
+
+                return CustomButton(
+                  text: buttonText,
+                  isLoading: attendanceProvider.isLoading,
+                  backgroundColor: isPunchedIn ? AppColors.error : const Color(0xFF2563EB),
+                  textColor: Colors.white,
+                  icon: buttonIcon,
+                  onPressed: _handleAttendanceAction,
+                  height: 56,
+                );
+              })(),
+              const SizedBox(height: 20),
+
+              // ─── 2b: Three-Card Punch Layout ──────────────────────────────
+              Row(
+                children: [
+                  // Card 1: Punch In Time / Timer
+                  Expanded(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Punch In Time',
+                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              // Show the real punch-in clock time in HH:MM:SS format.
+                              // This is the moment the user actually punched in — not an elapsed timer.
+                              // Source: phone clock at the moment of punch, stored in punchInTime from server.
+                              firstPunchIn != null
+                                  ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
+                                  : '--:--:--',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.secondary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              firstPunchIn != null ? 'Started' : 'Not Active',
+                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Card 2: Punch Out Time
+                  Expanded(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Punch Out Time',
+                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              // Show the real punch-out clock time in HH:MM:SS format.
+                              // Source: phone clock at the moment of punch-out, stored from server response.
+                              lastPunchOut != null
+                                  ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
+                                  : '--:--:--',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.error,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              lastPunchOut != null ? 'Completed' : 'Pending',
+                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Card 3: Hours Worked Today
+                  Expanded(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Hours Worked Today',
+                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${totalHours.toStringAsFixed(1)} hrs',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Target: 9h',
+                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Target 9h progress bar
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Shift Progress',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                          ),
+                          Text(
+                            '${(totalHours * 60).round() ~/ 60}h ${(totalHours * 60).round() % 60}m / 9h 00m',
+                            style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: (totalHours / 9.0).clamp(0.0, 1.0),
+                          backgroundColor: AppColors.outlineVariant,
+                          color: AppColors.primary,
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ─── 2c: Two-Column Distance Travel Block ───────────────────
+              SizedBox(
+                width: double.infinity,
+                child: Card(
+                  child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Travel & Odometer Summary',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.onSurface),
+                      ),
+                      const SizedBox(height: 12),
+                      (() {
+                        final leftCol = Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.outlineVariant),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                "Today's Entry",
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                              const SizedBox(height: 12),
+                              if (travelProvider.todayLog == null) ...[
+                                const Text(
+                                  'No odometer readings recorded for today.',
+                                  style: TextStyle(fontSize: 11, color: AppColors.outline),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () => _showTravelEntrySheet(context, travelProvider),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: const Text('Are You Travelling Today?', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
+                              ] else ...[
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Start Meter:', style: TextStyle(fontSize: 11, color: AppColors.outline)),
+                                    Text('${travelProvider.todayLog!.meterStart?.toStringAsFixed(0) ?? "--"} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('End Meter:', style: TextStyle(fontSize: 11, color: AppColors.outline)),
+                                    Text('${travelProvider.todayLog!.meterEnd?.toStringAsFixed(0) ?? "--"} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                const Divider(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Distance:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    Text('${travelProvider.todayDistanceKm.toStringAsFixed(1)} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Allowance:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    Text('₹${travelProvider.todayAllowance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                  ],
+                                ),
+                                if (travelProvider.todayLog!.meterEnd == null) ...[
+                                  const SizedBox(height: 12),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (sheetContext) => TravelEntrySheet(travelProvider: travelProvider),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: const Text('Complete Travel Log', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ],
+                            ],
+                          ),
+                        );
+
+                        final rightCol = Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.outlineVariant),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'History',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  DropdownButton<String>(
+                                    value: _travelFilter,
+                                    isDense: true,
+                                    style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold),
+                                    underline: const SizedBox(),
+                                    items: const [
+                                      DropdownMenuItem(value: 'today', child: Text('Today')),
+                                      DropdownMenuItem(value: '7', child: Text('7 Days')),
+                                      DropdownMenuItem(value: '15', child: Text('15 Days')),
+                                      DropdownMenuItem(value: '30', child: Text('30 Days')),
+                                      DropdownMenuItem(value: 'custom', child: Text('Custom')),
+                                    ],
+                                    onChanged: (val) async {
+                                      if (val == 'custom') {
+                                        final range = await showDateRangePicker(
+                                          context: context,
+                                          firstDate: DateTime.now().subtract(const Duration(days: 90)),
+                                          lastDate: DateTime.now(),
+                                        );
+                                        if (range != null) {
+                                          setState(() {
+                                            _customDateRange = range;
+                                            _travelFilter = 'custom';
+                                          });
+                                        }
+                                      } else if (val != null) {
+                                        setState(() {
+                                          _travelFilter = val;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              (() {
+                                final now = DateTime.now();
+                                final filteredLogs = travelProvider.history.where((log) {
+                                  final logDate = log.date.toLocal();
+                                  if (_travelFilter == 'today') {
+                                    return logDate.year == now.year && logDate.month == now.month && logDate.day == now.day;
+                                  } else if (_travelFilter == '7') {
+                                    return now.difference(logDate).inDays <= 7;
+                                  } else if (_travelFilter == '15') {
+                                    return now.difference(logDate).inDays <= 15;
+                                  } else if (_travelFilter == '30') {
+                                    return now.difference(logDate).inDays <= 30;
+                                  } else if (_travelFilter == 'custom' && _customDateRange != null) {
+                                    return logDate.isAfter(_customDateRange!.start.subtract(const Duration(days: 1))) &&
+                                        logDate.isBefore(_customDateRange!.end.add(const Duration(days: 1)));
+                                  }
+                                  return true;
+                                }).toList();
+
+                                if (filteredLogs.isEmpty) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                                    child: Text(
+                                      'No travel logs found.',
+                                      style: TextStyle(fontSize: 10, color: AppColors.outline),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  );
+                                }
+
+                                double totalAllowance = filteredLogs.fold(0.0, (sum, log) => sum + log.allowanceAmount);
+
+                                return Column(
+                                  children: [
+                                    SizedBox(
+                                      height: 100,
+                                      child: ListView.separated(
+                                        shrinkWrap: true,
+                                        itemCount: filteredLogs.length,
+                                        separatorBuilder: (_, __) => const Divider(height: 8),
+                                        itemBuilder: (context, index) {
+                                          final log = filteredLogs[index];
+                                          return Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                DateFormat('dd MMM').format(log.date.toLocal()),
+                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                                              ),
+                                              Text(
+                                                '${log.totalDistanceKm.toStringAsFixed(0)} KM',
+                                                style: const TextStyle(fontSize: 10),
+                                              ),
+                                              Text(
+                                                '₹${log.allowanceAmount.toStringAsFixed(0)}',
+                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const Divider(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Total:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                        Text('₹${totalAllowance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              })(),
+                            ],
+                          ),
+                        );
+
+                        if (MediaQuery.of(context).size.width < 500) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              leftCol,
+                              const SizedBox(height: 12),
+                              rightCol,
+                            ],
+                          );
+                        } else {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 6, child: leftCol),
+                              const SizedBox(width: 8),
+                              Expanded(flex: 7, child: rightCol),
+                            ],
+                          );
+                        }
+                      })(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+              const SizedBox(height: 16),
+
+              // ─── 2d: Dynamic Salary Block ──────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: Card(
+                  child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Salary Earned',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.onSurface),
+                      ),
+                      const SizedBox(height: 12),
+                      (() {
+                        final baseSalary = authUser?.baseSalary ?? 0.0;
+                        if (baseSalary == 0.0) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            child: Text(
+                              'Base salary not configured in your profile. Please contact HR.',
+                              style: TextStyle(fontSize: 11, color: AppColors.outline),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        }
+
+                        final logs = attendanceProvider.attendanceHistory;
+                        if (logs.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            child: Text(
+                              'No attendance history to calculate salary.',
+                              style: TextStyle(fontSize: 11, color: AppColors.outline),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        }
+
+                        // Calculate daily salary components (standard 26 working days)
+                        final dailySalaryRate = baseSalary / 26.0;
+
+                        // Group sessions by date to prevent duplicate rows
+                        // LATE status treated as full day pay per business rules
+                        final Map<String, List<dynamic>> groupedByDate = {};
+                        for (final log in logs) {
+                          final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
+                          groupedByDate.putIfAbsent(dateStr, () => []).add(log);
+                        }
+
+                        // Define status ranking to determine the highest status for multiple sessions
+                        int getStatusRank(String status) {
+                          final upper = status.toUpperCase();
+                          if (upper == 'PRESENT' || upper == 'ON_DUTY') return 4;
+                          if (upper == 'LATE') return 3;
+                          if (upper == 'HALF_DAY') return 2;
+                          if (upper == 'ABSENT') return 1;
+                          return 0;
+                        }
+
+                        final List<Map<String, dynamic>> groupedLogs = groupedByDate.entries.map((entry) {
+                          final dateLogs = entry.value;
+
+                          // Sum total working hours for the date
+                          double totalHours = 0.0;
+                          for (final l in dateLogs) {
+                            totalHours += l.totalWorkingHours ?? 0.0;
+                          }
+
+                          // Get highest status session of the date
+                          dynamic highestLog = dateLogs.first;
+                          int highestRank = getStatusRank(highestLog.status);
+                          for (final l in dateLogs) {
+                            final rank = getStatusRank(l.status);
+                            if (rank > highestRank) {
+                              highestRank = rank;
+                              highestLog = l;
+                            }
+                          }
+
+                          final finalStatus = highestLog.status.toUpperCase();
+                          double salaryFactor = 0.0;
+                          bool isPayable = false;
+
+                          // PRESENT -> 100%, LATE -> 100%, HALF_DAY -> 50%, ABSENT or other -> 0%
+                          if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
+                            salaryFactor = 1.0;
+                            isPayable = true;
+                          } else if (finalStatus == 'HALF_DAY') {
+                            salaryFactor = 0.5;
+                            isPayable = true;
+                          }
+
+                          final dailySalary = dailySalaryRate * salaryFactor;
+
+                          return {
+                            'date': highestLog.date as DateTime,
+                            'totalHours': totalHours,
+                            'dailySalary': dailySalary,
+                            'isPayable': isPayable,
+                          };
+                        }).toList();
+
+                        // Sort grouped logs by date descending
+                        groupedLogs.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: groupedLogs.take(5).length,
+                              separatorBuilder: (_, __) => const Divider(height: 8),
+                              itemBuilder: (context, index) {
+                                final gLog = groupedLogs[index];
+                                final isPayable = gLog['isPayable'] as bool;
+                                final dailySalary = gLog['dailySalary'] as double;
+                                final date = gLog['date'] as DateTime;
+                                final totalHours = gLog['totalHours'] as double;
+
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      DateFormat('dd MMM yyyy').format(date),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                                    ),
+                                    Text(
+                                      '${totalHours.toStringAsFixed(1)} hrs',
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                    Text(
+                                      '₹${dailySalary.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isPayable ? const Color(0xFF16A34A) : AppColors.error,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                            const Divider(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Accrued Salary (This Month):',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '₹${groupedLogs.fold<double>(0.0, (sum, gLog) {
+                                    return sum + (gLog['dailySalary'] as double);
+                                  }).toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Advance pay backend endpoint not yet available
+                            // UI ready — waiting for backend implementation
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const RequestAdvanceScreen(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                              icon: const Icon(Icons.payment, size: 16),
+                              label: const Text(
+                                'Request Salary Advance',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        );
+                      })(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTravelEntrySheet(BuildContext context, TravelProvider travelProvider) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Are You Travelling Today?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'If you are travelling for field force visits, please log your start and end odometer readings to claim travel allowance.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog, no further action
+            },
+            child: const Text('No, I\'m Not', style: TextStyle(color: AppColors.outline, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext); // Close dialog
+              // Show the full travel form bottom sheet
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (sheetContext) => TravelEntrySheet(travelProvider: travelProvider),
+              );
+            },
+            child: const Text('Yes, I Am', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 2c: Stateful Bottom Sheet for Travel Meter Entry ────────────────────────
+
+class TravelEntrySheet extends StatefulWidget {
+  final TravelProvider travelProvider;
+
+  const TravelEntrySheet({super.key, required this.travelProvider});
+
+  @override
+  State<TravelEntrySheet> createState() => _TravelEntrySheetState();
+}
+
+class _TravelEntrySheetState extends State<TravelEntrySheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _startOdometerController = TextEditingController();
+  final _endOdometerController = TextEditingController();
+  
+  XFile? _startPhoto;
+  XFile? _endPhoto;
+  double _distance = 0.0;
+  String? _validationError;
+  bool _isLoadingTodayLog = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _startOdometerController.addListener(_calculateDistance);
+    _endOdometerController.addListener(_calculateDistance);
+    _loadTodayLog();
+  }
+
+  Future<void> _loadTodayLog() async {
+    setState(() {
+      _isLoadingTodayLog = true;
+    });
+    await widget.travelProvider.fetchTodayTravel();
+    if (mounted) {
+      final log = widget.travelProvider.todayLog;
+      if (log != null && log.meterStart != null) {
+        _startOdometerController.text = log.meterStart!.toStringAsFixed(0);
+      }
+      setState(() {
+        _isLoadingTodayLog = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _startOdometerController.dispose();
+    _endOdometerController.dispose();
+    super.dispose();
+  }
+
+  double _getTravelRate() {
+    // 1. Check todayLog rate
+    if (widget.travelProvider.todayLog != null) {
+      return widget.travelProvider.todayLog!.allowanceRate;
+    }
+    // 2. Check current user profile rate
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (auth.currentUser?.travelAllowanceRate != null) {
+      return auth.currentUser!.travelAllowanceRate!;
+    }
+    // 3. Fall back to constant
+    return AppConstants.defaultTravelAllowanceRate;
+  }
+
+  void _calculateDistance() {
+    final startVal = double.tryParse(_startOdometerController.text);
+    final endVal = double.tryParse(_endOdometerController.text);
+    if (startVal != null && endVal != null) {
+      setState(() {
+        _distance = endVal - startVal;
+        if (endVal < startVal) {
+          _validationError = 'End-of-Day odometer reading must be greater than Start-of-Day reading';
+        } else {
+          _validationError = null;
+        }
+      });
+    } else {
+      setState(() {
+        _distance = 0.0;
+        _validationError = null;
+      });
+    }
+  }
+
+  Future<void> _pickPhoto(bool isStart) async {
+    // Reusable image upload utility: checks camera/gallery permission, lets user choose, formats/sizes under 1MB
+    final result = await ImageUploadUtil.pickAndCompressImage(
+      context,
+      cameraOnly: false,
+      preferredCameraDevice: CameraDevice.rear,
+    );
+    if (result != null) {
+      setState(() {
+        if (isStart) {
+          _startPhoto = XFile(result.path);
+        } else {
+          _endPhoto = XFile(result.path);
+        }
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    try {
+      debugPrint('[TravelEntrySheet] _submit called');
+      final isValidated = _formKey.currentState?.validate() ?? false;
+      debugPrint('[TravelEntrySheet] Form validation status: $isValidated');
+      if (!isValidated) {
+        debugPrint('[TravelEntrySheet] Form validation failed. Returning.');
+        return;
+      }
+      debugPrint('[TravelEntrySheet] Form validation passed.');
+      
+      debugPrint('[TravelEntrySheet] Current _validationError: $_validationError');
+      if (_validationError != null) {
+        debugPrint('[TravelEntrySheet] _validationError is not null. Returning.');
+        return;
+      }
+
+      final log = widget.travelProvider.todayLog;
+      final isStartLogged = log != null && log.meterStart != null;
+      debugPrint('[TravelEntrySheet] isStartLogged: $isStartLogged');
+
+      final startVal = double.tryParse(_startOdometerController.text);
+      final endVal = double.tryParse(_endOdometerController.text);
+      debugPrint('[TravelEntrySheet] startVal: $startVal, endVal: $endVal');
+
+      if (!isStartLogged) {
+        if (startVal == null) {
+          debugPrint('[TravelEntrySheet] startVal is null! Returning.');
+          return;
+        }
+        if (_startPhoto == null) {
+          debugPrint('[TravelEntrySheet] _startPhoto is null!');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please capture Start-of-Day odometer photo'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+        
+        debugPrint('[TravelEntrySheet] Reading start photo bytes...');
+        final bytes = await _startPhoto!.readAsBytes();
+        debugPrint('[TravelEntrySheet] Encoding start photo bytes to Base64...');
+        final base64Image = base64Encode(bytes);
+        debugPrint('[TravelEntrySheet] Base64 string length: ${base64Image.length}');
+
+        debugPrint('[TravelEntrySheet] Calling submitTravelLog for meterStart...');
+        final success = await widget.travelProvider.submitTravelLog(
+          meterStart: startVal,
+          proofImageBase64: base64Image,
+          notes: 'Logged start-of-day odometer reading',
+        );
+        debugPrint('[TravelEntrySheet] submitTravelLog result success: $success');
+
+        if (success && mounted) {
+          debugPrint('[TravelEntrySheet] Closing dialog and showing success SnackBar');
+          // Refresh travel block after submit so UI reflects latest data
+          widget.travelProvider.fetchTodayTravel();
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Travel log submitted successfully'),
+              backgroundColor: AppColors.secondary,
+            ),
+          );
+        } else if (mounted) {
+          final errorMsg = widget.travelProvider.errorMessage ?? 'Submission failed';
+          debugPrint('[TravelEntrySheet] Submission failed error message: $errorMsg');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } else {
+        // Logging End of Day
+        if (endVal == null) {
+          debugPrint('[TravelEntrySheet] endVal is null! Returning.');
+          return;
+        }
+        if (_endPhoto == null) {
+          debugPrint('[TravelEntrySheet] _endPhoto is null!');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please capture End-of-Day odometer photo'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+        
+        debugPrint('[TravelEntrySheet] Reading end photo bytes...');
+        final bytes = await _endPhoto!.readAsBytes();
+        debugPrint('[TravelEntrySheet] Encoding end photo bytes to Base64...');
+        final base64Image = base64Encode(bytes);
+        debugPrint('[TravelEntrySheet] Base64 string length: ${base64Image.length}');
+
+        debugPrint('[TravelEntrySheet] Calling submitTravelLog for meterEnd...');
+        final success = await widget.travelProvider.submitTravelLog(
+          meterEnd: endVal,
+          proofImageBase64: base64Image,
+          notes: 'Logged end-of-day odometer reading',
+        );
+        debugPrint('[TravelEntrySheet] submitTravelLog result success: $success');
+
+        if (success && mounted) {
+          debugPrint('[TravelEntrySheet] Closing dialog and showing success SnackBar');
+          // Refresh travel block after submit so UI reflects latest data
+          widget.travelProvider.fetchTodayTravel();
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Travel log submitted successfully'),
+              backgroundColor: AppColors.secondary,
+            ),
+          );
+        } else if (mounted) {
+          final errorMsg = widget.travelProvider.errorMessage ?? 'Submission failed';
+          debugPrint('[TravelEntrySheet] Submission failed error message: $errorMsg');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('[TravelEntrySheet] CRITICAL ERROR IN _submit: $e');
+      debugPrint(stack.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Submission Error: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoadingTodayLog) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(40),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final log = widget.travelProvider.todayLog;
+    final isStartLogged = log != null && log.meterStart != null;
+    final isEndLogged = log != null && log.meterEnd != null;
+    final rate = _getTravelRate();
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isStartLogged ? 'Complete Today\'s Travel Log' : 'Start Today\'s Travel Log',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+
+              // 1. Start-of-Day Odometer Reading
+              const Text(
+                'Start-of-Day Odometer Reading (KM)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextFormField(
+                  controller: _startOdometerController,
+                  keyboardType: TextInputType.number,
+                  enabled: !isStartLogged,
+                  decoration: InputDecoration(
+                    hintText: 'Enter start-of-day odometer reading',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    fillColor: isStartLogged ? Colors.grey[200] : Colors.transparent,
+                    filled: isStartLogged,
+                  ),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Required';
+                    if (double.tryParse(val) == null) return 'Invalid number';
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 2. Start-of-Day Odometer Photo
+              if (!isStartLogged) ...[
+                const Text(
+                  'Start-of-Day Odometer Photo',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _pickPhoto(true),
+                    icon: Icon(_startPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
+                    label: Text(_startPhoto != null ? 'Photo Captured' : 'Upload Start-of-Day Photo', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _startPhoto != null ? AppColors.secondaryContainer : AppColors.primaryContainer,
+                      foregroundColor: _startPhoto != null ? AppColors.secondary : AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                if (_startPhoto != null) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(_startPhoto!.path),
+                        height: 100,
+                        width: 150,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+              ] else ...[
+                const Text(
+                  'Start-of-Day Photo Status',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.check_circle, color: AppColors.secondary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Start-of-day odometer photo uploaded successfully', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // 3. End-of-Day Odometer Reading
+              if (isStartLogged) ...[
+                const Text(
+                  'End-of-Day Odometer Reading (KM)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextFormField(
+                    controller: _endOdometerController,
+                    keyboardType: TextInputType.number,
+                    enabled: !isEndLogged,
+                    decoration: InputDecoration(
+                      hintText: 'Enter end-of-day odometer reading',
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      fillColor: isEndLogged ? Colors.grey[200] : Colors.transparent,
+                      filled: isEndLogged,
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return 'Required';
+                      if (double.tryParse(val) == null) return 'Invalid number';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 4. End-of-Day Odometer Photo
+                if (!isEndLogged) ...[
+                  const Text(
+                    'End-of-Day Odometer Photo',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _pickPhoto(false),
+                      icon: Icon(_endPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
+                      label: Text(_endPhoto != null ? 'Photo Captured' : 'Upload End-of-Day Photo', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _endPhoto != null ? AppColors.secondaryContainer : AppColors.primaryContainer,
+                        foregroundColor: _endPhoto != null ? AppColors.secondary : AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  if (_endPhoto != null) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_endPhoto!.path),
+                          height: 100,
+                          width: 150,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                ] else ...[
+                  const Text(
+                    'End-of-Day Photo Status',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.check_circle, color: AppColors.secondary, size: 20),
+                        SizedBox(width: 8),
+                        Text('End-of-day odometer photo uploaded successfully', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
+                if (_validationError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
+                    child: Text(
+                      _validationError!,
+                      style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+
+                // 5. Distance & Allowance Display
+                const Text(
+                  'Distance & Allowance Calculation',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryContainer),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Traveled Distance:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                          Text(
+                            '${_distance >= 0 ? _distance.toStringAsFixed(1) : "0.0"} KM',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20, color: AppColors.outlineVariant),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Rate per KM:', style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant)),
+                          Text(
+                            '₹${rate.toStringAsFixed(2)} / KM',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.onSurface),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Calculated Allowance Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF16A34A))),
+                          Text(
+                            '₹${(_distance >= 0 ? _distance * rate : 0.0).toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF16A34A)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // 6. Submit button
+              if (!isEndLogged)
+                CustomButton(
+                  text: isStartLogged ? 'Complete Travel Log' : 'Save Start Odometer',
+                  onPressed: _submit,
+                  isLoading: widget.travelProvider.isSubmitting,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

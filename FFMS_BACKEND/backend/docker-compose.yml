@@ -1,0 +1,39 @@
+name: field-force-management
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ffms_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ffms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ffms_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-ffms_db}
+    ports:
+      - "5433:5432" # Conflict-free port for your local backend connection
+    volumes:
+      - ffms_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-ffms_user} -d $${POSTGRES_DB:-ffms_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: "no" # Docker will never start this automatically anymore
+
+  redis:
+    image: redis:7-alpine
+    container_name: ffms_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ffms_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: "no" # Docker will never start this automatically anymore
+
+volumes:
+  ffms_postgres_data:
+  ffms_redis_data:

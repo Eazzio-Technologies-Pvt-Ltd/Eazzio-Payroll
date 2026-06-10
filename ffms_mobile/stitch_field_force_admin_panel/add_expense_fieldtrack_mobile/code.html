@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Add Expense - FieldTrack</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }],
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "700" }],
+                        "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+                        "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                        "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Hide scrollbar for category pills but allow scrolling */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Ensure inputs don't zoom on iOS */
+        input[type="text"], input[type="number"], input[type="date"], textarea {
+            font-size: 16px !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md antialiased pb-[calc(72px+env(safe-area-inset-bottom)+24px)]">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 text-on-surface-variant dark:text-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">FieldTrack</h1>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 text-on-surface-variant dark:text-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-14 px-margin flex flex-col gap-stack-lg mt-stack-md">
+<!-- Page Title -->
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Add Expense</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Log your field expenses for reimbursement.</p>
+</div>
+<!-- Form Area -->
+<form class="flex flex-col gap-stack-lg">
+<!-- Amount Input -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm flex flex-col gap-stack-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="amount">Total Amount</label>
+<div class="flex items-center">
+<span class="font-headline-md text-headline-md text-on-surface mr-2">₹</span>
+<input class="w-full bg-transparent border-none p-0 focus:ring-0 font-headline-lg text-headline-lg text-on-surface placeholder-surface-dim outline-none" id="amount" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+<!-- Category Selector -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Category</label>
+<div class="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+<button class="px-4 py-2 min-h-touch-target-min rounded-full font-label-md text-label-md whitespace-nowrap bg-primary-container text-on-primary-container shadow-sm active:scale-95 transition-transform" type="button">Travel</button>
+<button class="px-4 py-2 min-h-touch-target-min rounded-full font-label-md text-label-md whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-transform" type="button">Food</button>
+<button class="px-4 py-2 min-h-touch-target-min rounded-full font-label-md text-label-md whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-transform" type="button">Accommodation</button>
+<button class="px-4 py-2 min-h-touch-target-min rounded-full font-label-md text-label-md whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant hover:bg-surface-container-high active:scale-95 transition-transform" type="button">Other</button>
+</div>
+</div>
+<!-- Date Picker -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="date">Date of Expense</label>
+<div class="relative bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<input class="w-full bg-transparent border-none px-4 py-3 min-h-touch-target-min font-body-md text-body-md text-on-surface outline-none focus:ring-0" id="date" type="date"/>
+</div>
+</div>
+<!-- Description Input -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider" for="description">Description</label>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<textarea class="w-full bg-transparent border-none px-4 py-3 font-body-md text-body-md text-on-surface placeholder-surface-dim outline-none focus:ring-0 resize-none" id="description" placeholder="Briefly describe the expense..." rows="3"></textarea>
+</div>
+</div>
+<!-- Upload Receipt -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex justify-between">
+<span>Receipt</span>
+<span class="text-outline">Optional</span>
+</label>
+<button class="w-full border-2 border-dashed border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center gap-2 text-on-surface-variant bg-surface-container-low hover:bg-surface-container active:bg-surface-container-high transition-colors cursor-pointer min-h-[120px]" type="button">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary mb-1">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 0;">add_a_photo</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary">Upload or take a photo</span>
+<span class="font-body-md text-body-md text-outline">JPG, PNG up to 5MB</span>
+</button>
+</div>
+<!-- Submit Button (Fixed near bottom, above nav if present) -->
+<div class="pt-4">
+<button class="w-full min-h-touch-target-min bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full py-3 shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    Submit Claim
+                </button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline shadow-lg rounded-t-xl md:hidden">
+<!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<!-- Tasks (Active - representing the flow this action belongs to) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-label-sm text-label-sm mt-1">Tasks</span>
+</a>
+<!-- Map (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">map</span>
+<span class="font-label-sm text-label-sm mt-1">Map</span>
+</a>
+<!-- Attendance (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Attendance</span>
+</a>
+<!-- Profile (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

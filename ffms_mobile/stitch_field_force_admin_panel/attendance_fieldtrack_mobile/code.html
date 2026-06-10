@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-width=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>FieldTrack - Attendance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#191c1e",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#005320",
+                    "on-secondary-container": "#007230",
+                    "tertiary-fixed": "#ffdbca",
+                    "on-surface-variant": "#434655",
+                    "outline-variant": "#c3c6d7",
+                    "surface-bright": "#f7f9fb",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f2f4f6",
+                    "tertiary-fixed-dim": "#ffb690",
+                    "on-primary-fixed": "#00174b",
+                    "secondary-fixed-dim": "#62df7d",
+                    "outline": "#737686",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#002109",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#341100",
+                    "tertiary": "#8e3c00",
+                    "surface": "#f7f9fb",
+                    "surface-container": "#eceef0",
+                    "inverse-on-surface": "#eff1f3",
+                    "inverse-primary": "#b4c5ff",
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#2d3133",
+                    "tertiary-container": "#b54e00",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-background": "#191c1e",
+                    "primary": "#004ac6",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#ffece5",
+                    "on-tertiary-fixed-variant": "#783200",
+                    "background": "#f7f9fb",
+                    "secondary-container": "#7cf994",
+                    "surface-tint": "#0053db",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#dbe1ff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary": "#006e2d",
+                    "primary-container": "#2563eb",
+                    "on-primary-container": "#eeefff",
+                    "secondary-fixed": "#7ffc97"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "touch-target-min": "44px",
+                    "stack-lg": "24px",
+                    "gutter": "16px",
+                    "margin": "16px",
+                    "stack-sm": "8px",
+                    "safe-bottom": "env(safe-area-inset-bottom)"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-md": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pt-safe pb-[calc(72px+env(safe-area-inset-bottom))]">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm pt-safe">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant text-on-surface-variant dark:text-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">FieldTrack</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high dark:hover:bg-surface-variant text-on-surface-variant dark:text-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 px-margin pt-[calc(56px+16px)] pb-stack-lg max-w-md mx-auto w-full">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-stack-md">Attendance</h2>
+<!-- Monthly Summary Grid -->
+<section class="grid grid-cols-2 gap-4 mb-stack-lg">
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Present</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">18</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-8 h-8 rounded-full bg-error-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">cancel</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Absent</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">2</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-8 h-8 rounded-full bg-tertiary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">schedule</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Late</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">1</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-8 h-8 rounded-full bg-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">flight_takeoff</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Leave</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">1</div>
+</div>
+</section>
+<!-- Apply Leave Button -->
+<button class="w-full h-touch-target-min bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 mb-stack-lg active:scale-[0.98] transition-transform shadow-[0_4px_8px_rgba(0,0,0,0.05)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">event_note</span>
+            Apply Leave
+        </button>
+<!-- Calendar View Snippet -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4 mb-stack-lg shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">October 2023</h3>
+<div class="flex gap-2">
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant rounded hover:bg-surface-container"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant rounded hover:bg-surface-container"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">M</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">T</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">W</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">T</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">F</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">S</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">S</span>
+</div>
+<!-- Dummy Calendar Grid (Week 1 & 2 for illustration) -->
+<div class="grid grid-cols-7 gap-1 text-center font-body-md text-body-md">
+<!-- Row 1 -->
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">25</span></div>
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">26</span></div>
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">27</span></div>
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">28</span></div>
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">29</span></div>
+<div class="aspect-square flex items-center justify-center relative"><span class="text-on-surface-variant opacity-50">30</span></div>
+<div class="aspect-square flex items-center justify-center relative text-error">1</div>
+<!-- Row 2 -->
+<div class="aspect-square flex items-center justify-center relative text-on-surface">2<div class="absolute bottom-1 w-1 h-1 rounded-full bg-secondary"></div></div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface">3<div class="absolute bottom-1 w-1 h-1 rounded-full bg-secondary"></div></div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface">4<div class="absolute bottom-1 w-1 h-1 rounded-full bg-tertiary"></div></div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface bg-primary-container/10 rounded-full">5<div class="absolute bottom-1 w-1 h-1 rounded-full bg-primary"></div></div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface">6<div class="absolute bottom-1 w-1 h-1 rounded-full bg-secondary"></div></div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface-variant">7</div>
+<div class="aspect-square flex items-center justify-center relative text-on-surface-variant">8</div>
+</div>
+</section>
+<!-- Recent Check-ins -->
+<section>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-stack-md">Recent Activity</h3>
+<div class="flex flex-col gap-3">
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-3 flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">login</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Check-in</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-xs">Downtown Site A</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-md text-label-md text-on-surface">08:55 AM</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-xs">Today</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-3 flex items-center justify-between shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">logout</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Check-out</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-xs">Downtown Site A</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-md text-label-md text-on-surface">05:05 PM</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-xs">Yesterday</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline shadow-lg md:hidden">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<!-- Tasks -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">assignment</span>
+<span class="font-label-sm text-label-sm">Tasks</span>
+</button>
+<!-- Map -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">map</span>
+<span class="font-label-sm text-label-sm">Map</span>
+</button>
+<!-- Attendance (Active) -->
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-label-sm text-label-sm">Attendance</span>
+</button>
+<!-- Profile -->
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-variant active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+</body></html>

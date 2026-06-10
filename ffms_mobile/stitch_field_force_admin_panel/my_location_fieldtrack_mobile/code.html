@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Location</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans", "sans-serif"],
+                        "label-md": ["Plus Jakarta Sans", "sans-serif"],
+                        "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+                        "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+                        "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+                        "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+                        "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+                        "label-sm": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #2563eb; /* primary-container */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #2563eb; /* primary-container */
+        }
+        
+        /* Pulse Animation for Map Pin */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(0, 74, 198, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(0, 74, 198, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(0, 74, 198, 0); }
+        }
+        .pin-pulse {
+            animation: pulse-ring 2s infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-hidden flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright border-b border-outline-variant shadow-sm transition-all duration-200">
+<div class="flex items-center gap-2">
+<button aria-label="Back" class="h-touch-target-min w-touch-target-min flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+</div>
+<div class="font-headline-sm text-headline-sm font-bold text-primary flex-1 text-center">
+            FieldTrack
+        </div>
+<div class="flex items-center gap-2">
+<button aria-label="Notifications" class="h-touch-target-min w-touch-target-min flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Map Canvas Area -->
+<main class="flex-1 relative w-full h-full mt-14 mb-[72px]">
+<!-- Map Background Placeholder -->
+<div class="absolute inset-0 bg-surface-container-high overflow-hidden">
+<img alt="A highly detailed top-down view of a modern digital map interface. The map displays a complex urban grid with distinct roads, parks, and building footprints in a light-mode color palette. The aesthetic is clean and corporate, relying on subtle grays, soft blues, and muted greens to denote different geographic features. The lighting is uniform and bright, suggesting a clear, functional digital display without heavy shadows or distracting textures." class="w-full h-full object-cover opacity-80" data-location="Urban Grid Map" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7pXE4XW8fNNrCJYQFJLgRBvCDsFQNNI7TvMKVYjleQyJK-kUOZduD535j_YpfaEn6MYr7WDV-YWVt_5_z9VoPp_XhxmB23nCRMD0y4kmzZ7hQWh3Q-HqmtKN9-V2P2lBAErmjIoNbsl8uyRU0of7lw7oEWg9rppDpSYeIxmxE77_hccsWNE0mV_C1sseMALNtcmm8KZiD4U-p8r61NzMI_9jf-RdBvzBSaOy0fohOz4ozOR5HWbveFUGmbCtLii5mGMGM3oM26sxO"/>
+</div>
+<!-- Geofence Polygon Overlay -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 pointer-events-none">
+<svg class="w-full h-full drop-shadow-md" viewbox="0 0 100 100">
+<!-- Semi-transparent fill with primary color border -->
+<polygon class="opacity-80" fill="rgba(0, 74, 198, 0.15)" points="50,10 90,40 70,90 30,90 10,40" stroke="#004ac6" stroke-linejoin="round" stroke-width="2"></polygon>
+</svg>
+</div>
+<!-- Current Location Pin -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none mt-4">
+<div class="pin-pulse w-4 h-4 bg-primary rounded-full absolute bottom-1 z-0"></div>
+<span class="material-symbols-outlined text-[40px] text-primary drop-shadow-lg z-10" data-icon="location_on" data-weight="fill" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<!-- Floating Action Button (Optional contextual action, e.g., center map) -->
+<button class="absolute top-margin right-margin bg-surface-container-lowest text-on-surface shadow-lg h-touch-target-min w-touch-target-min rounded-full flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-all duration-200 z-10">
+<span class="material-symbols-outlined" data-icon="my_location">my_location</span>
+</button>
+<!-- Bottom Sheet Card -->
+<div class="absolute bottom-margin left-margin right-margin z-20">
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/30 p-stack-md flex flex-col gap-stack-md">
+<!-- Header / Title -->
+<div class="flex items-center justify-between border-b border-surface-container pb-stack-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">My Location</h2>
+<!-- Status Badge -->
+<div class="bg-secondary-container text-on-secondary-container font-label-sm text-label-sm uppercase px-2 py-1 rounded-full flex items-center gap-1 border border-secondary/20">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                        Inside Zone
+                    </div>
+</div>
+<!-- Address Info -->
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined" data-icon="business">business</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant mb-1">Current Address</span>
+<span class="font-body-lg text-body-lg text-on-surface leading-tight">1204 Corporate Way, Suite 300<br/>San Francisco, CA 94107</span>
+<span class="font-label-sm text-label-sm text-outline mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="update">update</span>
+                            Last updated: Just now
+                        </span>
+</div>
+</div>
+<!-- Action Toggle -->
+<div class="bg-surface-bright rounded-lg p-3 flex items-center justify-between border border-surface-container-highest mt-2">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Share Location</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Visible to dispatcher</span>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out border-surface-dim top-0 bottom-0 m-auto" id="toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-container cursor-pointer transition-colors duration-200 ease-in-out" for="toggle"></label>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container border-t border-outline-variant shadow-lg transition-all duration-200">
+<!-- Inactive: Home -->
+<a class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high active:scale-95 transition-all duration-200 rounded-xl w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<!-- Inactive: Tasks -->
+<a class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high active:scale-95 transition-all duration-200 rounded-xl w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="assignment">assignment</span>
+<span class="font-label-sm text-label-sm">Tasks</span>
+</a>
+<!-- Active: Map -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1 active:scale-95 transition-all duration-200 w-1/5" href="#" style="font-variation-settings: 'FILL' 1;">
+<span class="material-symbols-outlined mb-1" data-icon="map" data-weight="fill">map</span>
+<span class="font-label-sm text-label-sm font-bold">Map</span>
+</a>
+<!-- Inactive: Attendance -->
+<a class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high active:scale-95 transition-all duration-200 rounded-xl w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-sm text-label-sm">Attendance</span>
+</a>
+<!-- Inactive: Profile -->
+<a class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high active:scale-95 transition-all duration-200 rounded-xl w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple JS for toggle interaction visuals if needed
+        const toggleInput = document.getElementById('toggle');
+        toggleInput.addEventListener('change', function() {
+            if(this.checked) {
+                this.classList.add('translate-x-6', 'border-primary-container');
+                this.classList.remove('border-surface-dim', 'translate-x-0');
+            } else {
+                this.classList.remove('translate-x-6', 'border-primary-container');
+                this.classList.add('border-surface-dim', 'translate-x-0');
+            }
+        });
+        
+        // Initialize toggle position
+        if(toggleInput.checked) {
+            toggleInput.classList.add('translate-x-6', 'border-primary-container');
+            toggleInput.classList.remove('border-surface-dim');
+        }
+    </script>
+</body></html>

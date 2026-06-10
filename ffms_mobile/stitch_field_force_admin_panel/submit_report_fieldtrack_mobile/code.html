@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }],
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "700" }],
+                        "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+                        "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                        "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }]
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        .hide { display: none !important; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pt-[56px] pb-[88px] selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright border-b border-outline-variant shadow-sm transition-all duration-200">
+<button aria-label="Go back" class="w-[44px] h-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary flex-1 text-center">FieldTrack</h1>
+<button aria-label="Notifications" class="w-[44px] h-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-full active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+</header>
+<!-- Main Content: Submit Form -->
+<main class="flex-1 px-margin pt-stack-md flex flex-col gap-stack-lg max-w-md mx-auto w-full pb-8" id="submit-form-view">
+<!-- Header / Task Info -->
+<section>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-sm">Submit Report</h2>
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-4 shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+<p class="font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">Assigned Task</p>
+<p class="font-body-md text-body-md text-on-surface font-medium">Quarterly Equipment Inspection - Sector 4G</p>
+</div>
+</section>
+<!-- Location & Time Auto-fill -->
+<section class="flex flex-col gap-stack-sm">
+<div class="flex items-center gap-3 bg-surface-container-low border border-outline-variant rounded-lg p-3">
+<span class="material-symbols-outlined text-primary text-[20px] fill">location_on</span>
+<div class="flex-1">
+<p class="font-label-sm text-label-sm text-outline">Location captured</p>
+<p class="font-body-md text-body-md text-on-surface">34.0522° N, 118.2437° W (Site A)</p>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+</div>
+<div class="flex items-center gap-3 bg-surface-container-low border border-outline-variant rounded-lg p-3">
+<span class="material-symbols-outlined text-primary text-[20px] fill">schedule</span>
+<div class="flex-1">
+<p class="font-label-sm text-label-sm text-outline">Time logged</p>
+<p class="font-body-md text-body-md text-on-surface" id="current-time">14:30 PST</p>
+</div>
+</div>
+</section>
+<!-- Photo Upload -->
+<section>
+<h3 class="font-label-lg text-label-lg text-on-surface mb-stack-sm">Upload Photos</h3>
+<div class="grid grid-cols-3 gap-3">
+<button class="aspect-square bg-surface border border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center text-outline hover:bg-surface-container-high transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[28px] mb-1">add_a_photo</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+<div class="aspect-square bg-surface border border-dashed border-outline-variant rounded-lg flex items-center justify-center text-outline-variant"></div>
+<div class="aspect-square bg-surface border border-dashed border-outline-variant rounded-lg flex items-center justify-center text-outline-variant"></div>
+</div>
+<p class="font-label-sm text-label-sm text-outline mt-2">At least 1 photo required.</p>
+</section>
+<!-- Notes Area -->
+<section class="flex-1 flex flex-col">
+<label class="font-label-lg text-label-lg text-on-surface mb-stack-sm" for="remarks">Notes / Remarks</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none placeholder-outline transition-shadow shadow-[0_2px_4px_rgba(0,0,0,0.02)]" id="remarks" placeholder="Add any details about the inspection..." rows="4"></textarea>
+</section>
+<!-- Submit Action -->
+<div class="mt-auto pt-stack-md">
+<button class="w-full min-h-[48px] bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-xl flex items-center justify-center shadow-md active:scale-[0.98] transition-transform" id="submit-btn">
+                Submit Report
+            </button>
+</div>
+</main>
+<!-- Success State View (Hidden initially) -->
+<main class="hide flex-1 px-margin flex flex-col items-center justify-center gap-stack-lg max-w-md mx-auto w-full text-center h-[calc(100vh-144px)]" id="success-view">
+<div class="w-24 h-24 bg-secondary-container rounded-full flex items-center justify-center shadow-lg animate-[pulse_2s_ease-in-out_infinite]">
+<span class="material-symbols-outlined text-[48px] text-on-secondary-container fill">check_circle</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Report Submitted</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Your report has been successfully uploaded and logged in the system.</p>
+</div>
+<button class="mt-8 px-8 min-h-[48px] bg-surface-container-high text-on-surface font-label-lg text-label-lg rounded-xl flex items-center justify-center shadow-sm hover:bg-surface-variant active:scale-[0.98] transition-all border border-outline-variant" id="back-home-btn">
+            Back to Tasks
+        </button>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 h-[72px] pb-safe bg-surface-container border-t border-outline-variant shadow-lg md:hidden">
+<a aria-label="Home" class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<a aria-current="page" aria-label="Tasks" class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1 active:scale-95 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px] fill">assignment</span>
+<span class="font-label-sm text-label-sm mt-1">Tasks</span>
+</a>
+<a aria-label="Map" class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]">map</span>
+<span class="font-label-sm text-label-sm mt-1">Map</span>
+</a>
+<a aria-label="Attendance" class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]">calendar_today</span>
+<span class="font-label-sm text-label-sm mt-1">Attendance</span>
+</a>
+<a aria-label="Profile" class="flex flex-col items-center justify-center text-outline px-4 py-1 hover:bg-surface-container-high transition-all duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="font-label-sm text-label-sm mt-1">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple interactions for demonstration
+        document.addEventListener('DOMContentLoaded', () => {
+            const submitBtn = document.getElementById('submit-btn');
+            const formView = document.getElementById('submit-form-view');
+            const successView = document.getElementById('success-view');
+            const backHomeBtn = document.getElementById('back-home-btn');
+
+            // Set current time
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' Local';
+            document.getElementById('current-time').textContent = timeStr;
+
+            submitBtn.addEventListener('click', () => {
+                // Simulate submission
+                submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin mr-2">sync</span> Submitting...';
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-80');
+
+                setTimeout(() => {
+                    formView.classList.add('hide');
+                    successView.classList.remove('hide');
+                }, 800);
+            });
+
+            backHomeBtn.addEventListener('click', () => {
+                // Reset for demo purposes
+                successView.classList.add('hide');
+                formView.classList.remove('hide');
+                submitBtn.innerHTML = 'Submit Report';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-80');
+            });
+        });
+    </script>
+</body></html>

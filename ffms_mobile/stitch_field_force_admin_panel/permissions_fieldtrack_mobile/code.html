@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FieldTrack - Permissions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#005320",
+                        "on-secondary-container": "#007230",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#434655",
+                        "outline-variant": "#c3c6d7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "surface-container-low": "#f2f4f6",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "on-primary-fixed": "#00174b",
+                        "secondary-fixed-dim": "#62df7d",
+                        "outline": "#737686",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#002109",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary": "#8e3c00",
+                        "surface": "#f7f9fb",
+                        "surface-container": "#eceef0",
+                        "inverse-on-surface": "#eff1f3",
+                        "inverse-primary": "#b4c5ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#b54e00",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "primary": "#004ac6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffece5",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#7cf994",
+                        "surface-tint": "#0053db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#006e2d",
+                        "primary-container": "#2563eb",
+                        "on-primary-container": "#eeefff",
+                        "secondary-fixed": "#7ffc97"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "touch-target-min": "44px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "margin": "16px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f7f9fb;
+            color: #191c1e;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pt-14 pb-safe">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-surface-bright dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm">
+<button class="w-[44px] h-[44px] flex items-center justify-center text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-full active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">FieldTrack</h1>
+<div class="w-[44px]"></div> <!-- Spacer for centering -->
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col px-margin pt-stack-lg pb-stack-lg max-w-md mx-auto w-full">
+<div class="mb-stack-lg">
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-stack-sm">FieldTrack needs access to</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">To provide the best experience, we need a few permissions to get started.</p>
+</div>
+<div class="flex flex-col gap-stack-md flex-grow">
+<!-- Location Permission Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md flex items-center gap-stack-md shadow-sm">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-container" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div class="flex-grow">
+<h3 class="font-label-lg text-label-lg text-on-surface">Location</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Required for tracking tasks and map features.</p>
+</div>
+<button class="h-touch-target-min px-4 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:scale-95 transition-transform">
+                    Allow
+                </button>
+</div>
+<!-- Camera Permission Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md flex items-center gap-stack-md shadow-sm">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-container" data-icon="photo_camera" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+</div>
+<div class="flex-grow">
+<h3 class="font-label-lg text-label-lg text-on-surface">Camera</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Used for scanning QR codes and taking evidence photos.</p>
+</div>
+<button class="h-touch-target-min px-4 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:scale-95 transition-transform">
+                    Allow
+                </button>
+</div>
+<!-- Notifications Permission Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md flex items-center gap-stack-md shadow-sm">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-container" data-icon="notifications" style="font-variation-settings: 'FILL' 1;">notifications</span>
+</div>
+<div class="flex-grow">
+<h3 class="font-label-lg text-label-lg text-on-surface">Notifications</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Stay updated on task assignments and alerts.</p>
+</div>
+<button class="h-touch-target-min px-4 bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg active:scale-95 transition-transform">
+                    Allow
+                </button>
+</div>
+</div>
+<!-- Bottom Action -->
+<div class="mt-stack-lg">
+<button class="w-full h-[48px] bg-primary-container text-on-primary font-label-lg text-label-lg rounded-[16px] active:scale-95 transition-transform flex items-center justify-center">
+                Continue
+            </button>
+</div>
+</main>
+<script>
+        // Simple micro-interaction for Allow buttons to show generic 'Granted' state
+        document.querySelectorAll('button:not([class*="w-full"])').forEach(btn => {
+            if(btn.textContent.trim() === 'Allow') {
+                btn.addEventListener('click', function() {
+                    this.textContent = 'Granted';
+                    this.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    this.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                });
+            }
+        });
+    </script>
+</body></html>

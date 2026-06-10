@@ -1,0 +1,72 @@
+name: ffms_mobile
+description: "Field Force Management Mobile App"
+publish_to: 'none'
+version: 2.0.0+4
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+  
+  # Environment variables
+  flutter_dotenv: ^5.1.0
+  
+  # HTTP & API
+  http: ^1.2.0
+  dio: ^5.4.0
+  
+  # State Management
+  provider: ^6.1.2
+  riverpod: ^2.5.0
+  
+  # Secure Storage
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.0
+  
+  # Location & Permissions
+  geolocator: ^12.0.0
+  permission_handler: ^11.0.0
+  flutter_foreground_task: ^8.0.0
+  
+  # Utilities
+  intl: ^0.19.0
+  image_picker: ^1.2.2
+  socket_io_client: ^2.0.3
+  sensors_plus: ^6.1.1
+  
+  # Map (keep commented for web, uncomment for Android/iOS)
+  # maplibre_gl: ^0.21.0
+  latlong2: ^0.9.0
+  flutter_map: ^7.0.0
+  shimmer: ^3.0.0
+  battery_plus: ^7.0.0
+  path_provider: ^2.1.5
+  flutter_local_notifications: ^18.0.1
+  google_fonts: ^8.1.0
+  lucide_icons: ^0.257.0
+  device_info_plus: ^12.4.0
+  connectivity_plus: ^7.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - .env
+    - assets/images/logo.png
+
+  # Fonts (if any, keep as is)
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
