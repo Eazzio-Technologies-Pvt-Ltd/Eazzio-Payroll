@@ -53,7 +53,7 @@ export default function LandingPage() {
       }}>
         {/* Logo — replaceable via public/logo.jpeg */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo.jpeg" alt="Eazzio Payroll" style={{ width: 140, height: "auto", objectFit: "contain" }} />
+          <img src="/logo.png" alt="Eazzio Payroll" style={{ width: 140, height: "auto", objectFit: "contain" }} />
         </div>
 
         {/* Nav Links */}
