@@ -6,6 +6,7 @@ const PRODUCTION_ORIGINS = [
   'https://field-force-mnt-sys.vercel.app',
   'https://eazzio-payroll.vercel.app',
   'https://payroll.eazzio.com',
+  'http://payroll.eazzio.com',
 ];
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
