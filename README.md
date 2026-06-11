@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150x150?text=FFMS+Logo" alt="FFMS Logo" width="120" height="120">
-  <h1>🚀 Field Force Management System (FFMS)</h1>
+  <img src="logo.jpeg" alt="Eazzio Technology Logo" width="200">
+  <h1>🚀 Eazzio Technology</h1>
   <p><b>A state-of-the-art enterprise solution for tracking, managing, and optimizing on-field employee operations.</b></p>
   
-  [![Organization](https://img.shields.io/badge/Organization-Thesis--Tech-blue.svg?style=for-the-badge)](https://github.com/Thesis-Tech)
+  [![Organization](https://img.shields.io/badge/Organization-Thesis--Tech-blue.svg?style=for-the-badge)](https://github.com/Eazzio technology)
   [![Stack](https://img.shields.io/badge/Stack-Next.js%20|%20Node.js%20|%20Flutter-success.svg?style=for-the-badge)](#)
   [![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge)](#)
 </div>
@@ -12,7 +12,7 @@
 
 ## 📖 About The Project
 
-The **Field Force Management System (FFMS)** is an end-to-end platform designed for organizations to seamlessly manage their distributed mobile workforce. It offers powerful real-time tracking, attendance logging, dynamic geofencing, robust task management, and deep analytical insights, all wrapped in a premium, role-based user interface.
+The **Eazzio Technology** is an end-to-end platform designed for organizations to seamlessly manage their distributed mobile workforce. It offers powerful real-time tracking, attendance logging, dynamic geofencing, robust task management, and deep analytical insights, all wrapped in a premium, role-based user interface.
 
 Whether you're managing a small local team or a massive regional sales force, FFMS acts as your central command center, bridging the gap between field agents and administrative managers.
 
@@ -77,14 +77,14 @@ Before you begin, ensure you have the following installed on your local machine:
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/Thesis-Tech/Field_Force_Mnt_Sys.git
+   git clone https://github.com/Eazzio technology/Field_Force_Mnt_Sys.git
    cd Field_Force_Mnt_Sys
    ```
 
-2. **Backend Setup (`FFMS_NANDINI`):**
+2. **Backend Setup (`EP_BACKEND`):**
 
    ```bash
-   cd FFMS_NANDINI/backend
+   cd EP_BACKEND/backend
    npm install
 
    # Set up your .env file based on .env.example
@@ -97,10 +97,10 @@ Before you begin, ensure you have the following installed on your local machine:
    npm run dev
    ```
 
-3. **Frontend Setup (`FFMS_FRONTEND_ADIT`):**
+3. **Frontend Setup (`EP_FRONTEND`):**
 
    ```bash
-   cd ../../FFMS_FRONTEND_ADIT/frontend
+   cd ../../EP_FRONTEND/frontend
    npm install
 
    # Set up your .env.local file
@@ -110,7 +110,7 @@ Before you begin, ensure you have the following installed on your local machine:
    npm run dev
    ```
 
-4. **Mobile App Setup (`ffms_mobile`):**
+4. **Mobile App Setup (`EP_mobile`):**
 
    ```bash
    cd ../../ffms_mobile
@@ -161,8 +161,8 @@ NEXT_PUBLIC_MAPPLS_TOKEN="your_mappls_api_token_here"
 
 ## 👥 Organization & Mentions
 
-**Organization:** [Thesis-Tech](https://github.com/Thesis-Tech)  
-**Project Owner / Architect:** Core Development Team at Thesis-Tech
+**Organization:** [Eazzio technology](https://github.com/Eazzio technology)  
+**Project Owner / Architect:** Core Development Team at Eazzio technology
 
 A massive thank you to all the contributors, QA testers, and developers who have helped shape FFMS into a robust, enterprise-grade solution.
 
@@ -170,8 +170,9 @@ A massive thank you to all the contributors, QA testers, and developers who have
 
 ## 📄 License
 
-This project is proprietary software belonging to **Thesis-Tech**. Unauthorized copying of this repository, via any medium, is strictly prohibited without explicit permission.
+This project is proprietary software belonging to **Eazzio technology**. Unauthorized copying of this repository, via any medium, is strictly prohibited without explicit permission.
 
 ---
 
-<p align="center">Made with ❤️ by the Thesis-Tech Team</p>
+<p align="center">Made with ❤️ by the Eazzio technology Team</p>
+
