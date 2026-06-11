@@ -51,23 +51,9 @@ export default function LandingPage() {
         maxWidth: 1280, margin: "0 auto", padding: "20px 48px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        {/* Logo */}
+        {/* Logo — replaceable via public/logo.jpeg */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 6px 20px rgba(59,130,246,0.35)",
-          }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1.1 }}>FieldTrack</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "#93c5fd", letterSpacing: "2.5px", textTransform: "uppercase", marginTop: 1 }}>Manage • Track • Grow</div>
-          </div>
+          <img src="/logo.jpeg" alt="Eazzio Payroll" style={{ width: 140, height: "auto", objectFit: "contain" }} />
         </div>
 
         {/* Nav Links */}

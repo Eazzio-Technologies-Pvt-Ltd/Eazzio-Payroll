@@ -137,11 +137,10 @@ export default function LoginPage() {
     }}>
 
       <div style={{ width: "100%", maxWidth: "410px", animation: "fadeIn 0.5s ease", position: "relative", zIndex: 2 }}>
-        {/* Logo */}
+        {/* Logo (replace TR@NSForce text) */}
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          
-          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 2px" }}>TR@NSForce Admin</h1>
-          <p style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>Sign in to your dashboard</p>
+          <img src="/logo.jpeg" alt="Eazzio Payroll" style={{ width: 180, height: "auto", objectFit: "contain", display: "inline-block" }} />
+          <p style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500, marginTop: 8 }}>Sign in to your dashboard</p>
         </div>
 
         {/* Card */}
