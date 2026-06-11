@@ -284,20 +284,37 @@ export default function Sidebar() {
         )}
 
         {/* Project Management */}
-        <Link href={`${basePath}/projects`} style={{ textDecoration: "none" }} title="Project Management">
-          <div style={getLinkStyle(pathname === `${basePath}/projects`)} className="sidebar-link">
-            {renderIcon(Briefcase, pathname === `${basePath}/projects`)}
-            <span style={{
-              fontSize: "13.5px",
-              fontWeight: pathname === `${basePath}/projects` ? 700 : 500,
-              opacity: isExpanded ? 1 : 0,
-              width: isExpanded ? "auto" : 0,
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              transition: "opacity 0.2s ease 0.05s",
-            }}>Project Management</span>
-          </div>
-        </Link>
+        {isAdmin ? (
+          <Link href={`${basePath}/projects`} style={{ textDecoration: "none" }} title="Project Management">
+            <div style={getLinkStyle(pathname === `${basePath}/projects`)} className="sidebar-link">
+              {renderIcon(Briefcase, pathname === `${basePath}/projects`)}
+              <span style={{
+                fontSize: "13.5px",
+                fontWeight: pathname === `${basePath}/projects` ? 700 : 500,
+                opacity: isExpanded ? 1 : 0,
+                width: isExpanded ? "auto" : 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                transition: "opacity 0.2s ease 0.05s",
+              }}>Project Management</span>
+            </div>
+          </Link>
+        ) : (
+          <Link href={`/my-projects`} style={{ textDecoration: "none" }} title="My Projects">
+            <div style={getLinkStyle(pathname === `/my-projects`)} className="sidebar-link">
+              {renderIcon(Briefcase, pathname === `/my-projects`)}
+              <span style={{
+                fontSize: "13.5px",
+                fontWeight: pathname === `/my-projects` ? 700 : 500,
+                opacity: isExpanded ? 1 : 0,
+                width: isExpanded ? "auto" : 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                transition: "opacity 0.2s ease 0.05s",
+              }}>My Projects</span>
+            </div>
+          </Link>
+        )}
 
         {mounted && !isAdmin && (<>
         {/* 3. My Task Accordion */}

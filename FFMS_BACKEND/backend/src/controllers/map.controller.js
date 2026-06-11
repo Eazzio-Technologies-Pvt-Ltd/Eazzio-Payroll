@@ -122,7 +122,23 @@ const searchLocation = async (req, res, next) => {
       throw new Error(`Mappls API responded with ${response.status}`);
     }
 
-    const data = await response.json();
+    if (response.status === 204) {
+      return successResponse(res, { suggestions: [] });
+    }
+
+    const text = await response.text();
+    if (!text) {
+      return successResponse(res, { suggestions: [] });
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      logger.warn(`Failed to parse Mappls response: ${e.message}`);
+      return successResponse(res, { suggestions: [] });
+    }
+
     const suggestions = (data.suggestedLocations || []).map(loc => ({
       placeName: loc.placeName,
       placeAddress: loc.placeAddress,

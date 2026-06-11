@@ -656,16 +656,33 @@ export default function TerritorySetupPage() {
 
       {/* New Territory Modal */}
       {showModal && (
-        <div className="modal-overlay" style={{ alignItems: "center", justifyContent: "center" }} onClick={() => {
+        <div className="modal-overlay" style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(0,0,0,0.4)",
+          backdropFilter: "blur(4px)",
+          zIndex: 9999
+        }} onClick={() => {
           setShowModal(false);
           setSearchQuery("");
           setSuggestions([]);
         }}>
           <div className="modal-box" style={{ 
-            maxWidth: "700px", 
-            padding: "16px 20px" // Reduced padding to fit screen
+            maxWidth: "600px", 
+            width: "90%",
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            padding: "12px 16px" 
           }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexShrink: 0 }}>
               <h3 style={{ fontWeight: 700, fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
                 <Map size={18} color="var(--accent-blue)" /> {editId ? "Edit Territory Boundary" : "New Territory Boundary"}
               </h3>
@@ -678,8 +695,8 @@ export default function TerritorySetupPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", flexShrink: 0 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.5fr", gap: "10px", alignItems: "start" }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.5fr", gap: "8px", alignItems: "start", flexShrink: 0 }}>
                 <div>
                   <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Territory Name *</label>
                   <input
@@ -762,25 +779,24 @@ export default function TerritorySetupPage() {
               </div>
 
               {/* Map Canvas */}
-              <div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "200px" }}>
                 <div
                   id="mappls-picker-map"
                   style={{
                     width: "100%",
-                    minHeight: "500px",
-                    height: "60vh",
+                    flex: 1,
                     background: "var(--bg-secondary)",
                     border: "1px solid var(--border)",
                     borderRadius: "4px",
                     overflow: "hidden"
                   }}
                 ></div>
-                <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px", textAlign: "right" }}>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px", textAlign: "right", flexShrink: 0 }}>
                   Interactive Map (Click/Drag pin to set location)
                 </div>
               </div>
  
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: "10px", alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: "8px", alignItems: "center", flexShrink: 0 }}>
                 <div>
                   <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Center Latitude *</label>
                   <input
@@ -819,7 +835,7 @@ export default function TerritorySetupPage() {
                 </div>
               </div>
 
-              <button type="submit" className="btn-primary" style={{ padding: "8px", fontSize: "13px", width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "6px" }}>
+              <button type="submit" className="btn-primary" style={{ padding: "8px", fontSize: "13px", width: "100%", justifyContent: "center", display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, marginTop: "4px" }}>
                 <Send size={14} /> {editId ? "Save Changes" : "Create Territory"}
               </button>
             </form>
