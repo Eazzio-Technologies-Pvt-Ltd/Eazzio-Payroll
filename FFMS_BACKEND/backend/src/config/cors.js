@@ -4,6 +4,7 @@ const logger = require('./logger');
 const PRODUCTION_ORIGINS = [
   'https://field-force-mnt-sys.pages.dev',
   'https://field-force-mnt-sys.vercel.app',
+  'https://eazzio-payroll.vercel.app',
 ];
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
