@@ -802,6 +802,19 @@ export default function Sidebar() {
                   ➔ Inactive Persons
                 </span>
               </Link>
+              <Link href={`${basePath}/settings/account-settings`} style={{ textDecoration: "none", color: "inherit" }}>
+                <span
+                  style={{
+                    fontSize: "12.5px",
+                    color: pathname === `${basePath}/settings/account-settings` ? "var(--accent-blue)" : "var(--sidebar-text-inactive)",
+                    fontWeight: pathname === `${basePath}/settings/account-settings` ? 700 : 400,
+                    display: "block",
+                    padding: "4px 8px",
+                  }}
+                >
+                  ➔ Account Settings
+                </span>
+              </Link>
             </div>
           )}
         </div>
