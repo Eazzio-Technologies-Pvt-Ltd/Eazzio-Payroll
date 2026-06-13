@@ -46,6 +46,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ],
       ),
       body: RefreshIndicator(
+        // UI/UX v2 — modern premium design — Antigravity 2026
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        strokeWidth: 2.5,
         onRefresh: () async => attendanceProvider.fetchHistory(),
         child: attendanceProvider.isLoading
             ? const Center(child: CircularProgressIndicator())

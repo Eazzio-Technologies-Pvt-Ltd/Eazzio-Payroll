@@ -7,6 +7,7 @@ import '../widgets/task_card.dart';
 import '../core/theme/app_theme.dart';
 import 'task_detail_screen.dart';
 import '../widgets/task_skeleton.dart';
+import '../widgets/empty_state.dart';
 
 /// Task screen with unified single list — no "Assigned to Me" / "Created by Me" tabs.
 /// Each task card shows:
@@ -156,8 +157,12 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           ),
 
           // Tasks List — single unified list
+// UI/UX v2 — modern premium design — Antigravity 2026
           Expanded(
             child: RefreshIndicator(
+              color: AppColors.primary,
+              backgroundColor: AppColors.surface,
+              strokeWidth: 2.5,
               onRefresh: () async => _fetchTasksForCurrentTab(),
               child: taskProvider.isLoading
                   ? ListView.separated(
@@ -169,12 +174,11 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
                   : filteredTasks.isEmpty
                       ? ListView(
                           children: [
-                            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-                            const Center(
-                              child: Text(
-                                'No tasks found.',
-                                style: TextStyle(color: AppColors.outline),
-                              ),
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                            const EmptyState(
+                              icon: Icons.task_alt_outlined,
+                              title: 'No tasks assigned yet',
+                              subtitle: 'Check back later or create a personal task using the button below.',
                             ),
                           ],
                         )

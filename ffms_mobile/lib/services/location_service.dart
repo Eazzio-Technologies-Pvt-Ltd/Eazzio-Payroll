@@ -53,6 +53,27 @@ class LocationService {
       return false;
     }
 
+    // Request Activity Recognition / Sensors permission for motion tracking
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        if (await Permission.activityRecognition.isDenied) {
+          await Permission.activityRecognition.request();
+        }
+      } else if (Platform.isIOS) {
+        if (await Permission.sensors.isDenied) {
+          await Permission.sensors.request();
+        }
+      }
+    }
+
+    // Request battery optimization exclusion to allow background activity by default
+    if (!kIsWeb && Platform.isAndroid) {
+      final isIgnoringBattery = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+      if (!isIgnoringBattery) {
+        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+      }
+    }
+
     return true;
   }
 
@@ -203,8 +224,8 @@ class LocationService {
   static void initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'fieldtrack_location',
-        channelName: 'FieldTrack Location Tracking',
+        channelId: 'eazziopayroll_location',
+        channelName: 'Eazzio Payroll Location Tracking',
         channelDescription: 'Keeps GPS active while you are on duty.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
@@ -215,7 +236,7 @@ class LocationService {
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(300000), // 300,000 ms = 5 minutes periodic interval
-        autoRunOnBoot: false,
+        autoRunOnBoot: true,
         allowWakeLock: true,
         allowWifiLock: true,
       ),
@@ -226,7 +247,7 @@ class LocationService {
     if (await FlutterForegroundTask.isRunningService) return;
 
     await FlutterForegroundTask.startService(
-      notificationTitle: 'FieldTrack — On Duty',
+      notificationTitle: 'Eazzio Payroll — On Duty',
       notificationText: 'Tracking your location. Status: $shiftStatus',
       callback: startLocationCallback,
     );
@@ -238,7 +259,7 @@ class LocationService {
 
   static Future<void> updateNotification(String shiftStatus) async {
     await FlutterForegroundTask.updateService(
-      notificationTitle: 'FieldTrack — On Duty',
+      notificationTitle: 'Eazzio Payroll — On Duty',
       notificationText: 'Tracking your location. Status: $shiftStatus',
     );
   }

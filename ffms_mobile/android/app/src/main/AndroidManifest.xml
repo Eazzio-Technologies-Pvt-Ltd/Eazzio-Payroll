@@ -1,53 +1,118 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Network & Internet Access -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    
-    <!-- Geolocation & Tracking Access -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-    
-    <!-- Camera & Storage Access -->
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- ============================================================= -->
+    <!-- FFMS Mobile App — AndroidManifest.xml Permissions             -->
+    <!-- Only permissions actively used by the app are listed below    -->
+    <!-- Verified against lib/ codebase by Antigravity Dev Team        -->
+    <!-- Last updated: 2026-06-10 | Task 10 Permission Cleanup         -->
+    <!-- ============================================================= -->
 
-    <!-- Background Services & Battery Persistence -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    
-    <!-- Notification Permission (Android 13+) -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Internet & Network — required for all API calls via ApiService -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Bluetooth Access (Android 12+) -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <!-- Location — required for GPS tracking, punch-in geofence validation -->
+    <!-- Used in: location_service.dart via geolocator package -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Camera — required for selfie capture on punch-in/out and task completion -->
+    <!-- Used in: image_upload_util.dart via image_picker package -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Storage — required for gallery access in expense receipt and proof photo upload -->
+    <!-- READ_EXTERNAL_STORAGE capped at API 32 — replaced by READ_MEDIA_IMAGES on API 33+ -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- WRITE_EXTERNAL_STORAGE capped at API 29 — scoped storage applies on API 30+ -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+    <!-- READ_MEDIA_IMAGES — required on Android 13+ for gallery image picker -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- Notifications — required for task alerts and punch-in reminders on Android 13+ -->
+    <!-- Used in: notification_helper.dart via flutter_local_notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground Service — required to keep GPS tracking alive when app is in background -->
+    <!-- Used in: location_service.dart via flutter_foreground_task package -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- FOREGROUND_SERVICE_LOCATION — required on Android 14+ for location-type foreground services -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Background Services — required to survive device restart and keep service running -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Battery — required to prompt user to disable battery optimization for GPS service -->
+    <!-- Used in: location_service.dart battery check before foreground service starts -->
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Vibration — required for local notification alert vibration -->
+    <!-- Used in: notification_helper.dart -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Bluetooth — required to detect Bluetooth connectivity status in GPS telemetry payload -->
+    <!-- Used in: location_service.dart — reads Bluetooth on/off state only (no pairing) -->
+    <!-- UI/UX v2 — modern premium design — Antigravity 2026 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- BLUETOOTH_SCAN with neverForLocation — status check only, not used for positioning -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
-    <!-- Legacy Bluetooth Access (Android 11 and below) -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- ============================================================= -->
+    <!-- Hardware Feature Declarations                                  -->
+    <!-- android:required="false" — app works on devices without these -->
+    <!-- Required to avoid Play Store blocking installs on most phones  -->
+    <!-- ============================================================= -->
+    <uses-feature android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth"
+        android:required="false" />
 
-    <!-- Hardware Compatibility Declarations -->
-    <uses-feature android:name="android.hardware.camera" android:required="false"/>
-    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
-    <uses-feature android:name="android.hardware.bluetooth" android:required="false"/>
+    <!-- ============================================================= -->
+    <!-- REMOVED PERMISSIONS — not required by FFMS business logic     -->
+    <!-- Removed to reduce app permission footprint                     -->
+    <!-- and improve user trust on Play Store listing                   -->
+    <!-- If any feature later needs these — add back with a comment     -->
+    <!-- explaining which screen/service uses it and why                -->
+    <!-- ============================================================= -->
+
+    <!-- REMOVED: READ_CALENDAR — no calendar integration in FFMS -->
+    <!-- REMOVED: WRITE_CALENDAR — no calendar integration in FFMS -->
+
+    <!-- REMOVED: READ_CONTACTS — employee contact data comes from API, not device contacts -->
+    <!-- REMOVED: GET_ACCOUNTS — no Google/device account access needed in FFMS -->
+
+    <!-- REMOVED: READ_PHONE_STATE — phone number or SIM state not used in any GPS or auth flow -->
+
+    <!-- Activity Recognition — required for motion/activity tracking to optimize GPS and check battery saver states -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- REMOVED: com.google.android.gms.permission.AD_ID — no advertising or analytics SDK used -->
+
+    <!-- REMOVED: BLUETOOTH_ADVERTISE — app reads Bluetooth state only, never advertises as BT device -->
 
     <application
-        android:label="FForceTracking"
+        android:label="Eazzio Payroll"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true">
+        <!-- MainActivity — single top launch mode prevents duplicate instances -->
+        <!-- enableOnBackInvokedCallback — required for Android 13 predictive back gesture support -->
+        <!-- configChanges — prevents unnecessary restarts on orientation/keyboard/locale changes -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
+            android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
@@ -74,6 +139,20 @@
             android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
             android:foregroundServiceType="location"
             android:exported="false"/>
+
+        <!-- Boot Receiver for auto-launch on device reboot -->
+        <receiver
+            android:name="com.pravera.flutter_foreground_task.receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

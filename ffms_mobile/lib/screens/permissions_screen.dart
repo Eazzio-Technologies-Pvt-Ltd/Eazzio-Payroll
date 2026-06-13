@@ -1,10 +1,32 @@
+// UI/UX v2 — modern premium design — Antigravity 2026
+import 'dart:io';
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/custom_button.dart';
 import '../core/utils/storage_helper.dart';
+
+class PermissionStep {
+  final String title;
+  final String explanation;
+  final IconData icon;
+  final bool isGranted;
+  final VoidCallback onGrant;
+
+  PermissionStep({
+    required this.title,
+    required this.explanation,
+    required this.icon,
+    required this.isGranted,
+    required this.onGrant,
+  });
+}
 
 class PermissionsScreen extends StatefulWidget {
   final VoidCallback? onPermissionsGranted;
@@ -16,18 +38,20 @@ class PermissionsScreen extends StatefulWidget {
 }
 
 class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindingObserver {
-  // Track status of the 5 requested permissions
+  // Track status of permissions
   bool _locGranted = false;
   bool _cameraGranted = false;
   bool _photosGranted = false;
   bool _bluetoothGranted = false;
   bool _notificationsGranted = false;
+  bool _activityGranted = false;
+  bool _powerGranted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermissions();
+    _checkPermissions(isInit: true);
   }
 
   @override
@@ -38,48 +62,95 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Check permissions again if user returns to app after granting them in Settings
     if (state == AppLifecycleState.resumed) {
       _checkPermissions();
     }
   }
 
-  /// Verifies current status of all 5 permissions
-  Future<void> _checkPermissions() async {
-    final locStatusAlways = await Permission.locationAlways.isGranted;
-    final locStatusInUse = await Permission.location.isGranted;
-    final cameraStatus = await Permission.camera.isGranted;
-    
-    // Check photo/storage status (support compatibility on different OS/Android APIs)
-    final photosStatus = await Permission.photos.isGranted || await Permission.storage.isGranted;
-    
-    bool bluetoothStatus = false;
+  /// Verifies current status of all permissions
+  Future<void> _checkPermissions({bool isInit = false}) async {
     try {
-      bluetoothStatus = await Permission.bluetooth.isGranted;
-    } catch (_) {
-      // Bluetooth may be restricted on some devices — treated as non-blocking
-      bluetoothStatus = true;
-    }
-    
-    final notificationsStatus = await Permission.notification.isGranted;
+      final locStatusAlways = await Permission.locationAlways.isGranted;
+      final locStatusInUse = await Permission.location.isGranted;
+      final cameraStatus = await Permission.camera.isGranted;
+      final photosStatus = await Permission.photos.isGranted || await Permission.storage.isGranted;
+      
+      bool bluetoothStatus = false;
+      try {
+        bluetoothStatus = await Permission.bluetooth.isGranted;
+      } catch (_) {
+        bluetoothStatus = true;
+      }
+      
+      final notificationsStatus = await Permission.notification.isGranted;
 
-    if (mounted) {
-      setState(() {
-        _locGranted = locStatusAlways || locStatusInUse;
-        _cameraGranted = cameraStatus;
-        _photosGranted = photosStatus;
-        _bluetoothGranted = bluetoothStatus;
-        _notificationsGranted = notificationsStatus;
-      });
+      bool activityStatus = false;
+      if (!kIsWeb) {
+        if (Platform.isAndroid) {
+          activityStatus = await Permission.activityRecognition.isGranted;
+        } else if (Platform.isIOS) {
+          activityStatus = await Permission.sensors.isGranted;
+        }
+      } else {
+        activityStatus = true;
+      }
+
+      bool powerStatus = true;
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          powerStatus = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+        } catch (_) {
+          powerStatus = true;
+        }
+      }
+
+      final newLoc = locStatusAlways || locStatusInUse;
+
+      // Trigger light haptic if any permission was newly granted (not on first init load)
+      if (!isInit) {
+        bool newlyGranted = (newLoc && !_locGranted) ||
+            (cameraStatus && !_cameraGranted) ||
+            (photosStatus && !_photosGranted) ||
+            (notificationsStatus && !_notificationsGranted) ||
+            (activityStatus && !_activityGranted) ||
+            (powerStatus && !_powerGranted);
+        if (newlyGranted) {
+          HapticFeedback.lightImpact();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _locGranted = newLoc;
+          _cameraGranted = cameraStatus;
+          _photosGranted = photosStatus;
+          _bluetoothGranted = bluetoothStatus;
+          _notificationsGranted = notificationsStatus;
+          _activityGranted = activityStatus;
+          _powerGranted = powerStatus;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking device permissions: $e');
+      // On error, apply safe fallbacks to prevent the screen from remaining blank/hanging
+      if (mounted) {
+        setState(() {
+          _locGranted = _locGranted;
+          _cameraGranted = _cameraGranted;
+          _photosGranted = _photosGranted;
+          _bluetoothGranted = _bluetoothGranted;
+          _notificationsGranted = _notificationsGranted;
+          _activityGranted = _activityGranted;
+          _powerGranted = _powerGranted;
+        });
+      }
     }
   }
 
   /// Location: Always / When in Use
   Future<void> _grantLocation() async {
-    // 1. Request foreground location first as required by modern OS constraints
     var status = await Permission.location.request();
     if (status.isGranted) {
-      // 2. Request always-on (background) location
       await Permission.locationAlways.request();
     }
     await _checkPermissions();
@@ -102,14 +173,12 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   Future<void> _grantBluetooth() async {
     try {
       final status = await Permission.bluetooth.request();
-      // Bluetooth may be restricted on some devices — treated as non-blocking
       if (status.isRestricted || status.isPermanentlyDenied) {
         setState(() {
           _bluetoothGranted = true;
         });
       }
     } catch (_) {
-      // Bluetooth may be restricted on some devices — treated as non-blocking
       setState(() {
         _bluetoothGranted = true;
       });
@@ -123,13 +192,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     await _checkPermissions();
   }
 
-  /// Helper getter to determine if all 5 permissions are satisfied
+  /// Helper getter to determine if all required permissions are satisfied
   bool get _allGranted =>
       _locGranted &&
       _cameraGranted &&
       _photosGranted &&
-      _notificationsGranted;
-      // Bluetooth is checked but does not block app flow
+      _notificationsGranted &&
+      _activityGranted &&
+      _powerGranted;
 
   /// Handles auto-requesting all missing permissions sequentially
   Future<void> _grantAllMissingPermissions() async {
@@ -138,12 +208,43 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     if (!_photosGranted) await _grantPhotos();
     if (!_bluetoothGranted) await _grantBluetooth();
     if (!_notificationsGranted) await _grantNotifications();
+    if (!_activityGranted) await _grantActivity();
+    if (!_powerGranted) await _grantPower();
+  }
+
+  /// Physical Activity / Motion Tracking
+  Future<void> _grantActivity() async {
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        await Permission.activityRecognition.request();
+      } else if (Platform.isIOS) {
+        await Permission.sensors.request();
+      }
+    }
+    await _checkPermissions();
+  }
+
+  /// Power / Auto Launch settings
+  static const _channel = MethodChannel('com.eazzio.eazziopayroll/device_settings');
+
+  Future<void> _grantPower() async {
+    if (!kIsWeb && Platform.isAndroid) {
+      final isIgnoringBattery = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+      if (!isIgnoringBattery) {
+        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+      }
+      try {
+        await _channel.invokeMethod('openAutostartSettings');
+      } catch (e) {
+        debugPrint('Failed to open autostart settings: $e');
+      }
+    }
+    await _checkPermissions();
   }
 
   /// Save flag in SharedPreferences and continue to next screen
   void _handleContinue() async {
     if (!_allGranted) {
-      // Request any outstanding permissions before letting user continue
       await _grantAllMissingPermissions();
       if (!_allGranted) {
         if (mounted) {
@@ -158,8 +259,6 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
       }
     }
 
-    // SUCCESS: Save flag in SharedPreferences to prevent onboarding from showing again
-    // Renamed flag/setting: permissions_granted = true
     await StorageHelper.setPermissionsGranted(true);
 
     if (widget.onPermissionsGranted != null) {
@@ -177,11 +276,22 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     }
   }
 
+  int get _currentStepIndex {
+    if (!_locGranted) return 0;
+    if (!_cameraGranted) return 1;
+    if (!_photosGranted) return 2;
+    if (!_activityGranted) return 3;
+    if (!kIsWeb && Platform.isAndroid && !_powerGranted) return 4;
+    if (!_notificationsGranted) return 5;
+    return 6;
+  }
+
   Widget _buildPermissionItem({
     required IconData icon,
     required String title,
     required String explanation,
     required bool isGranted,
+    required bool isActiveStep,
     required VoidCallback onGrant,
   }) {
     return Container(
@@ -189,24 +299,37 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isActiveStep 
+              ? AppColors.primary.withOpacity(0.4) 
+              : AppColors.outlineVariant, 
+          width: isActiveStep ? 1.5 : 0.8,
+        ),
+        boxShadow: isActiveStep ? [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ] : null,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: isGranted
-                  ? AppColors.secondaryContainer.withOpacity(0.15)
-                  : AppColors.primaryContainer.withOpacity(0.15),
+                  ? AppColors.secondary.withOpacity(0.1)
+                  : AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               color: isGranted ? AppColors.secondary : AppColors.primary,
-              size: 24,
+              size: 22,
             ),
           ),
           const SizedBox(width: 16),
@@ -229,50 +352,25 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.onSurfaceVariant,
-                    height: 1.4,
+                    height: 1.3,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          SizedBox(
-            height: 36,
-            child: isGranted
-                ? const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, color: AppColors.secondary, size: 20),
-                      SizedBox(width: 4),
-                      Text(
-                        'Active',
-                        style: TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  )
-                : TextButton(
-                    onPressed: onGrant,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      backgroundColor: AppColors.primaryContainer,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Grant',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
+          isGranted
+              ? const Icon(Icons.check_circle, color: AppColors.secondary, size: 22)
+              : Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.outline,
+                    shape: BoxShape.circle,
                   ),
-          ),
+                ),
         ],
       ),
     );
@@ -280,95 +378,228 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
+    final List<PermissionStep> steps = [
+      PermissionStep(
+        title: 'Location (Always)',
+        explanation: 'Needed for GPS tracking and distance calculation',
+        icon: Icons.my_location,
+        isGranted: _locGranted,
+        onGrant: _grantLocation,
+      ),
+      PermissionStep(
+        title: 'Camera Access',
+        explanation: 'Needed to upload odometer photos and task proof',
+        icon: Icons.camera_alt,
+        isGranted: _cameraGranted,
+        onGrant: _grantCamera,
+      ),
+      PermissionStep(
+        title: 'Photo Library',
+        explanation: 'Needed to select images from your gallery',
+        icon: Icons.photo_library,
+        isGranted: _photosGranted,
+        onGrant: _grantPhotos,
+      ),
+      PermissionStep(
+        title: 'Physical Activity',
+        explanation: 'Needed to optimize tracking and detect motion states',
+        icon: Icons.directions_run,
+        isGranted: _activityGranted,
+        onGrant: _grantActivity,
+      ),
+      if (!kIsWeb && Platform.isAndroid)
+        PermissionStep(
+          title: 'Power Optimization',
+          explanation: 'Needed to bypass battery saver and auto-start on reboot',
+          icon: Icons.battery_saver,
+          isGranted: _powerGranted,
+          onGrant: _grantPower,
+        ),
+      PermissionStep(
+        title: 'Notifications',
+        explanation: 'Needed to receive task alerts and updates',
+        icon: Icons.notifications,
+        isGranted: _notificationsGranted,
+        onGrant: _grantNotifications,
+      ),
+    ];
+
+    final currentStep = _currentStepIndex;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16),
-              const Center(
-                child: Icon(
-                  Icons.shield_outlined,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
+      body: Stack(
+        children: [
+          // Decorative top-right gradient blob
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Setup Permissions',
-                style: TextStyle(
-                  fontFamily: 'Plus Jakarta Sans',
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.onSurface,
-                ),
-                textAlign: TextAlign.center,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+                child: Container(color: Colors.transparent),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                'To begin tracking your shifts, resolving client visits, and managing your tasks, please configure the required permissions.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    _buildPermissionItem(
-                      icon: Icons.my_location,
-                      title: 'Location (Always / When in Use)',
-                      explanation: 'Needed for GPS tracking and distance calculation',
-                      isGranted: _locGranted,
-                      onGrant: _grantLocation,
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 12),
+                  const Center(
+                    child: Icon(
+                      Icons.shield_outlined,
+                      size: 56,
+                      color: AppColors.primary,
                     ),
-                    _buildPermissionItem(
-                      icon: Icons.camera_alt,
-                      title: 'Camera',
-                      explanation: 'Needed to upload odometer photos and task proof',
-                      isGranted: _cameraGranted,
-                      onGrant: _grantCamera,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Setup Permissions',
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
                     ),
-                    _buildPermissionItem(
-                      icon: Icons.photo_library,
-                      title: 'Photo Library / Storage',
-                      explanation: 'Needed to select images from your gallery',
-                      isGranted: _photosGranted,
-                      onGrant: _grantPhotos,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'To begin tracking your shifts, resolving client visits, and managing your tasks, please configure the required permissions.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.4,
                     ),
-                    _buildPermissionItem(
-                      icon: Icons.bluetooth,
-                      title: 'Bluetooth',
-                      explanation: 'Needed to detect device connectivity status',
-                      isGranted: _bluetoothGranted,
-                      onGrant: _grantBluetooth,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Progress Step dots
+                  if (!_allGranted && currentStep < steps.length) ...[
+                    Text(
+                      'Step ${currentStep + 1} of ${steps.length}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    _buildPermissionItem(
-                      icon: Icons.notifications,
-                      title: 'Notifications',
-                      explanation: 'Needed to receive task alerts and updates',
-                      isGranted: _notificationsGranted,
-                      onGrant: _grantNotifications,
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(steps.length, (index) {
+                        final isActive = index == currentStep;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: isActive ? 16 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isActive ? AppColors.primary : AppColors.outlineVariant,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: steps.length,
+                      itemBuilder: (context, index) {
+                        final step = steps[index];
+                        return _buildPermissionItem(
+                          icon: step.icon,
+                          title: step.title,
+                          explanation: step.explanation,
+                          isGranted: step.isGranted,
+                          isActiveStep: index == currentStep,
+                          onGrant: step.onGrant,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Grant/Continue Button
+                  Container(
+                    width: double.infinity,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: _allGranted
+                          ? const LinearGradient(
+                              colors: [AppColors.secondary, Color(0xFF16A34A)],
+                            )
+                          : LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withOpacity(0.8),
+                              ],
+                            ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: _allGranted 
+                          ? _handleContinue 
+                          : () {
+                              if (currentStep < steps.length) {
+                                steps[currentStep].onGrant();
+                              }
+                            },
+                      child: Text(
+                        _allGranted ? 'Continue' : 'Grant ${steps[currentStep].title}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Skip Button if not all granted
+                  if (!_allGranted) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: TextButton(
+                        onPressed: _handleContinue,
+                        child: const Text(
+                          'Skip for now',
+                          style: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 16),
-              CustomButton(
-                text: _allGranted ? 'Continue' : 'Grant Required Permissions',
-                onPressed: _handleContinue,
-              ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

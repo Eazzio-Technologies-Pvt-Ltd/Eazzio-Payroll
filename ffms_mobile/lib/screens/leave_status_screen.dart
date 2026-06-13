@@ -6,6 +6,9 @@ import '../core/theme/app_theme.dart';
 import '../widgets/status_badge.dart';
 import 'leave_detail_screen.dart';
 
+import '../widgets/empty_state.dart';
+
+// UI/UX v2 — modern premium design — Antigravity 2026
 class LeaveStatusScreen extends StatefulWidget {
   const LeaveStatusScreen({super.key});
 
@@ -31,18 +34,20 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
         title: const Text('Leave History', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        strokeWidth: 2.5,
         onRefresh: () async => leaveProvider.fetchMyLeaves(),
         child: leaveProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : leaveProvider.leaves.isEmpty
                 ? ListView(
                     children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                      const Center(
-                        child: Text(
-                          'No leave requests found.',
-                          style: TextStyle(color: AppColors.outline),
-                        ),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                      const EmptyState(
+                        icon: Icons.date_range_outlined,
+                        title: "No leave records found",
+                        subtitle: "Your leave applications and history will appear here.",
                       ),
                     ],
                   )

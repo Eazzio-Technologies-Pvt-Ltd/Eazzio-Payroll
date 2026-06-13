@@ -23,14 +23,31 @@ import 'core/utils/notification_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize communication port for flutter_foreground_task
-  FlutterForegroundTask.initCommunicationPort();
+  try {
+    // Initialize communication port for flutter_foreground_task
+    FlutterForegroundTask.initCommunicationPort();
+  } catch (e) {
+    debugPrint('Failed to initialize foreground task communication port: $e');
+  }
   
-  LocationService.initForegroundTask();
+  try {
+    LocationService.initForegroundTask();
+  } catch (e) {
+    debugPrint('Failed to initialize location foreground task: $e');
+  }
   
-  // Initialize API service and Secure Storage
-  await ApiService.initialize();
-  await NotificationHelper.initialize();
+  try {
+    // Initialize API service and Secure Storage
+    await ApiService.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize API Service / StorageHelper: $e');
+  }
+
+  try {
+    await NotificationHelper.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize Notification Helper: $e');
+  }
   
   runApp(
     MultiProvider(
@@ -44,18 +61,18 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FeedbackProvider()),
         ChangeNotifierProvider(create: (_) => TravelProvider()),
       ],
-      child: const FFMSApp(),
+      child: const EazzioPayrollApp(),
     ),
   );
 }
 
-class FFMSApp extends StatelessWidget {
-  const FFMSApp({super.key});
+class EazzioPayrollApp extends StatelessWidget {
+  const EazzioPayrollApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FieldTrack',
+      title: 'Eazzio Payroll',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       initialRoute: '/',

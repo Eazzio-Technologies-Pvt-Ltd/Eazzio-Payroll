@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/notification_provider.dart';
 import '../core/theme/app_theme.dart';
+import '../widgets/empty_state.dart';
 
+// UI/UX v2 — modern premium design — Antigravity 2026
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -39,18 +41,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        strokeWidth: 2.5,
         onRefresh: () async => notifProvider.fetchNotifications(),
         child: notifProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : notifProvider.notifications.isEmpty
                 ? ListView(
                     children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                      const Center(
-                        child: Text(
-                          'No notifications yet.',
-                          style: TextStyle(color: AppColors.outline),
-                        ),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                      const EmptyState(
+                        icon: Icons.done_all_outlined,
+                        title: "You're all caught up!",
+                        subtitle: "No new notifications at this time. We will let you know when something comes up.",
                       ),
                     ],
                   )

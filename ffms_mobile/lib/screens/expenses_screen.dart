@@ -294,6 +294,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         ],
       ),
       body: RefreshIndicator(
+        // UI/UX v2 — modern premium design — Antigravity 2026
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        strokeWidth: 2.5,
         onRefresh: () async {
           await expenseProvider.fetchMyExpenses();
           await Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);

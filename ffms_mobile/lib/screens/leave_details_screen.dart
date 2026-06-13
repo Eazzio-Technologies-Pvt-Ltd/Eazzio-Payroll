@@ -5,7 +5,9 @@ import '../providers/leave_provider.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
 import 'leave_detail_screen.dart';
+import '../widgets/empty_state.dart';
 
+// UI/UX v2 — modern premium design — Antigravity 2026
 class LeaveDetailsScreen extends StatefulWidget {
   const LeaveDetailsScreen({super.key});
 
@@ -192,6 +194,9 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
             // Leaves History list
             Expanded(
               child: RefreshIndicator(
+                color: AppColors.primary,
+                backgroundColor: AppColors.surface,
+                strokeWidth: 2.5,
                 onRefresh: () async {
                   _refreshData();
                 },
@@ -201,15 +206,11 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: const [
-                              SizedBox(height: 100),
-                              Center(
-                                child: Text(
-                                  'No leave requests found.',
-                                  style: TextStyle(
-                                    fontFamily: 'Plus Jakarta Sans',
-                                    color: AppColors.outline,
-                                  ),
-                                ),
+                              SizedBox(height: 50),
+                              EmptyState(
+                                icon: Icons.date_range_outlined,
+                                title: "No leave records found",
+                                subtitle: "Apply for leaves using the button below.",
                               ),
                             ],
                           )

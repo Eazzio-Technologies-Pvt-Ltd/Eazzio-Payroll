@@ -63,7 +63,7 @@ class AppTheme {
         outlineVariant: AppColors.outlineVariant,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.interTextTheme().copyWith(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
         headlineLarge: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,

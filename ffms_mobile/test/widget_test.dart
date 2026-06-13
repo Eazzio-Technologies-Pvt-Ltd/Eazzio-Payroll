@@ -22,7 +22,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => ExpenseProvider()),
           ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ],
-        child: const FFMSApp(),
+        child: const EazzioPayrollApp(),
       ),
     );
 

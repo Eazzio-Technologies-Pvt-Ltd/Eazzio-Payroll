@@ -56,13 +56,13 @@ class AuthProvider extends ChangeNotifier {
         // Connect socket in background
         SocketService.connect().catchError((_) {});
 
-        // Fetch fresh profile synchronously to avoid layout jump
-        try {
-          final freshUser = await _authService.getProfile();
+        // Fetch fresh profile in the background to update cached data without blocking app launch
+        _authService.getProfile().then((freshUser) {
           if (freshUser != null) {
             _currentUser = freshUser;
+            notifyListeners();
           }
-        } catch (_) {}
+        }).catchError((_) {});
       } else {
         final user = await _authService.getProfile();
         if (user != null) {

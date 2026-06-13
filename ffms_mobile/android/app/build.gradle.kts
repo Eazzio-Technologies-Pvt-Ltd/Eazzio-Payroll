@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.ffms_mobile"
+    namespace = "com.eazzio.eazziopayroll"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.fieldforce.ffms_mobile"
+        applicationId = "com.eazzio.eazziopayroll"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -33,9 +33,9 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("fforcetracking.jks")
+            storeFile = file("eazziopayroll.jks")
             storePassword = "fforce123"
-            keyAlias = "fforcetracking"
+            keyAlias = "eazziopayroll"
             keyPassword = "fforce123"
         }
     }
@@ -43,6 +43,13 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // Keep debug symbols only if debugging native code; keeping them increases release APK size to 430MB+
+            // keepDebugSymbols.add("**/*.so")
         }
     }
 }

@@ -1,11 +1,11 @@
 {
-    "name": "ffms_mobile",
-    "short_name": "ffms_mobile",
+    "name": "Eazzio Payroll",
+    "short_name": "Eazzio Payroll",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Eazzio Payroll Field Force App.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

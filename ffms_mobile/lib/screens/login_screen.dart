@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/app_toast.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,107 +45,139 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
-        );
+        // UI/UX v2 — modern premium design — Antigravity 2026
+        AppToast.showSuccess(context, 'Login successful!');
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(authProvider.errorMessage ?? 'Login failed')),
-        );
+        // UI/UX v2 — modern premium design — Antigravity 2026
+        AppToast.showError(context, authProvider.errorMessage ?? 'Login failed');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC), // Slate-50 background
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    height: 80,
-                    fit: BoxFit.contain,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // UI/UX v2 — modern premium design — Antigravity 2026
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 90,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Eazzio Payroll',
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A), // Slate-900
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sign in to continue',
-                    style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Enter your credentials to access your account',
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontSize: 14,
+                    color: Color(0xFF64748B), // Slate-500
+                    fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(height: 48),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                ),
+                const SizedBox(height: 32),
+                
+                // Form Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withOpacity(0.06),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                      border: const OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleLogin,
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : const Text('Sign In', style: TextStyle(fontSize: 16)),
+                    ],
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0), // Slate-200
+                      width: 1,
                     ),
                   ),
-
-                ],
-              ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomTextField(
+                          controller: _emailController,
+                          label: 'Email Address',
+                          hint: 'name@company.com',
+                          prefixIcon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        CustomTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          hint: '••••••••',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: const Color(0xFF94A3B8), // Slate-400
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 32),
+                        CustomButton(
+                          text: 'Sign In',
+                          isLoading: _isLoading,
+                          onPressed: _handleLogin,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

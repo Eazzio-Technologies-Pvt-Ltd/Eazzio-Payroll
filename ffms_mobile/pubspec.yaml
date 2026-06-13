@@ -1,7 +1,10 @@
 name: ffms_mobile
 description: "Field Force Management Mobile App"
 publish_to: 'none'
-version: 2.0.0+4
+# Version format: major.minor.patch+buildNumber
+# Bumped for Task 10 release build — AndroidManifest cleanup + APK
+# Date: 2026-06-10 | Antigravity Dev Team
+version: 1.0.1+2
 
 environment:
   sdk: ^3.11.0
@@ -56,13 +59,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
 
   # Assets
+  # UI/UX v2 — modern premium design — Antigravity 2026
   assets:
     - .env
+    - assets/images/logo.jpeg
     - assets/images/logo.png
 
   # Fonts (if any, keep as is)
@@ -70,3 +76,8 @@ flutter:
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/app_icon.png"

@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'FieldTrack',
+          'Eazzio Payroll',
           style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
         actions: [
@@ -273,6 +273,10 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0.5,
       ),
       body: RefreshIndicator(
+        // UI/UX v2 — modern premium design — Antigravity 2026
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        strokeWidth: 2.5,
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
