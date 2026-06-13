@@ -1,11 +1,21 @@
 <div align="center">
-  <img src="logo.jpeg" alt="Eazzio Technology Logo" width="200">
-  <h1>🚀 Eazzio Technology</h1>
-  <p><b>A state-of-the-art enterprise solution for tracking, managing, and optimizing on-field employee operations.</b></p>
-  
-  [![Organization](https://img.shields.io/badge/Organization-Thesis--Tech-blue.svg?style=for-the-badge)](https://github.com/Eazzio technology)
-  [![Stack](https://img.shields.io/badge/Stack-Next.js%20|%20Node.js%20|%20Flutter-success.svg?style=for-the-badge)](#)
-  [![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge)](#)
+
+<img src="logo.jpeg" alt="Eazzio Technology Logo" width="250"/>
+
+<h1>🚀 Eazzio Technology</h1>
+
+<p>
+<b>
+A state-of-the-art enterprise solution for tracking, managing, and optimizing on-field employee operations.
+</b>
+</p>
+
+<p>
+<img src="https://img.shields.io/badge/Organization-Eazzio--Technology-blue?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Stack-Next.js%20|%20Node.js%20|%20Flutter-success?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" />
+</p>
+
 </div>
 
 ---
@@ -81,10 +91,10 @@ Before you begin, ensure you have the following installed on your local machine:
    cd Field_Force_Mnt_Sys
    ```
 
-2. **Backend Setup (`EP_BACKEND`):**
+2. **Backend Setup (`FFMS_BACKEND`):**
 
    ```bash
-   cd EP_BACKEND/backend
+   cd FFMS_BACKEND/backend
    npm install
 
    # Set up your .env file based on .env.example
@@ -97,10 +107,10 @@ Before you begin, ensure you have the following installed on your local machine:
    npm run dev
    ```
 
-3. **Frontend Setup (`EP_FRONTEND`):**
+3. **Frontend Setup (`FFMS_FRONTEND`):**
 
    ```bash
-   cd ../../EP_FRONTEND/frontend
+   cd ../../FFMS_FRONTEND/frontend
    npm install
 
    # Set up your .env.local file
@@ -110,7 +120,7 @@ Before you begin, ensure you have the following installed on your local machine:
    npm run dev
    ```
 
-4. **Mobile App Setup (`EP_mobile`):**
+4. **Mobile App Setup (`ffms_mobile`):**
 
    ```bash
    cd ../../ffms_mobile
