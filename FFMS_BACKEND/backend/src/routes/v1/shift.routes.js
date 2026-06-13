@@ -10,7 +10,7 @@ router.use(checkOrgAccess);
 
 // Routes
 router.get('/', authorize('ADMIN', 'MANAGER'), shiftController.listShifts);
-router.get('/:id', authorize('ADMIN', 'MANAGER', 'FIELD_STAFF'), shiftController.getShift);
+router.get('/:id', authorize('ADMIN', 'MANAGER', 'FIELD_STAFF', 'OFFICE_STAFF'), shiftController.getShift);
 router.post('/', authorize('ADMIN'), shiftController.createShift);
 router.patch('/:id', authorize('ADMIN'), shiftController.updateShift);
 router.delete('/:id', authorize('ADMIN'), shiftController.deleteShift);

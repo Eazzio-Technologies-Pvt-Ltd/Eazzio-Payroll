@@ -125,7 +125,7 @@ const listTasks = async ({
   };
 
   // Role-based restrictions
-  if (role === 'FIELD_STAFF') {
+  if (role === 'FIELD_STAFF' || role === 'OFFICE_STAFF') {
     // Field staff only sees their assigned tasks
     where.assignments = {
       some: {

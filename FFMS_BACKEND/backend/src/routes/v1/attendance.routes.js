@@ -9,9 +9,9 @@ router.use(authenticate);
 router.use(checkOrgAccess);
 
 // Check-in and out (Field Staff)
-router.post('/check-in', authorize('FIELD_STAFF'), attendanceController.checkIn);
-router.post('/check-out', authorize('FIELD_STAFF'), attendanceController.checkOut);
-router.post('/status-photo', authorize('FIELD_STAFF'), attendanceController.uploadStatusPhoto);
+router.post('/check-in', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.checkIn);
+router.post('/check-out', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.checkOut);
+router.post('/status-photo', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.uploadStatusPhoto);
 
 // Live and aggregates (Manager+)
 router.get('/today', authorize('ADMIN', 'MANAGER'), attendanceController.getTodayAttendance);

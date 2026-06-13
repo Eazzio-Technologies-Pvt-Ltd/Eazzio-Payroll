@@ -319,9 +319,9 @@ const listAttendance = async ({
   const parsedPage = parseInt(page);
   const parsedLimit = parseInt(limit);
 
-  // Authorization check: Field staff can only see their own attendance logs
+  // Authorization check: Field staff and Office staff can only see their own attendance logs
   let targetUserId = userId;
-  if (requestingUser.role === 'FIELD_STAFF') {
+  if (requestingUser.role === 'FIELD_STAFF' || requestingUser.role === 'OFFICE_STAFF') {
     targetUserId = requestingUser.id;
   }
 
@@ -474,7 +474,7 @@ const getTodayAttendance = async (organizationId, requestingUser = null) => {
   const staffUsers = await prisma.user.findMany({
     where: {
       organizationId,
-      role: 'FIELD_STAFF',
+      role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] },
       status: 'ACTIVE',
       ...(requestingUser && requestingUser.role === 'MANAGER' && { managerId: requestingUser.id })
     },

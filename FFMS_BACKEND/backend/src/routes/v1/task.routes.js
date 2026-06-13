@@ -8,7 +8,7 @@ const router = express.Router();
 router.use(authenticate);
 router.use(checkOrgAccess);
 
-router.post('/',                    authorize('ADMIN', 'MANAGER', 'FIELD_STAFF'), taskController.createTask)
+router.post('/',                    authorize('ADMIN', 'MANAGER', 'FIELD_STAFF', 'OFFICE_STAFF'), taskController.createTask)
 router.get('/',                     taskController.listTasks)
 router.get('/my',                   taskController.getMyTasks)          
 router.get('/:id',                  taskController.getTaskById)

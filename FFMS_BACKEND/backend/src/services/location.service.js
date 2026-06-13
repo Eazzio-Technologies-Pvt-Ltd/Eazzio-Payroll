@@ -117,7 +117,7 @@ const getLiveLocations = async (organizationId, managerId = null) => {
   const fieldStaff = await prisma.user.findMany({
     where: {
       organizationId,
-      role: 'FIELD_STAFF',
+      role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] },
       status: 'ACTIVE',
       ...(managerId && { managerId })
     },

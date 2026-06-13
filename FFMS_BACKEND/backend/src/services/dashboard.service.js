@@ -53,7 +53,7 @@ const getAdminDashboard = async (organizationId, role, userId) => {
   ] = await Promise.all([
     prisma.attendance.count({ where: { user: { organizationId, ...(role === 'MANAGER' && { managerId: userId }) }, date: todayDate } }),
     prisma.attendance.count({ where: { user: { organizationId, ...(role === 'MANAGER' && { managerId: userId }) }, date: todayDate, isLate: true } }),
-    prisma.user.count({ where: { organizationId, role: 'FIELD_STAFF', status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) } }),
+    prisma.user.count({ where: { organizationId, role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] }, status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) } }),
     prisma.task.count({ where: { organizationId, status: 'COMPLETED', updatedAt: { gte: todayDate }, ...taskFilter } }),
     prisma.task.count({ where: { organizationId, status: { in: ['PENDING', 'IN_PROGRESS'] }, dueDate: { lt: new Date() }, ...taskFilter } }),
     prisma.task.count({ where: { organizationId, status: 'PENDING', ...taskFilter } }),
@@ -67,7 +67,7 @@ const getAdminDashboard = async (organizationId, role, userId) => {
     prisma.leave.count({ where: { status: 'PENDING', user: { organizationId, ...(role === 'MANAGER' && { managerId: userId }) } } }),
     prisma.expense.count({ where: { status: 'SUBMITTED', user: { organizationId, ...(role === 'MANAGER' && { managerId: userId }) } } }),
     prisma.user.findMany({
-      where: { organizationId, role: 'FIELD_STAFF', status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) },
+      where: { organizationId, role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] }, status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) },
       select: {
         id: true, name: true, employeeId: true,
         taskAssignments: { where: { status: 'COMPLETED', task: taskFilter }, select: { rating: true } },
@@ -83,7 +83,7 @@ const getAdminDashboard = async (organizationId, role, userId) => {
       where: { organizationId },
       select: {
         id: true, name: true,
-        users: { where: { role: 'FIELD_STAFF', status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) }, select: { id: true } }
+        users: { where: { role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] }, status: 'ACTIVE', ...(role === 'MANAGER' && { managerId: userId }) }, select: { id: true } }
       }
     }),
     prisma.user.findMany({
@@ -314,7 +314,7 @@ const getFieldStaffDashboard = async (userId, organizationId) => {
 
   // Simple rank calculation within organization
   const allStaffPerformance = await prisma.user.findMany({
-    where: { organizationId, role: 'FIELD_STAFF', status: 'ACTIVE' },
+    where: { organizationId, role: { in: ['FIELD_STAFF', 'OFFICE_STAFF'] }, status: 'ACTIVE' },
     select: {
       id: true,
       taskAssignments: {

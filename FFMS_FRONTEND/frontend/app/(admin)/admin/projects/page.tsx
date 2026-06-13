@@ -51,7 +51,7 @@ export default function AdminProjectsPage() {
         }
       }
       if (empRes.success) {
-        const staff = empRes.data.filter((u: any) => u.role === "FIELD_STAFF" || u.role === "MANAGER");
+        const staff = empRes.data.filter((u: any) => u.role === "FIELD_STAFF" || u.role === "OFFICE_STAFF" || u.role === "MANAGER");
         setEmployees(staff);
         if (staff.length > 0 && !taskForm.assigneeId) {
           setTaskForm(prev => ({ ...prev, assigneeId: staff[0].id }));

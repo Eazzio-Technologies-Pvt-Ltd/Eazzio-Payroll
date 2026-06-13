@@ -103,7 +103,7 @@ export default function LiveFeedWidget({
       if (!hasLoadedInit) setLoading(true);
 
       const usersRes = await usersApi.list();
-      const activeUsers = usersRes.data.filter(u => u.role === "FIELD_STAFF" || u.role === "MANAGER");
+      const activeUsers = usersRes.data.filter(u => u.role === "FIELD_STAFF" || u.role === "OFFICE_STAFF" || u.role === "MANAGER");
 
       const liveLocationsRes = await locationApi.getLive();
       const liveLocations = Array.isArray(liveLocationsRes.data) ? liveLocationsRes.data : [];
