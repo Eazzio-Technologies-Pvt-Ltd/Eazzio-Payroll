@@ -95,7 +95,7 @@ export default function TasksPage() {
       return e.role === "MANAGER";
     }
     if (user?.role === "MANAGER") {
-      return e.role === "FIELD_STAFF";
+      return e.role === "FIELD_STAFF" || e.role === "OFFICE_STAFF";
     }
     return true;
   });

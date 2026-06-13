@@ -61,6 +61,7 @@ export default function FilterBar({
             <option value="All">All Roles</option>
             <option value="MANAGER">Manager</option>
             <option value="FIELD_STAFF">Field Staff</option>
+            <option value="OFFICE_STAFF">Office Staff</option>
           </select>
         </div>
 

@@ -9,7 +9,7 @@ router.use(authenticate);
 router.use(checkOrgAccess);
 
 // Batch update (Field staff only)
-router.post('/batch', authorize('FIELD_STAFF'), locationController.batchInsertLocation);
+router.post('/batch', authorize('FIELD_STAFF', 'OFFICE_STAFF'), locationController.batchInsertLocation);
 
 // Live locations (Manager+)
 router.get('/live', authorize('ADMIN', 'MANAGER'), locationController.getLiveLocations);

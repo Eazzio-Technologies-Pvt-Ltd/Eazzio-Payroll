@@ -77,24 +77,24 @@ const initSocket = (server) => {
     if (['ADMIN', 'MANAGER'].includes(role)) {
       socket.join(`org:${organizationId}:admins`);
       logger.info(`User ${name} joined org:${organizationId}:admins room`);
-    } else if (role === 'FIELD_STAFF') {
+    } else if (role === 'FIELD_STAFF' || role === 'OFFICE_STAFF') {
       io.to(`org:${organizationId}:admins`).emit('staff:online', {
         userId: id,
         name,
         socketId: socket.id,
       });
-      logger.info(`Field staff ${name} is online. Emitted staff:online to admins.`);
+      logger.info(`Staff ${name} is online. Emitted staff:online to admins.`);
     }
 
     socket.on('disconnect', () => {
       logger.info(`Socket disconnected: ${name} - Socket ID: ${socket.id}`);
 
-      if (role === 'FIELD_STAFF') {
+      if (role === 'FIELD_STAFF' || role === 'OFFICE_STAFF') {
         io.to(`org:${organizationId}:admins`).emit('staff:offline', {
           userId: id,
           name,
         });
-        logger.info(`Field staff ${name} went offline. Emitted staff:offline to admins.`);
+        logger.info(`Staff ${name} went offline. Emitted staff:offline to admins.`);
       }
     });
   });

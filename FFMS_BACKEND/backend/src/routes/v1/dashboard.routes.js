@@ -13,6 +13,6 @@ router.get('/admin', authorize('ADMIN', 'MANAGER'), dashboardController.getAdmin
 
 
 // Field staff dashboard (Field staff own only)
-router.get('/field-staff', authorize('FIELD_STAFF'), dashboardController.getFieldStaffDashboard);
+router.get('/field-staff', authorize('FIELD_STAFF', 'OFFICE_STAFF'), dashboardController.getFieldStaffDashboard);
 
 module.exports = router;

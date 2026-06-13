@@ -11,6 +11,7 @@ enum Role {
   ADMIN
   MANAGER
   FIELD_STAFF
+  OFFICE_STAFF
 }
 
 enum UserStatus {

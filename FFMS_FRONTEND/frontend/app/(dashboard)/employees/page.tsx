@@ -187,10 +187,14 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
             <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Role</label>
             <select className="input" value={form.role||"FIELD_STAFF"} onChange={e=>handleFieldChange("role",e.target.value)}>
               {currentUser?.role === "MANAGER" ? (
-                <option value="FIELD_STAFF">Field Staff</option>
+                <>
+                  <option value="FIELD_STAFF">Field Staff</option>
+                  <option value="OFFICE_STAFF">Office Staff</option>
+                </>
               ) : (
                 <>
                   <option value="FIELD_STAFF">Field Staff</option>
+                  <option value="OFFICE_STAFF">Office Staff</option>
                   <option value="MANAGER">Manager</option>
                   <option value="ADMIN">Admin</option>
                 </>
@@ -411,6 +415,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
 
 const BASE_SALARIES: Record<string, number> = {
   "FIELD_STAFF": 30000,
+  "OFFICE_STAFF": 28000,
   "MANAGER": 50000,
   "ADMIN": 75000,
   "Sales Executive": 35000,
@@ -976,7 +981,7 @@ export default function EmployeesPage() {
                           <div>
                             <div style={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: depth === 0 ? 700 : 500 }}>{emp.name}</div>
                             <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}>
-                              <span>{emp.employeeId || "No ID"} • {emp.role === "FIELD_STAFF" ? "Field Staff" : emp.role === "MANAGER" ? "Manager" : emp.role === "ADMIN" ? "Admin" : emp.role}</span>
+                              <span>{emp.employeeId || "No ID"} • {emp.role === "FIELD_STAFF" ? "Field Staff" : emp.role === "OFFICE_STAFF" ? "Office Staff" : emp.role === "MANAGER" ? "Manager" : emp.role === "ADMIN" ? "Admin" : emp.role}</span>
                               <span className="badge badge-purple" style={{ fontSize: "9px", padding: "1px 4px", textTransform: "uppercase" }}>{emp.employmentType || "Full Time"}</span>
                             </div>
                           </div>
