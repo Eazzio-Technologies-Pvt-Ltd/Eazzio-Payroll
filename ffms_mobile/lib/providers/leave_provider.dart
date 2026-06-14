@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 import '../models/leave_model.dart';
+import '../services/socket_service.dart';
 
 class LeaveProvider extends ChangeNotifier {
   List<LeaveModel> _leaves = [];
@@ -13,6 +14,18 @@ class LeaveProvider extends ChangeNotifier {
   List<LeaveBalanceModel> get balances => _balances;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  LeaveProvider() {
+    _initSocketListener();
+  }
+
+  void _initSocketListener() {
+    SocketService.onLeaveStatusUpdated = (data) {
+      debugPrint('Socket event received: leave status updated');
+      fetchMyLeaves();
+      fetchBalances();
+    };
+  }
 
   // Fetch my leaves
   Future<void> fetchMyLeaves({String? userId, String? orgId}) async {

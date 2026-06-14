@@ -49,7 +49,7 @@ function mapApiUserToEmployee(u: ApiUser): Employee {
     role: u.role,
     territory: u.territory?.name || "Unassigned",
     status: u.status?.toLowerCase() || "active",
-    avatar: initials,
+    avatar: u.profileImage || initials,
     lat: 0,
     lng: 0,
     employeeId: u.employeeId,

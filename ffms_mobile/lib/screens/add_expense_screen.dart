@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/expense_provider.dart';
+import '../utils/image_upload_util.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_toast.dart';
@@ -58,14 +59,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   Future<void> _pickReceipt(ImageSource source) async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: source,
-        imageQuality: 70,
+      final result = await ImageUploadUtil.pickAndCompressImage(
+        context,
+        cameraOnly: source == ImageSource.camera,
       );
 
-      if (pickedFile != null) {
-        setState(() => _receiptFile = File(pickedFile.path));
+      if (result != null) {
+        setState(() => _receiptFile = File(result.path));
       }
     } catch (e) {
       // Capture pick errors

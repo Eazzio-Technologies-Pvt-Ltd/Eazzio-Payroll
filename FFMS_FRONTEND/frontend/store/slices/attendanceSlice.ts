@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   hours: string;
   status: string;
   location: string;
+  selfieUrl?: string;
 }
 
 interface AttendanceState {
@@ -65,6 +66,7 @@ function mapApiToRecord(a: ApiAttendance | any): AttendanceRecord {
     hours: formattedHours,
     status: a.status?.toLowerCase() || (isTodayFormat && !a.checkedIn ? "absent" : "present"),
     location: "",
+    selfieUrl: a.selfieUrl || "",
   };
 }
 

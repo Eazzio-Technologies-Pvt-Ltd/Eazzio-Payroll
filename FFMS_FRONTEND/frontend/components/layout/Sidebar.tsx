@@ -479,6 +479,24 @@ export default function Sidebar() {
           </div>
         </Link>
 
+        {/* 5b. Leave Management — approve/reject leaves from all employees */}
+        {(isAdmin || isManager) && (
+          <Link href={`${basePath}/leaves`} style={{ textDecoration: "none" }} title="Leave Management">
+            <div style={getLinkStyle(pathname === `${basePath}/leaves`)} className="sidebar-link">
+              {renderIcon(FileText, pathname === `${basePath}/leaves`)}
+              <span style={{
+                fontSize: "13.5px",
+                fontWeight: pathname === `${basePath}/leaves` ? 700 : 500,
+                opacity: isExpanded ? 1 : 0,
+                width: isExpanded ? "auto" : 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                transition: "opacity 0.2s ease 0.05s",
+              }}>Leave Requests</span>
+            </div>
+          </Link>
+        )}
+
         {/* 6. Insights Accordion */}
         <div>
           <div
@@ -635,6 +653,17 @@ export default function Sidebar() {
                   padding: "4px 8px",
                 }}>
                   ➔ Travel Expenses
+                </span>
+              </Link>
+              <Link href={`${basePath}/reports/travel-logs`} style={{ textDecoration: "none", color: "inherit" }}>
+                <span style={{
+                  fontSize: "12.5px",
+                  color: pathname === `${basePath}/reports/travel-logs` ? "var(--accent-blue)" : "var(--sidebar-text-inactive)",
+                  fontWeight: pathname === `${basePath}/reports/travel-logs` ? 700 : 400,
+                  display: "block",
+                  padding: "4px 8px",
+                }}>
+                  ➔ Travel Logs
                 </span>
               </Link>
               <Link href={`${basePath}/reports/productivity`} style={{ textDecoration: "none", color: "inherit" }}>

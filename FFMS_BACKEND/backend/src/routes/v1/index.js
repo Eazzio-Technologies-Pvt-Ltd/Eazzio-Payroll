@@ -16,6 +16,7 @@ const projectRoutes = require('./project.routes');
 const travelRoutes = require('./travel.routes');
 const advanceRoutes = require('./advance.routes');
 const shiftRoutes = require('./shift.routes');
+const visitRoutes = require('./visit.routes');
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.use('/auth', authRoutes);
 router.use('/shifts', shiftRoutes);
 
 router.use('/users', userRoutes);
+router.use('/visits', visitRoutes);
 router.use('/location', locationRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/tasks', taskRoutes);

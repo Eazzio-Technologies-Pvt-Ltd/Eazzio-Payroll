@@ -5,6 +5,7 @@ import { expensesApi, ApiExpense } from "@/lib/api-client";
 export interface ExpenseRecord {
   id: string;
   userName: string;
+  managerName?: string;
   employeeId: string;
   expenseHead: string;
   expenseCategory: string;
@@ -14,6 +15,7 @@ export interface ExpenseRecord {
   customer: string;
   status: "Pending Approval by Manager" | "Approved" | "Rejected";
   remark: string;
+  receiptUrl?: string;
 }
 
 interface ExpenseState {
@@ -40,6 +42,7 @@ function mapApiToExpenseRecord(e: ApiExpense): ExpenseRecord {
   return {
     id: e.id,
     userName: e.user?.name || "Unknown",
+    managerName: e.user?.manager?.name || "None",
     employeeId: e.userId,
     expenseHead: e.description || e.category,
     expenseCategory: e.category,
@@ -49,15 +52,25 @@ function mapApiToExpenseRecord(e: ApiExpense): ExpenseRecord {
     customer: "",
     status: mapStatus(e.status),
     remark: "",
+    receiptUrl: e.receiptUrl || "",
   };
 }
 
 export const fetchExpenses = createAsyncThunk(
   "expenses/fetchAll",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const res = await expensesApi.getAll({ limit: 100 });
-      return res.data.map(mapApiToExpenseRecord);
+      const state = getState() as any;
+      const role = state.auth.user?.role;
+      let res;
+      if (role === "ADMIN") {
+        res = await expensesApi.getAll({ limit: 100 });
+      } else if (role === "MANAGER") {
+        res = await expensesApi.getTeam({ limit: 100 });
+      } else {
+        res = await expensesApi.getMy({ limit: 100 });
+      }
+      return res.data.expenses.map(mapApiToExpenseRecord);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to fetch expenses";
       return rejectWithValue(message);

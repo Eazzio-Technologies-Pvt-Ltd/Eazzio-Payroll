@@ -1,6 +1,8 @@
 const prisma = require('../config/prisma')
 const cloudinary = require('../config/cloudinary')
 const notificationService = require('./notification.service')
+// Socket.IO emitter — real-time status push to mobile app
+const { emitToUser } = require('../config/socket')
 
 // Helper: calculate working days between two dates (excludes weekends)
 const calcWorkingDays = (startDate, endDate) => {
@@ -93,7 +95,7 @@ const approveLeave = async (leaveId, managerId, approvalNote) => {
     data: { status: 'APPROVED', approvedById: managerId, approvalNote },
   })
 
-  // Notify employee
+  // Notify employee via persistent notification
   await notificationService.createNotification({
     userId:      leave.userId,
     title:       'Leave Approved',
@@ -103,6 +105,15 @@ const approveLeave = async (leaveId, managerId, approvalNote) => {
   }).catch(err => {
     console.error('Failed to create leave approval notification:', err.message);
   })
+
+  // Real-time socket push so mobile app updates immediately without manual refresh
+  emitToUser(leave.userId, 'leave:status_updated', {
+    leaveId,
+    status:      'APPROVED',
+    approvedById: managerId,
+    approvalNote,
+    message:     `Your leave request has been approved`,
+  });
 
   return updated
 }
@@ -122,7 +133,7 @@ const rejectLeave = async (leaveId, managerId, approvalNote) => {
     data: { status: 'REJECTED', approvedById: managerId, approvalNote },
   })
 
-  // Notify employee
+  // Notify employee via persistent notification
   await notificationService.createNotification({
     userId:      leave.userId,
     title:       'Leave Rejected',
@@ -132,6 +143,15 @@ const rejectLeave = async (leaveId, managerId, approvalNote) => {
   }).catch(err => {
     console.error('Failed to create leave rejection notification:', err.message);
   })
+
+  // Real-time socket push so mobile app updates immediately without manual refresh
+  emitToUser(leave.userId, 'leave:status_updated', {
+    leaveId,
+    status:      'REJECTED',
+    approvedById: managerId,
+    approvalNote,
+    message:     `Your leave request has been rejected. ${approvalNote || ''}`,
+  });
 
   return updated
 }
@@ -207,7 +227,7 @@ const getAllLeaves = async ({ page = 1, limit = 10, status, userId } = {}) => {
       skip: (page - 1) * limit,
       take: limit,
       include: {
-        user: { select: { id: true, name: true, employeeId: true } },
+        user: { select: { id: true, name: true, employeeId: true, profileImage: true } },
         approvedBy: { select: { id: true, name: true } },
       },
     }),

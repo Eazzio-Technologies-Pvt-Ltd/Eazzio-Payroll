@@ -12,6 +12,8 @@ export interface Task {
   status: string;
   deadline: string;
   territory: string;
+  completionNote?: string;
+  completionImages?: string[];
 }
 
 interface TaskState {
@@ -29,6 +31,8 @@ const initialState: TaskState = {
 function mapApiTaskToTask(t: ApiTask): Task {
   const assignee = t.assignments?.[0]?.user?.name || "Unassigned";
   const assigneeId = t.assignments?.[0]?.userId || "";
+  const completionNote = t.assignments?.[0]?.completionNote || "";
+  const completionImages = t.assignments?.[0]?.completionImages || [];
   return {
     id: t.id,
     title: t.title,
@@ -39,6 +43,8 @@ function mapApiTaskToTask(t: ApiTask): Task {
     status: t.status?.toLowerCase().replace("_", "-") || "pending",
     deadline: t.dueDate ? new Date(t.dueDate).toISOString().split("T")[0] : "",
     territory: t.territory?.name || "Unassigned",
+    completionNote,
+    completionImages,
   };
 }
 

@@ -4,7 +4,8 @@ const createExpenseSchema = z.object({
   category:    z.enum(['TRAVEL', 'FOOD', 'ACCOMMODATION', 'OTHER']),
   amount:      z.number().positive('Amount must be greater than 0'),
   description: z.string().min(3).optional(),
-  receiptUrl:  z.string().url().optional(),
+  receiptUrl:  z.string().optional(),
+  receiptBase64: z.string().optional(),
   date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
   taskId:      z.string().optional(),
 })

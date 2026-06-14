@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 import '../models/expense_model.dart';
+import '../services/socket_service.dart';
 
 class ExpenseProvider extends ChangeNotifier {
   List<ExpenseModel> _expenses = [];
@@ -12,6 +14,17 @@ class ExpenseProvider extends ChangeNotifier {
   List<ExpenseModel> get expenses => _expenses;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  ExpenseProvider() {
+    _initSocketListener();
+  }
+
+  void _initSocketListener() {
+    SocketService.onExpenseStatusUpdated = (data) {
+      debugPrint('Socket event received: expense status updated');
+      fetchMyExpenses();
+    };
+  }
 
   // Fetch my expenses
   Future<void> fetchMyExpenses() async {
@@ -67,7 +80,9 @@ class ExpenseProvider extends ChangeNotifier {
       };
 
       if (receipt != null) {
-        payload['receiptUrl'] = 'https://res.cloudinary.com/mock-cloud/image/upload/v12345/ffms/${receipt.path.split('/').last}';
+        final bytes = await receipt.readAsBytes();
+        final base64String = base64Encode(bytes);
+        payload['receiptBase64'] = 'data:image/jpeg;base64,$base64String';
       }
 
       // 1. Create the expense (creates as DRAFT)

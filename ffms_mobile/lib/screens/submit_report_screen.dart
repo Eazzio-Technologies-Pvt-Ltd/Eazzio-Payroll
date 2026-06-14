@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/task_provider.dart';
+import '../utils/image_upload_util.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_toast.dart';
@@ -39,15 +40,14 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: source,
-        imageQuality: 70, // Compress slightly
+      final result = await ImageUploadUtil.pickAndCompressImage(
+        context,
+        cameraOnly: source == ImageSource.camera,
       );
 
-      if (pickedFile != null) {
+      if (result != null) {
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageFile = File(result.path);
         });
       }
     } catch (e) {

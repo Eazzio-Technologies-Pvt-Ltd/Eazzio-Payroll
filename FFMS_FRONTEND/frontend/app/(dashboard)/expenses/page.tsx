@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
+import CloudinaryImage from "@/components/common/CloudinaryImage";
 import { 
   addExpense, 
   approveExpense, 
@@ -12,6 +13,8 @@ import {
 } from "@/store/slices/expenseSlice";
 import { getStatusColor } from "@/lib/utils";
 import { addNotification } from "@/store/slices/notificationSlice";
+import { fetchExpenses } from "@/store/slices/expenseSlice";
+import { expensesApi } from "@/lib/api-client";
 import { 
   Wallet, 
   Plus, 
@@ -162,6 +165,26 @@ export default function ExpensesPage() {
     });
   }, [expenses, activeTab, appliedFilters, searchQuery, currentAdminName]);
 
+  // Expenses from GET /api/v1/expenses
+  // Grouped by employee and category for admin view
+  const groupedExpenses = useMemo(() => {
+    if (activeTab !== "APPROVALS") return null;
+
+    const byEmployee: Record<string, Record<string, ExpenseRecord[]>> = {};
+    filteredList.forEach(item => {
+      const emp = item.userName;
+      const cat = item.expenseCategory;
+      if (!byEmployee[emp]) {
+        byEmployee[emp] = {};
+      }
+      if (!byEmployee[emp][cat]) {
+        byEmployee[emp][cat] = [];
+      }
+      byEmployee[emp][cat].push(item);
+    });
+    return byEmployee;
+  }, [filteredList, activeTab]);
+
   // Totals calculations
   const totalAmountFiltered = useMemo(() => {
     return filteredList.reduce((acc, item) => acc + item.amount, 0);
@@ -173,22 +196,31 @@ export default function ExpensesPage() {
       .reduce((acc, item) => acc + item.amount, 0);
   }, [expenses, activeTab, currentAdminName]);
 
-  // Bulk / individual approvals
-  const handleApprove = (id: string) => {
+  // Bulk / individual approvals — calls real backend API, then refreshes Redux state
+  const handleApprove = async (id: string) => {
     const exp = expenses.find(e => e.id === id);
-    dispatch(approveExpense(id));
-    if (exp) {
-      dispatch(addNotification({
-        employeeId: exp.employeeId,
-        employeeName: exp.userName,
-        avatar: exp.userName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
-        type: "system",
-        message: `Expense APPROVED: ${exp.userName}'s claim of ₹${exp.amount.toLocaleString("en-IN")} for '${exp.expenseHead}' was approved by ${currentAdminName}.`,
-        priority: "normal"
-      }));
+    try {
+      // POST to backend: PUT /api/v1/expenses/:id/approve
+      await expensesApi.approve(id, 'Approved by admin');
+      // Refresh expense list from backend so status reflects DB truth
+      dispatch(fetchExpenses() as any);
+      if (exp) {
+        dispatch(addNotification({
+          employeeId: exp.employeeId,
+          employeeName: exp.userName,
+          avatar: exp.userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
+          type: "system",
+          message: `Expense APPROVED: ${exp.userName}'s claim of ₹${exp.amount.toLocaleString("en-IN")} was approved.`,
+          priority: "normal"
+        }));
+      }
+      setToast("Expense approved and mobile notified!");
+      setTimeout(() => setToast(null), 3000);
+    } catch (err: any) {
+      const msg = err?.message || 'Approval failed';
+      setToast(`❌ ${msg}`);
+      setTimeout(() => setToast(null), 4000);
     }
-    setToast("Expense record successfully approved!");
-    setTimeout(() => setToast(null), 3000);
   };
 
   const handleRejectPrompt = (id: string) => {
@@ -196,24 +228,33 @@ export default function ExpensesPage() {
     setRejectRemark("");
   };
 
-  const handleRejectConfirm = () => {
+  const handleRejectConfirm = async () => {
     if (rejectingId) {
       const exp = expenses.find(e => e.id === rejectingId);
       const reason = rejectRemark || "Rejected by operations manager.";
-      dispatch(rejectExpense({ id: rejectingId, remark: reason }));
-      if (exp) {
-        dispatch(addNotification({
-          employeeId: exp.employeeId,
-          employeeName: exp.userName,
-          avatar: exp.userName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
-          type: "alert",
-          message: `Expense REJECTED: ${exp.userName}'s claim of ₹${exp.amount.toLocaleString("en-IN")} for '${exp.expenseHead}' was rejected. Reason: ${reason}`,
-          priority: "high"
-        }));
+      try {
+        // POST to backend: PUT /api/v1/expenses/:id/reject
+        await expensesApi.reject(rejectingId, reason);
+        // Refresh expense list from backend so status reflects DB truth
+        dispatch(fetchExpenses() as any);
+        if (exp) {
+          dispatch(addNotification({
+            employeeId: exp.employeeId,
+            employeeName: exp.userName,
+            avatar: exp.userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
+            type: "alert",
+            message: `Expense REJECTED: ${exp.userName}'s claim was rejected. Reason: ${reason}`,
+            priority: "high"
+          }));
+        }
+        setRejectingId(null);
+        setToast("Expense rejected and mobile notified.");
+        setTimeout(() => setToast(null), 3000);
+      } catch (err: any) {
+        const msg = err?.message || 'Rejection failed';
+        setToast(`❌ ${msg}`);
+        setTimeout(() => setToast(null), 4000);
       }
-      setRejectingId(null);
-      setToast("Expense record rejected.");
-      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -323,6 +364,45 @@ export default function ExpensesPage() {
           <div className="page-subtitle">Track, audit, and approve field force operations travel and lodging expenses.</div>
         </div>
       </div>
+
+      {/* Summary Cards Row */}
+      {mounted && activeTab === "APPROVALS" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+          <div className="card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Total Pending Claims</span>
+            <span style={{ fontSize: "20px", fontWeight: 800, color: "var(--accent-orange)" }}>
+              ₹{expenses.filter(e => e.status === "Pending Approval by Manager").reduce((sum, e) => sum + e.amount, 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </span>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+              {expenses.filter(e => e.status === "Pending Approval by Manager").length} pending claims
+            </span>
+          </div>
+          <div className="card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Total Approved Claims</span>
+            <span style={{ fontSize: "20px", fontWeight: 800, color: "var(--accent-green)" }}>
+              ₹{expenses.filter(e => e.status === "Approved").reduce((sum, e) => sum + e.amount, 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </span>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+              {expenses.filter(e => e.status === "Approved").length} approved claims
+            </span>
+          </div>
+          <div className="card" style={{ display: "flex", flexDirection: "column", gap: "8px", gridColumn: "span 2" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)" }}>Claims count by Category</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "4px" }}>
+              {["FOOD", "TRAVEL", "ACCOMMODATION", "OTHER"].map(cat => {
+                const count = expenses.filter(e => e.expenseCategory === cat).length;
+                const sum = expenses.filter(e => e.expenseCategory === cat).reduce((s, e) => s + e.amount, 0);
+                return (
+                  <div key={cat} style={{ display: "flex", flexDirection: "column", background: "var(--bg-secondary)", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--border)", minWidth: "120px" }}>
+                    <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--text-secondary)" }}>{cat}</span>
+                    <span style={{ fontSize: "12.5px", fontWeight: 800, color: "var(--text-primary)" }}>{count} (₹{sum.toLocaleString("en-IN", { maximumFractionDigits: 0 })})</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Row */}
       <div style={{ display: "flex", borderBottom: "1px solid var(--border)", gap: "2px" }}>
@@ -527,96 +607,183 @@ export default function ExpensesPage() {
                 <th>Expense Date</th>
                 <th>Submitted On</th>
                 <th>Customer</th>
+                <th>Receipt</th>
                 <th>Status</th>
                 <th>Remark</th>
                 {activeTab === "APPROVALS" && <th style={{ textAlign: "center" }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredList.length > 0 ? (
-                filteredList.map(item => (
-                  <tr key={item.id} style={{ background: selectedIds[item.id] ? "rgba(0,82,255,0.02)" : "transparent" }}>
-                    <td style={{ textAlign: "center" }}>
-                      <input 
-                        type="checkbox" 
-                        checked={!!selectedIds[item.id]} 
-                        onChange={(e) => handleSelectRow(item.id, e.target.checked)}
-                        style={{ cursor: "pointer" }}
-                      />
+              {activeTab === "APPROVALS" ? (
+                groupedExpenses && Object.keys(groupedExpenses).length > 0 ? (
+                  Object.entries(groupedExpenses).map(([empName, categories]) => {
+                    const firstExp = Object.values(categories)[0]?.[0];
+                    const managerText = firstExp?.managerName || "None";
+                    return (
+                      <Fragment key={`emp-group-${empName}`}>
+                        {/* Employee Group Header */}
+                        <tr style={{ background: "var(--bg-secondary)" }}>
+                          <td colSpan={12} style={{ padding: "10px 16px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontWeight: 800, fontSize: "13px", color: "var(--text-primary)" }}>
+                                Employee: {empName}
+                              </span>
+                              <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600 }}>
+                                Manager: {managerText}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                        {Object.entries(categories).map(([catName, items]) => (
+                          <Fragment key={`cat-group-${empName}-${catName}`}>
+                            {/* Category Sub-Header */}
+                            <tr>
+                              <td colSpan={12} style={{ padding: "6px 24px", background: "rgba(0,0,0,0.01)" }}>
+                                <span style={{ fontWeight: 700, fontSize: "11px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  Category: {catName} ({items.length} items, Total: ₹{items.reduce((s, i) => s + i.amount, 0).toLocaleString("en-IN")})
+                                </span>
+                              </td>
+                            </tr>
+                            {/* Items under Category */}
+                            {items.map(item => (
+                              <tr key={item.id} style={{ background: selectedIds[item.id] ? "rgba(0,82,255,0.02)" : "transparent" }}>
+                                <td style={{ textAlign: "center" }}>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={!!selectedIds[item.id]} 
+                                    onChange={(e) => handleSelectRow(item.id, e.target.checked)}
+                                    style={{ cursor: "pointer" }}
+                                  />
+                                </td>
+                                <td>
+                                  <div style={{ fontWeight: 700, fontSize: "13px" }}>{item.userName}</div>
+                                </td>
+                                <td>
+                                  <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>{item.expenseHead}</div>
+                                </td>
+                                <td>
+                                  <span className="badge" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: "11px" }}>
+                                    {item.expenseCategory}
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "13px" }}>
+                                  ₹{item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace" }}>{item.expenseDate}</td>
+                                <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-muted)" }}>{item.submittedOn}</td>
+                                <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.customer || "--"}</td>
+                                <td>
+                                  <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} />
+                                </td>
+                                <td>
+                                  <span className={`badge ${getStatusColor(item.status === "Pending Approval by Manager" ? "pending" : item.status === "Approved" ? "present" : "absent")}`} style={{ fontSize: "11px" }}>
+                                    {item.status}
+                                  </span>
+                                </td>
+                                <td style={{ fontSize: "12.5px", color: "var(--text-muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}>
+                                  {item.remark || "--"}
+                                </td>
+                                <td style={{ textAlign: "center" }}>
+                                  {item.status === "Pending Approval by Manager" ? (
+                                    <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                                      <button
+                                        onClick={() => handleApprove(item.id)}
+                                        className="btn-primary"
+                                        style={{
+                                          padding: "4px 8px",
+                                          height: "26px",
+                                          fontSize: "11px",
+                                          background: "var(--accent-green)",
+                                          borderColor: "var(--accent-green)"
+                                        }}
+                                        title="Approve Voucher"
+                                      >
+                                        <ThumbsUp size={11} /> Approve
+                                      </button>
+                                      <button
+                                        onClick={() => handleRejectPrompt(item.id)}
+                                        className="btn-primary"
+                                        style={{
+                                          padding: "4px 8px",
+                                          height: "26px",
+                                          fontSize: "11px",
+                                          background: "var(--accent-red)",
+                                          borderColor: "var(--accent-red)"
+                                        }}
+                                        title="Reject Voucher"
+                                      >
+                                        <ThumbsDown size={11} /> Reject
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                                      <UserCheck size={12} color="var(--accent-green)" /> Done
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </Fragment>
+                        ))}
+                      </Fragment>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={12} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
+                      No data available in table
                     </td>
-                    <td>
-                      <div style={{ fontWeight: 700, fontSize: "13px" }}>{item.userName}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>{item.expenseHead}</div>
-                    </td>
-                    <td>
-                      <span className="badge" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: "11px" }}>
-                        {item.expenseCategory}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "13px" }}>
-                      ₹{item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace" }}>{item.expenseDate}</td>
-                    <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-muted)" }}>{item.submittedOn}</td>
-                    <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.customer}</td>
-                    <td>
-                      <span className={`badge ${getStatusColor(item.status === "Pending Approval by Manager" ? "pending" : item.status === "Approved" ? "present" : "absent")}`} style={{ fontSize: "11px" }}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: "12.5px", color: "var(--text-muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}>
-                      {item.remark || "--"}
-                    </td>
-                    {activeTab === "APPROVALS" && (
-                      <td style={{ textAlign: "center" }}>
-                        {item.status === "Pending Approval by Manager" ? (
-                          <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                            <button
-                              onClick={() => handleApprove(item.id)}
-                              className="btn-primary"
-                              style={{
-                                padding: "4px 8px",
-                                height: "26px",
-                                fontSize: "11px",
-                                background: "var(--accent-green)",
-                                borderColor: "var(--accent-green)"
-                              }}
-                              title="Approve Voucher"
-                            >
-                              <ThumbsUp size={11} /> Approve
-                            </button>
-                            <button
-                              onClick={() => handleRejectPrompt(item.id)}
-                              className="btn-primary"
-                              style={{
-                                padding: "4px 8px",
-                                height: "26px",
-                                fontSize: "11px",
-                                background: "var(--accent-red)",
-                                borderColor: "var(--accent-red)"
-                              }}
-                              title="Reject Voucher"
-                            >
-                              <ThumbsDown size={11} /> Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-                            <UserCheck size={12} color="var(--accent-green)" /> Done
-                          </div>
-                        )}
-                      </td>
-                    )}
                   </tr>
-                ))
+                )
               ) : (
-                <tr>
-                  <td colSpan={activeTab === "APPROVALS" ? 11 : 10} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
-                    No data available in table
-                  </td>
-                </tr>
+                filteredList.length > 0 ? (
+                  filteredList.map(item => (
+                    <tr key={item.id} style={{ background: selectedIds[item.id] ? "rgba(0,82,255,0.02)" : "transparent" }}>
+                      <td style={{ textAlign: "center" }}>
+                        <input 
+                          type="checkbox" 
+                          checked={!!selectedIds[item.id]} 
+                          onChange={(e) => handleSelectRow(item.id, e.target.checked)}
+                          style={{ cursor: "pointer" }}
+                        />
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, fontSize: "13px" }}>{item.userName}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>{item.expenseHead}</div>
+                      </td>
+                      <td>
+                        <span className="badge" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: "11px" }}>
+                          {item.expenseCategory}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "13px" }}>
+                        ₹{item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace" }}>{item.expenseDate}</td>
+                      <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-muted)" }}>{item.submittedOn}</td>
+                      <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.customer || "--"}</td>
+                      <td>
+                        <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} />
+                      </td>
+                      <td>
+                        <span className={`badge ${getStatusColor(item.status === "Pending Approval by Manager" ? "pending" : item.status === "Approved" ? "present" : "absent")}`} style={{ fontSize: "11px" }}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "12.5px", color: "var(--text-muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}>
+                        {item.remark || "--"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={11} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
+                      No data available in table
+                    </td>
+                  </tr>
+                )
               )}
             </tbody>
           </table>

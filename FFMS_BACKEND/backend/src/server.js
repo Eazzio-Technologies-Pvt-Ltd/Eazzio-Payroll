@@ -1,4 +1,4 @@
-require('dotenv').config();
+const dotenvResult = require('dotenv').config();
 const logger = require('./config/logger');
 // Start background job workers
 require('./jobs/geofenceAlert.job');
@@ -11,7 +11,7 @@ const app = require('./app');
 const { initSocket } = require('./config/socket');
 const prisma = require('./config/prisma');
 
-const PORT = process.env.PORT || 5000;
+const PORT = (dotenvResult.parsed && dotenvResult.parsed.PORT) || process.env.PORT || 5000;
 
 // Create HTTP Server
 const server = http.createServer(app);
@@ -72,4 +72,4 @@ process.on('uncaughtException', (err) => {
   });
 });
 
-// Trigger nodemon restart - Redis config updated
+// Trigger nodemon restart - Cloudinary credentials updated

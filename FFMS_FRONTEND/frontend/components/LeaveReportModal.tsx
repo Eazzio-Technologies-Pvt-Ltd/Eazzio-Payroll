@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import { fetchClient } from "@/lib/fetch-client";
+// Use centralized api-client so Bearer token is included automatically
+import request from "@/lib/api-client";
 
 export function LeaveReportModal({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<any[]>([]);
@@ -10,21 +11,18 @@ export function LeaveReportModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     async function loadReport() {
       try {
-        const url = process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL}/leaves/report`
-          : "http://localhost:5000/api/v1/leaves/report";
-        const res = await fetchClient(url);
-        if (!res.ok) throw new Error("Failed to load leave report");
-        const json = await res.json();
-        setData(json.data || []);
+        // Correct backend route is /leave/report (not /leaves/report)
+        const res = await request<any[]>("GET", "/leave/report");
+        setData(res.data || []);
       } catch (err: any) {
-        setError(err.message);
+        setError(err.message || "Failed to load leave report");
       } finally {
         setLoading(false);
       }
     }
     loadReport();
   }, []);
+
 
   return (
     <div className="modal-overlay">

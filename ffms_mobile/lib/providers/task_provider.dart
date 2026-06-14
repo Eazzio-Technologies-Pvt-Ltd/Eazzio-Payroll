@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
+import '../services/socket_service.dart';
 
 class TaskProvider extends ChangeNotifier {
   List<TaskModel> _tasks = [];
@@ -17,6 +18,17 @@ class TaskProvider extends ChangeNotifier {
   List<TaskModel> get personalTasks => _personalTasks;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  TaskProvider() {
+    _initSocketListener();
+  }
+
+  void _initSocketListener() {
+    SocketService.onTaskAssigned = (data) {
+      debugPrint('Socket event received: task assigned');
+      fetchMyTasks();
+    };
+  }
 
   // Fetch tasks (assigned to me or created by me)
   Future<void> fetchMyTasks({String? status, String? type = 'assigned'}) async {

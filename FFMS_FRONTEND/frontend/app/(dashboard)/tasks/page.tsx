@@ -6,6 +6,7 @@ import { createTaskAsync, fetchTasks, deleteTaskAsync, updateTaskStatus, Task } 
 import { Employee } from "@/store/slices/employeeSlice";
 import { getStatusColor } from "@/lib/utils";
 import { Plus, Trash2, X, Flag, Calendar, User, Mail, CheckCircle } from "lucide-react";
+import CloudinaryImage from "@/components/common/CloudinaryImage";
 
 const STATUSES = ["pending", "in-progress", "completed"];
 const PRIORITIES = ["low", "medium", "high"];
@@ -139,6 +140,23 @@ export default function TasksPage() {
               <button onClick={()=>dispatch(deleteTaskAsync(task.id))} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",flexShrink:0 }}><Trash2 size={15}/></button>
             </div>
             <div style={{ fontSize:"13px",color:"var(--text-secondary)",lineHeight:1.5 }}>{task.description}</div>
+
+            {task.status === "completed" && (task.completionNote || (task.completionImages && task.completionImages.length > 0)) && (
+              <div style={{ padding: "10px", background: "rgba(34,211,165,0.04)", border: "1px solid rgba(34,211,165,0.15)", borderRadius: "6px", marginTop: "4px" }}>
+                {task.completionNote && (
+                  <div style={{ fontSize: "12px", color: "var(--text-primary)", marginBottom: task.completionImages && task.completionImages.length > 0 ? "8px" : 0 }}>
+                    <strong>Completion Note:</strong> {task.completionNote}
+                  </div>
+                )}
+                {task.completionImages && task.completionImages.length > 0 && (
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {task.completionImages.map((imgUrl: string, idx: number) => (
+                      <CloudinaryImage key={idx} url={imgUrl} placeholder="No Image" alt="Completion Proof" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Meta */}
             <div style={{ display:"flex",flexWrap:"wrap",gap:"8px" }}>

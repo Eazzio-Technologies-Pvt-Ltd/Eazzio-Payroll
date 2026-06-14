@@ -7,6 +7,7 @@ import { getStatusColor } from "@/lib/utils";
 import { Plus, Search, Trash2, Pencil, X, Coins, FileText, Calculator, Printer, Network, ChevronDown, ChevronRight, User } from "lucide-react";
 import Link from "next/link";
 import { geofenceApi, attendanceApi, tasksApi, travelApi, advanceApi, expensesApi, shiftApi } from "@/lib/api-client";
+import CloudinaryImage from "@/components/common/CloudinaryImage";
 
 const ROLES = ["FIELD_STAFF", "MANAGER", "ADMIN"];
 const DEFAULT_TERRITORIES = ["Mumbai North","Mumbai South","Thane","Pune","Navi Mumbai","Nashik"];
@@ -975,9 +976,19 @@ export default function EmployeesPage() {
                           ) : (
                             <div style={{ width: "14px" }} />
                           )}
-                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--bg-secondary)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: "12px", fontWeight: 700 }}>
-                            {emp.avatar}
-                          </div>
+                          {emp.avatar?.startsWith("http") ? (
+                            <CloudinaryImage 
+                              url={emp.avatar} 
+                              alt={emp.name} 
+                              width="32px" 
+                              height="32px" 
+                              className="rounded-full"
+                            />
+                          ) : (
+                            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--bg-secondary)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", fontSize: "12px", fontWeight: 700 }}>
+                              {emp.avatar}
+                            </div>
+                          )}
                           <div>
                             <div style={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: depth === 0 ? 700 : 500 }}>{emp.name}</div>
                             <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1117,7 +1128,17 @@ export default function EmployeesPage() {
                   <tr key={emp.id} style={{ opacity: isInactive ? 0.6 : 1, background: isInactive ? "var(--bg-hover)" : "none" }}>
                     <td>
                       <div style={{ display:"flex",alignItems:"center",gap:"10px" }}>
-                        <div style={{ width:"36px",height:"36px",borderRadius: "0",background: isInactive ? "var(--text-muted)" : "var(--accent-blue)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:"12px",color:"white",flexShrink:0 }}>{emp.avatar}</div>
+                        {emp.avatar?.startsWith("http") ? (
+                          <CloudinaryImage 
+                            url={emp.avatar} 
+                            alt={emp.name} 
+                            width="36px" 
+                            height="36px" 
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <div style={{ width:"36px",height:"36px",borderRadius: "0",background: isInactive ? "var(--text-muted)" : "var(--accent-blue)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:"12px",color:"white",flexShrink:0 }}>{emp.avatar}</div>
+                        )}
                         <div>
                           <div style={{ fontWeight:600,fontSize:"14px" }}>{emp.name}</div>
                           <div style={{ fontSize:"11px",color:"var(--text-muted)",fontWeight:600 }}>{emp.role}</div>

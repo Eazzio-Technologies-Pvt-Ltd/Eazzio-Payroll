@@ -552,6 +552,7 @@ model Expense {
   date         DateTime        @db.Date
   status       ExpenseStatus   @default(DRAFT)
   approvedById String?
+  approvalNote String?
   approvedBy   User?           @relation("ApprovedExpenses", fields: [approvedById], references: [id])
   taskId       String?
   createdAt    DateTime        @default(now())

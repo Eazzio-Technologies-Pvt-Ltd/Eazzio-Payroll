@@ -5,22 +5,26 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Image upload result containing base64 data and local path info.
+/// base64String always includes the `data:image/jpeg;base64,` prefix
+/// so the backend Cloudinary uploader receives a valid data URI.
+/// Backend handles all Cloudinary uploads — never call Cloudinary from mobile.
 class ImageUploadResult {
   final String base64String;
   final String path;
-  final String? url;
 
   ImageUploadResult({
     required this.base64String,
     required this.path,
-    this.url,
   });
 }
 
-/// A single reusable image upload utility class.
+/// Shared image utility — pick → compress (max 800×800px, q70, JPEG) → Base64
+/// Images are sent as Base64 inside JSON payloads to the backend.
+/// Backend uploads to Cloudinary and returns the secure_url.
+/// Never call Cloudinary directly from mobile.
 class ImageUploadUtil {
-  /// Prompts the user to pick an image, performs permission checks, compresses the image to < 1MB, 
-  /// and returns an ImageUploadResult containing the base64 string, local path, and a simulated Cloudinary URL.
+  /// Picks image from camera or gallery, compresses to max 800px / 70% quality,
+  /// and returns base64 prefixed with `data:image/jpeg;base64,` for backend use.
   static Future<ImageUploadResult?> pickAndCompressImage(
     BuildContext context, {
     required bool cameraOnly,
@@ -79,22 +83,22 @@ class ImageUploadUtil {
 
     if (selectedSource == null) return null;
 
-    // 3. Open image picker with compression settings
+    // 3. Open image picker — compress to 800px × 70% quality (keeps under 500KB typically)
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: selectedSource,
       preferredCameraDevice: preferredCameraDevice,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 40, // Drastically compresses JPEG quality to ensure file is under 1MB
+      maxWidth: 800,   // Max 800px width for network efficiency
+      maxHeight: 800,  // Max 800px height for network efficiency
+      imageQuality: 70, // 70% JPEG quality — good visual quality under 1MB
     );
 
     if (image == null) return null;
 
     // 4. Client-side Format & Size Validation
     final pathLower = image.path.toLowerCase();
-    final isValidFormat = pathLower.endsWith('.jpg') || 
-                          pathLower.endsWith('.jpeg') || 
+    final isValidFormat = pathLower.endsWith('.jpg') ||
+                          pathLower.endsWith('.jpeg') ||
                           pathLower.endsWith('.png');
 
     if (!isValidFormat) {
@@ -113,11 +117,11 @@ class ImageUploadUtil {
     final bytes = await file.readAsBytes();
     final double fileSizeMb = bytes.length / (1024 * 1024);
 
-    if (fileSizeMb > 1.0) {
+    if (fileSizeMb > 1.5) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Image is too large (${fileSizeMb.toStringAsFixed(2)}MB). Max limit is 1MB.'),
+            content: Text('Image is too large (${fileSizeMb.toStringAsFixed(2)}MB). Max limit is 1.5MB.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -125,17 +129,17 @@ class ImageUploadUtil {
       return null;
     }
 
-    // Convert to Base64
-    final String base64String = base64Encode(bytes);
-
-    // TODO: Backend API needed - Generic multipart image upload endpoint is missing on the backend.
-    // Returning a simulated/mock Cloudinary URL along with the base64 data to remain compatible with base64 APIs.
-    final String mockUrl = 'https://res.cloudinary.com/mock-cloud/image/upload/v12345/ffms/${image.name}';
+    // 5. Convert to Base64 and prefix with data URI header
+    // The `data:image/jpeg;base64,` prefix is required by the backend Cloudinary uploader.
+    // Backend also normalises this prefix if missing, but we enforce it here for consistency.
+    // Images sent as Base64 inside JSON — backend uploads to Cloudinary
+    // Never call Cloudinary directly from mobile
+    final String rawBase64 = base64Encode(bytes);
+    final String base64WithPrefix = 'data:image/jpeg;base64,$rawBase64';
 
     return ImageUploadResult(
-      base64String: base64String,
+      base64String: base64WithPrefix,
       path: image.path,
-      url: mockUrl,
     );
   }
 }

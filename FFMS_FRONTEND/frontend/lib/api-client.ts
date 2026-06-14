@@ -249,6 +249,7 @@ export interface ApiAttendance {
   status: string;
   isLate: boolean;
   notes: string | null;
+  selfieUrl: string | null;
 }
 
 export const attendanceApi = {
@@ -279,7 +280,14 @@ export interface ApiTask {
   createdById: string;
   createdBy?: { id: string; name: string };
   territory?: { id: string; name: string } | null;
-  assignments?: { id: string; userId: string; user?: { id: string; name: string }; status: string }[];
+  assignments?: { 
+    id: string; 
+    userId: string; 
+    user?: { id: string; name: string }; 
+    status: string;
+    completionNote?: string | null;
+    completionImages?: string[];
+  }[];
   createdAt: string;
 }
 
@@ -302,7 +310,7 @@ export const tasksApi = {
 export interface ApiExpense {
   id: string;
   userId: string;
-  user?: { id: string; name: string };
+  user?: { id: string; name: string; manager?: { name: string } };
   category: string;
   amount: number;
   description: string | null;
@@ -313,11 +321,20 @@ export interface ApiExpense {
   createdAt: string;
 }
 
+export interface ApiExpenseListResponse {
+  expenses: ApiExpense[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export const expensesApi = {
   getMy: (query?: Record<string, string | number | undefined>) =>
-    request<ApiExpense[]>("GET", "/expenses/my", undefined, query),
+    request<ApiExpenseListResponse>("GET", "/expenses/my", undefined, query),
+  getTeam: (query?: Record<string, string | number | undefined>) =>
+    request<ApiExpenseListResponse>("GET", "/expenses/team", undefined, query),
   getAll: (query?: Record<string, string | number | undefined>) =>
-    request<ApiExpense[]>("GET", "/expenses/all", undefined, query),
+    request<ApiExpenseListResponse>("GET", "/expenses/all", undefined, query),
   create: (data: Record<string, unknown>) =>
     request<ApiExpense>("POST", "/expenses", data),
   update: (id: string, data: Record<string, unknown>) =>
@@ -376,6 +393,8 @@ export const leaveApi = {
     request("PUT", `/leave/${id}/reject`, { approvalNote: note }),
   getAll: (query?: Record<string, string | number | undefined>) =>
     request("GET", "/leave/all", undefined, query),
+  getTeam: (query?: Record<string, string | number | undefined>) =>
+    request("GET", "/leave/team", undefined, query),
 };
 
 // ─── Location ────────────────────────────────────────
@@ -401,14 +420,31 @@ export const geofenceApi = {
 };
 
 // ─── Travel ──────────────────────────────────────────
+export interface ApiTravelLog {
+  id: string;
+  userId: string;
+  date: string;
+  meterStart: number | null;
+  meterEnd: number | null;
+  totalDistanceKm: number;
+  allowanceAmount: number;
+  proofImageUrl: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ApiTravelAllowanceResponse {
+  totalDistanceKm: number;
+  allowanceRate: number;
+  totalAllowanceAmount: number;
+  logs: ApiTravelLog[];
+}
+
 export const travelApi = {
   getUserMonthlyAllowance: (userId: string, year: number, month: number) =>
-    request<{ totalDistanceKm: number; allowanceRate: number; totalAllowanceAmount: number; logs: any[] }>(
-      "GET",
-      "/travel/all",
-      undefined,
-      { userId, year, month }
-    ),
+    request<ApiTravelAllowanceResponse>("GET", "/travel/all", undefined, { userId, year, month }),
+  getLogs: (query: { userId: string; year?: number; month?: number }) =>
+    request<ApiTravelAllowanceResponse>("GET", "/travel/all", undefined, query as any),
 };
 
 // ─── Advance ─────────────────────────────────────────
@@ -435,6 +471,7 @@ export const mapApi = {
   reverseGeocode: (lat: number | string, lng: number | string) =>
     request<{ results: any[] }>("GET", "/map/reverse-geocode", undefined, { lat, lng }),
 };
+
 
 export { ApiError };
 export default request;

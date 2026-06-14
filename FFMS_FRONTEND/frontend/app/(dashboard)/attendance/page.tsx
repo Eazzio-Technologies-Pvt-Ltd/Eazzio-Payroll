@@ -8,6 +8,7 @@ import { Clock, CheckCircle, XCircle, AlertCircle, FileText } from "lucide-react
 import { addNotification } from "@/store/slices/notificationSlice";
 import { fetchAttendance } from "@/store/slices/attendanceSlice";
 import { LeaveReportModal } from "@/components/LeaveReportModal";
+import CloudinaryImage from "@/components/common/CloudinaryImage";
 
 export default function AttendancePage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -189,6 +190,7 @@ export default function AttendancePage() {
           <thead>
             <tr>
               <th>Employee</th>
+              <th>Selfie</th>
               <th>Check In</th>
               <th>Check Out</th>
               <th>Hours Worked</th>
@@ -201,6 +203,9 @@ export default function AttendancePage() {
               <tr key={row.id}>
                 <td>
                   <div style={{ fontWeight:600,fontSize:"14px" }}>{row.name}</div>
+                </td>
+                <td style={{ padding: "8px 12px" }}>
+                  <CloudinaryImage url={row.selfieUrl} placeholder="No Selfie" alt={`${row.name} Selfie`} />
                 </td>
                 <td>
                   <span style={{ fontFamily:"monospace",fontSize:"13px",color: row.checkIn==="--" ? "var(--text-muted)" : "var(--accent-green)" }}>

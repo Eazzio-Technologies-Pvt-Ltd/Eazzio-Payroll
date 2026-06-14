@@ -1,15 +1,43 @@
 const prisma                = require('../config/prisma')
 const notificationService   = require('./notification.service')
+const cloudinary            = require('../config/cloudinary')
+const logger                = require('../config/logger')
+const { BadRequestError }   = require('../utils/errors')
+// Socket.IO emitter — real-time status push to mobile app
+const { emitToUser }        = require('../config/socket')
+
+/**
+ * Upload receipt image to Cloudinary
+ */
+const uploadReceiptImage = async (base64Str) => {
+  try {
+    const formatted = base64Str.startsWith('data:image')
+      ? base64Str
+      : `data:image/jpeg;base64,${base64Str}`;
+    const res = await cloudinary.uploader.upload(formatted, {
+      folder: 'ffms/receipts',
+      resource_type: 'image',
+    });
+    return res.secure_url;
+  } catch (err) {
+    logger.error('Failed to upload expense receipt image to Cloudinary:', err);
+    throw new BadRequestError('Failed to upload expense receipt image');
+  }
+};
 
 // ─── Create draft ─────────────────────────────────────────────────
 const createExpense = async (userId, data) => {
+  let receiptUrl = data.receiptUrl;
+  if (data.receiptBase64) {
+    receiptUrl = await uploadReceiptImage(data.receiptBase64);
+  }
   return prisma.expense.create({
     data: {
       userId,
       category:    data.category,
       amount:      data.amount,
       description: data.description,
-      receiptUrl:  data.receiptUrl,
+      receiptUrl,
       date:        new Date(data.date),
       taskId:      data.taskId,
       status:      'DRAFT',
@@ -29,7 +57,19 @@ const updateExpense = async (expenseId, userId, data) => {
   if (expense.status !== 'DRAFT') {
     const err = new Error('Only draft expenses can be edited'); err.statusCode = 400; throw err
   }
-  return prisma.expense.update({ where: { id: expenseId }, data })
+
+  const { receiptBase64, ...updateData } = data;
+  if (receiptBase64) {
+    updateData.receiptUrl = await uploadReceiptImage(receiptBase64);
+  }
+
+  return prisma.expense.update({
+    where: { id: expenseId },
+    data: {
+      ...updateData,
+      ...(updateData.date && { date: new Date(updateData.date) })
+    }
+  })
 }
 
 // ─── Submit for approval ──────────────────────────────────────────
@@ -86,7 +126,7 @@ const approveExpense = async (expenseId, managerId, approvalNote) => {
     data:  { status: 'APPROVED', approvedById: managerId, approvalNote }
   })
 
-  // Notify staff
+  // Notify staff via persistent notification
   await notificationService.createNotification({
     userId:      expense.userId,
     title:       'Expense Approved',
@@ -94,6 +134,15 @@ const approveExpense = async (expenseId, managerId, approvalNote) => {
     type:        'SYSTEM',
     referenceId: expenseId,
   })
+
+  // Real-time socket push so mobile app updates immediately without manual refresh
+  emitToUser(expense.userId, 'expense:status_updated', {
+    expenseId,
+    status:      'APPROVED',
+    approvedById: managerId,
+    approvalNote,
+    message:     `Your expense claim of ₹${expense.amount} has been approved`,
+  });
 
   return updated
 }
@@ -113,7 +162,7 @@ const rejectExpense = async (expenseId, managerId, approvalNote) => {
     data:  { status: 'REJECTED', approvedById: managerId, approvalNote }
   })
 
-  // Notify staff
+  // Notify staff via persistent notification
   await notificationService.createNotification({
     userId:      expense.userId,
     title:       'Expense Rejected',
@@ -121,6 +170,15 @@ const rejectExpense = async (expenseId, managerId, approvalNote) => {
     type:        'SYSTEM',
     referenceId: expenseId,
   })
+
+  // Real-time socket push so mobile app updates immediately without manual refresh
+  emitToUser(expense.userId, 'expense:status_updated', {
+    expenseId,
+    status:      'REJECTED',
+    approvedById: managerId,
+    approvalNote,
+    message:     `Your expense claim of ₹${expense.amount} was rejected. ${approvalNote || ''}`,
+  });
 
   return updated
 }
@@ -173,7 +231,16 @@ const getTeamExpenses = async (managerId, { page = 1, limit = 10, status } = {})
       orderBy: { date: 'desc' },
       skip:    (page - 1) * limit,
       take:    limit,
-      include: { user: { select: { id: true, name: true, employeeId: true } } }
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            employeeId: true,
+            manager: { select: { name: true } }
+          }
+        }
+      }
     }),
     prisma.expense.count({ where }),
   ])
@@ -194,8 +261,15 @@ const getAllExpenses = async (orgId, { page = 1, limit = 10, status, userId } = 
       skip:    (page - 1) * limit,
       take:    limit,
       include: {
-        user:      { select: { id: true, name: true, employeeId: true } },
-        approvedBy:{ select: { id: true, name: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            employeeId: true,
+            manager: { select: { name: true } }
+          }
+        },
+        approvedBy: { select: { id: true, name: true } },
       }
     }),
     prisma.expense.count({ where }),

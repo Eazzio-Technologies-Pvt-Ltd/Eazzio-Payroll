@@ -28,7 +28,7 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
   bool _isSubmitting = false;
   String? _base64Image;
 
-  final List<String> _leaveTypes = ['CASUAL', 'SICK', 'PLANNED', 'MATERNITY', 'PATERNITY'];
+  final List<String> _leaveTypes = ['CASUAL', 'SICK', 'EARNED', 'UNPAID', 'OTHER'];
 
   @override
   void initState() {
@@ -76,6 +76,8 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
     setState(() => _isSubmitting = true);
     final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
     
+    // Leave application submitted to POST /api/v1/leaves
+    // Status: PENDING → APPROVED / REJECTED by manager
     final success = await leaveProvider.applyLeave(
       leaveType: _selectedLeaveType,
       startDate: _startDate!,
