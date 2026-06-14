@@ -243,7 +243,7 @@ export default function RegisterPage() {
             
             {/* ─────────────── STEP 1: ACCOUNT DETAILS ─────────────── */}
             {step === 1 && (
-              <form onSubmit={handleNextStep1} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 
                 {/* Full Name */}
                 <div>
@@ -339,11 +339,11 @@ export default function RegisterPage() {
 
                 {/* Submit button at bottom */}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
-                  <button type="submit" className="btn-primary" style={{ padding: "12px 28px", fontSize: "14px", borderRadius: "0", background: "#0077ee" }}>
+                  <button type="button" onClick={handleNextStep1} className="btn-primary" style={{ padding: "12px 28px", fontSize: "14px", borderRadius: "0", background: "#0077ee" }}>
                     Continue <ArrowRight size={16} />
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* ─────────────── STEP 2: CHOOSE PLAN ─────────────── */}
@@ -494,7 +494,7 @@ export default function RegisterPage() {
 
             {/* ─────────────── STEP 3: CONFIRMATION ─────────────── */}
             {step === 3 && (
-              <form onSubmit={handleCompleteSetup} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 
                 {/* Summary Box */}
                 <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "20px" }}>
@@ -573,7 +573,8 @@ export default function RegisterPage() {
                     <div className="skeleton-box" style={{ width: "240px", height: "46px", borderRadius: "0" }} />
                   ) : (
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleCompleteSetup}
                       className="btn-primary"
                       style={{
                         padding: "12px 32px", fontSize: "14.5px", borderRadius: "0",
@@ -584,7 +585,7 @@ export default function RegisterPage() {
                     </button>
                   )}
                 </div>
-              </form>
+              </div>
             )}
 
           </div>

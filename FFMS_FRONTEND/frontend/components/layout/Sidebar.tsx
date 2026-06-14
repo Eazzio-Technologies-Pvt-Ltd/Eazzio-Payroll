@@ -31,6 +31,7 @@ import {
 
 const COLLAPSED_WIDTH = 64;
 const EXPANDED_WIDTH = 240;
+// Force reload 2
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -201,7 +202,6 @@ export default function Sidebar() {
               src="/logo.png" 
               alt="TR@NSForce" 
               style={{
-                filter: "brightness(0) invert(1)",
                 height: "100%",
                 width: isExpanded ? "auto" : "200px",
                 objectFit: "contain",

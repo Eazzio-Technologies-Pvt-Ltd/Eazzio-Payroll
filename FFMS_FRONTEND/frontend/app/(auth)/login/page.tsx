@@ -131,26 +131,30 @@ export default function LoginPage() {
   return (
     <div style={{
       height: "100vh",
-      background: "url(/login-bg.jpg) no-repeat center center / cover",
+      background: "#081d39",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "20px", position: "relative", overflow: "hidden",
     }}>
+      {/* Ambient glowing orbs for depth */}
+      <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+
 
       <div style={{ width: "100%", maxWidth: "410px", animation: "fadeIn 0.5s ease", position: "relative", zIndex: 2 }}>
         {/* Logo (replace TR@NSForce text) */}
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <img src="/logo.png" alt="Eazzio Payroll" style={{ width: 180, height: "auto", objectFit: "contain", display: "inline-block" }} />
-          <p style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500, marginTop: 8 }}>Sign in to your dashboard</p>
+          <p style={{ fontSize: "14px", color: "rgba(255, 255, 255, 0.85)", fontWeight: 500, marginTop: 12 }}>Sign in to your dashboard</p>
         </div>
 
         {/* Card */}
         <div style={{
-          background: "rgba(255, 255, 255, 0.95)",
-          border: "1px solid rgba(0, 82, 255, 0.12)",
-          borderRadius: "14px",
-          padding: "26px 28px",
+          background: "rgba(255, 255, 255, 0.98)",
+          border: "1px solid rgba(0, 82, 255, 0.1)",
+          borderRadius: "20px",
+          padding: "32px 28px",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 15px 35px rgba(0, 82, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02)",
+          boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 0 20px rgba(8, 29, 57, 0.2)",
         }}>
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Email */}
@@ -197,7 +201,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            
+
 
             {/* Button */}
             {loading ? (
@@ -225,7 +229,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12px", color: "var(--text-muted)" }}>
+        <p style={{ textAlign: "center", marginTop: "20px", fontSize: "12px", color: "rgba(255, 255, 255, 0.5)" }}>
           <MapPin size={12} style={{ display: "inline", marginRight: "4px" }} />
           Field Force Management System v1.0
         </p>
