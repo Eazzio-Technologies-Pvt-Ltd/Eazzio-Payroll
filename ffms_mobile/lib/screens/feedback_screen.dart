@@ -138,6 +138,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
                           value: _category,
+                          isExpanded: true,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: AppColors.background,

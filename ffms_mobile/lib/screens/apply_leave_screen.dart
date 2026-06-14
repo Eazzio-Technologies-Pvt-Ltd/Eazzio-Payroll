@@ -1,16 +1,18 @@
-// UI/UX v2 — modern premium design — Antigravity 2026
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/leave_provider.dart';
 import '../models/leave_model.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_toast.dart';
 import '../core/theme/app_theme.dart';
+import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
 
+// Apply leave screen v2 — modern balance badges + structured container + gradient submission
 class ApplyLeaveScreen extends StatefulWidget {
   const ApplyLeaveScreen({super.key});
 
@@ -49,7 +51,7 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
             colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
-              onSurface: AppColors.onSurface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -76,8 +78,6 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
     setState(() => _isSubmitting = true);
     final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
     
-    // Leave application submitted to POST /api/v1/leaves
-    // Status: PENDING → APPROVED / REJECTED by manager
     final success = await leaveProvider.applyLeave(
       leaveType: _selectedLeaveType,
       startDate: _startDate!,
@@ -107,7 +107,6 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
   Widget build(BuildContext context) {
     final leaveProvider = Provider.of<LeaveProvider>(context);
 
-    // Try finding the selected balance
     final balance = leaveProvider.balances.firstWhere(
       (b) => b.leaveType == _selectedLeaveType,
       orElse: () => LeaveBalanceModel(
@@ -121,15 +120,20 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text('Apply Leave', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Apply Leave', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary)),
         backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        // Responsive padding — no hardcoded values
+        padding: EdgeInsets.all(Responsive(context).cardPadding),
         child: Form(
           key: _formKey,
           child: Column(
@@ -139,25 +143,13 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.03),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  border: Border.all(color: AppColors.outlineVariant, width: 1),
-                ),
+                decoration: AppTheme.cardDecoration,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '$_selectedLeaveType QUOTA BALANCE',
-                      style: const TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
@@ -165,74 +157,51 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // Row uses Expanded to prevent right overflow on small screens
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildQuotaStat('Entitled', balance.totalEntitled),
-                        _buildQuotaStat('Used', balance.totalUsed),
-                        _buildQuotaStat('Pending', balance.totalPending),
-                        _buildQuotaStat('Available', balance.available, highlight: true),
+                        Expanded(child: _buildQuotaStat('Entitled', balance.totalEntitled)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildQuotaStat('Used', balance.totalUsed)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildQuotaStat('Pending', balance.totalPending)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildQuotaStat('Available', balance.available, highlight: true)),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Form Input Card Container
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.03),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  border: Border.all(color: AppColors.outlineVariant, width: 1),
-                ),
+                decoration: AppTheme.cardDecoration,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Leave Type Select
                     Text(
                       'Leave Type',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: _selectedLeaveType,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.background,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                        ),
-                      ),
+                      isExpanded: true, // isExpanded:true on dropdown prevents overflow
+                      decoration: modernInputDecoration(hint: 'Select Leave Type'),
                       dropdownColor: AppColors.surface,
                       items: _leaveTypes.map((type) {
                         return DropdownMenuItem<String>(
                           value: type,
                           child: Text(
                             type,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
                           ),
                         );
                       }).toList(),
@@ -247,20 +216,22 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                     // Date range selector
                     Text(
                       'Leave Duration',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
                       onTap: _selectDateRange,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.outlineVariant),
+                          color: AppColors.bgInput,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Row(
                           children: [
@@ -271,14 +242,14 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                                 _startDate == null
                                     ? 'Select start and end dates'
                                     : '${DateFormat('dd MMM yyyy').format(_startDate!)}  →  ${DateFormat('dd MMM yyyy').format(_endDate!)}',
-                                style: TextStyle(
-                                  color: _startDate == null ? AppColors.outline : AppColors.onSurface,
+                                style: GoogleFonts.inter(
+                                  color: _startDate == null ? AppColors.textTertiary : AppColors.textPrimary,
                                   fontSize: 14,
                                   fontWeight: _startDate == null ? FontWeight.normal : FontWeight.w600,
                                 ),
                               ),
                             ),
-                            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.outline),
+                            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
                           ],
                         ),
                       ),
@@ -303,9 +274,10 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                     // Attachment
                     Text(
                       'Attachment / Medical Proof',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -314,7 +286,7 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                         final picker = ImagePicker();
                         final XFile? image = await picker.pickImage(
                           source: ImageSource.camera,
-                          imageQuality: 30, // Compressed
+                          imageQuality: 30,
                           maxWidth: 800,
                           maxHeight: 800,
                         );
@@ -323,14 +295,15 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                           setState(() => _base64Image = base64Encode(bytes));
                         }
                       },
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                         decoration: BoxDecoration(
-                          color: _base64Image != null ? AppColors.surface : AppColors.background,
-                          borderRadius: BorderRadius.circular(16),
+                          color: _base64Image != null ? AppColors.successSoft : AppColors.bgInput,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                           border: Border.all(
-                            color: _base64Image != null ? AppColors.primary.withOpacity(0.4) : AppColors.outlineVariant,
+                            color: _base64Image != null ? AppColors.success.withOpacity(0.4) : AppColors.border,
                           ),
                         ),
                         child: Column(
@@ -341,28 +314,28 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                                 child: Image.memory(base64Decode(_base64Image!), height: 120, width: 120, fit: BoxFit.cover),
                               ),
                               const SizedBox(height: 12),
-                              const Row(
+                              Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.check_circle_rounded, color: AppColors.secondary, size: 16),
-                                  SizedBox(width: 6),
+                                  const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
+                                  const SizedBox(width: 6),
                                   Text(
                                     'Document Attached (Tap to retake)',
-                                    style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
+                                    style: GoogleFonts.inter(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
                             ] else ...[
                               const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 36),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'Tap to capture proof document',
-                                style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+                                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 'Camera capture only (Max size 5MB)',
-                                style: TextStyle(color: AppColors.outline, fontSize: 11),
+                                style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 11),
                               ),
                             ]
                           ],
@@ -372,7 +345,7 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Submit Button
               CustomButton(
@@ -388,33 +361,37 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
   }
 
   Widget _buildQuotaStat(String label, int val, {bool highlight = false}) {
+    // Container fills Expanded parent — no fixed horizontal padding to avoid overflow
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
       decoration: BoxDecoration(
-        color: highlight ? AppColors.primary.withOpacity(0.08) : AppColors.background,
+        color: highlight ? AppColors.primarySoft : AppColors.bgInput,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: highlight ? AppColors.primary.withOpacity(0.2) : AppColors.outlineVariant,
+          color: highlight ? AppColors.primary.withOpacity(0.2) : AppColors.border,
         ),
       ),
       child: Column(
         children: [
+          // Label — overflow ellipsis guards against very long labels
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              color: highlight ? AppColors.primary : AppColors.onSurfaceVariant,
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              color: highlight ? AppColors.primary : AppColors.textSecondary,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.2,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           const SizedBox(height: 6),
           Text(
             '$val',
-            style: TextStyle(
-              fontSize: 18,
+            style: GoogleFonts.inter(
+              fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: highlight ? AppColors.primary : AppColors.onSurface,
+              color: highlight ? AppColors.primary : AppColors.textPrimary,
             ),
           ),
         ],

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/attendance_provider.dart';
 import '../widgets/status_badge.dart';
 import '../core/theme/app_theme.dart';
 import 'apply_leave_screen.dart';
 
+// Attendance history screen v2 — premium cards + customized action appbar
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -27,14 +30,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final attendanceProvider = Provider.of<AttendanceProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text('My Attendance', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'My Attendance',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),
+        ),
         backgroundColor: AppColors.surface,
-        elevation: 0.5,
+        elevation: 0,
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.time_to_leave_outlined, size: 18),
-            label: const Text('Apply Leave'),
+            icon: const Icon(Icons.time_to_leave_outlined, size: 18, color: AppColors.primary),
+            label: Text(
+              'Apply Leave',
+              style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.bold),
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -44,29 +54,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
           const SizedBox(width: 8),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: RefreshIndicator(
-        // UI/UX v2 — modern premium design — Antigravity 2026
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         strokeWidth: 2.5,
         onRefresh: () async => attendanceProvider.fetchHistory(),
-        child: attendanceProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+        child: attendanceProvider.isLoading ? const SkeletonList()
             : attendanceProvider.attendanceHistory.isEmpty
                 ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                      const Center(
+                      Center(
                         child: Text(
                           'No attendance logs recorded yet.',
-                          style: TextStyle(color: AppColors.outline),
+                          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
                         ),
                       ),
                     ],
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: attendanceProvider.attendanceHistory.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -79,105 +93,108 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ? DateFormat('hh:mm a').format(log.punchOutTime!.toLocal())
                           : '--:--';
 
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    dateStr,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      return Container(
+                        decoration: AppTheme.cardDecoration,
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  dateStr,
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
                                   ),
-                                  StatusBadge(status: log.status),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                                Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        const Text(
-                                          'Punch In',
-                                          style: TextStyle(fontSize: 11, color: AppColors.outline),
+                                ),
+                                StatusBadge(status: log.status),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Punch In',
+                                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        punchInStr,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          punchInStr,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
+                                ),
+                                const SizedBox(width: 12),
+                                Container(
+                                  width: 1,
+                                  height: 30,
+                                  color: AppColors.border,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Punch Out',
+                                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        punchOutStr,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (log.totalWorkingHours != null) ...[
                                   const SizedBox(width: 12),
                                   Container(
                                     width: 1,
                                     height: 30,
-                                    color: AppColors.outlineVariant,
+                                    color: AppColors.border,
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        const Text(
-                                          'Punch Out',
-                                          style: TextStyle(fontSize: 11, color: AppColors.outline),
+                                        Text(
+                                          'Hours',
+                                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          punchOutStr,
-                                          style: const TextStyle(
+                                          '${log.totalWorkingHours!.toStringAsFixed(1)}h',
+                                          style: GoogleFonts.inter(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
-                                            color: AppColors.onSurface,
+                                            color: AppColors.primary,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  if (log.totalWorkingHours != null) ...[
-                                    const SizedBox(width: 12),
-                                    Container(
-                                      width: 1,
-                                      height: 30,
-                                      color: AppColors.outlineVariant,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          const Text(
-                                            'Hours',
-                                            style: TextStyle(fontSize: 11, color: AppColors.outline),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${log.totalWorkingHours!.toStringAsFixed(1)}h',
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.onSurface,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
                                 ],
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
                       );
                     },

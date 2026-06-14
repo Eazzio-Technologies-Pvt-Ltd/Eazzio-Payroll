@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../providers/notification_provider.dart';
+import '../providers/leave_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/empty_state.dart';
+import '../models/notification_model.dart';
+import '../models/leave_model.dart';
+import 'task_detail_screen.dart';
+import 'leave_detail_screen.dart';
+import 'expenses_screen.dart';
 
 // UI/UX v2 — modern premium design — Antigravity 2026
 class NotificationsScreen extends StatefulWidget {
@@ -20,6 +27,95 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
     });
+  }
+
+    Future<void> _handleNotificationTap(NotificationModel item) async {
+    final notifProvider = Provider.of<NotificationProvider>(context, listen: false);
+    
+    // Mark as read silently under the hood instantly
+    if (!item.isRead) {
+      notifProvider.markAsReadSilent(item.id);
+    }
+    
+    if (item.type == 'TASK' && item.referenceId.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TaskDetailScreen(taskId: item.referenceId),
+        ),
+      );
+    } else if (item.type == 'LEAVE' && item.referenceId.isNotEmpty) {
+      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+      LeaveModel? existingLeave;
+      for (final l in leaveProvider.leaves) {
+        if (l.id == item.referenceId) {
+          existingLeave = l;
+          break;
+        }
+      }
+      
+      if (existingLeave != null) {
+        // Instant redirect if already loaded locally
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LeaveDetailScreen(leave: existingLeave!),
+          ),
+        );
+      } else {
+        // Show loading spinner only while fetching from network
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        );
+        
+        try {
+          await leaveProvider.fetchMyLeaves();
+          if (mounted) {
+            Navigator.pop(context); // Close loading indicator
+            
+            LeaveModel? fetchedLeave;
+            for (final l in leaveProvider.leaves) {
+              if (l.id == item.referenceId) {
+                fetchedLeave = l;
+                break;
+              }
+            }
+            
+            if (fetchedLeave != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LeaveDetailScreen(leave: fetchedLeave!),
+                ),
+              );
+            } else {
+              throw Exception('Leave not found');
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            Navigator.pop(context); // Close loading dialog if open
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Could not open leave details: ${e.toString()}'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      }
+    } else if (item.type == 'EXPENSE') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ExpensesScreen(),
+        ),
+      );
+    }
   }
 
   @override
@@ -46,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         strokeWidth: 2.5,
         onRefresh: () async => notifProvider.fetchNotifications(),
         child: notifProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const _NotificationSkeletonList()
             : notifProvider.notifications.isEmpty
                 ? ListView(
                     children: [
@@ -69,11 +165,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return Card(
                         color: item.isRead ? AppColors.surface : AppColors.primaryContainer.withOpacity(0.04),
                         child: InkWell(
-                          onTap: () {
-                            if (!item.isRead) {
-                              notifProvider.markAsRead(item.id);
-                            }
-                          },
+                          onTap: () => _handleNotificationTap(item),
                           borderRadius: BorderRadius.circular(16),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -144,6 +236,80 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     },
                   ),
       ),
+    );
+  }
+}
+
+
+class _NotificationSkeletonList extends StatelessWidget {
+  const _NotificationSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[200]!,
+          highlightColor: Colors.grey[100]!,
+          child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey[200]!),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 140,
+                          height: 14,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 180,
+                          height: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: 80,
+                          height: 10,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

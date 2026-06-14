@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -139,8 +140,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         title: const Text('Create New Task', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0.5,
       ),
-      body: _fetchingEmployees
-          ? const Center(child: CircularProgressIndicator())
+      body: _fetchingEmployees ? const SkeletonList()
           : Form(
               key: _formKey,
               child: ListView(
@@ -176,6 +176,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   // Priority Selector
                   DropdownButtonFormField<String>(
                     value: _priority,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Priority',
                     ),

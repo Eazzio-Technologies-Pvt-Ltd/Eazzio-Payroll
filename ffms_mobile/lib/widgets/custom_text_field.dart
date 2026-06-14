@@ -1,5 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/theme/app_theme.dart';
+
+// Modern clean input field helper
+// Same controller and validation logic — only visual change
+InputDecoration modernInputDecoration({
+  required String hint,
+  String? label,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+  Widget? suffix,
+}) {
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    filled: true,
+    fillColor: AppColors.bgInput,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: 16, vertical: 14,
+    ),
+    prefixIcon: prefixIcon != null
+      ? Icon(prefixIcon, color: AppColors.textTertiary, size: 20)
+      : null,
+    suffixIcon: suffixIcon ?? suffix,
+    labelStyle: GoogleFonts.inter(
+      color: AppColors.textSecondary,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    ),
+    hintStyle: GoogleFonts.inter(
+      color: AppColors.textTertiary,
+      fontSize: 14,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+    ),
+  );
+}
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -32,10 +82,11 @@ class CustomTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -43,29 +94,14 @@ class CustomTextField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.outline) : null,
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontSize: 15,
+          ),
+          decoration: modernInputDecoration(
+            hint: hint,
+            prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
-            filled: true,
-            fillColor: AppColors.surface,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.outlineVariant),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.outlineVariant),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
           ),
           validator: validator,
         ),

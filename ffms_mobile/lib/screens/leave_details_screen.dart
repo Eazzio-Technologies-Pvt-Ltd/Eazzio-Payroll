@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/leave_provider.dart';
@@ -200,8 +201,7 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
                 onRefresh: () async {
                   _refreshData();
                 },
-                child: leaveProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                child: leaveProvider.isLoading ? const SkeletonList()
                     : leaveProvider.leaves.isEmpty
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -463,6 +463,7 @@ class _ApplyLeaveBottomSheetState extends State<ApplyLeaveBottomSheet> {
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedLeaveType,
+                isExpanded: true,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.background,

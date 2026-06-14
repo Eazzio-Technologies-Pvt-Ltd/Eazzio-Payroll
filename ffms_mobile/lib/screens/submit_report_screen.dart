@@ -184,6 +184,7 @@ class _SubmitReportScreenState extends State<SubmitReportScreen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: _selectedVisitType,
+                      isExpanded: true,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: AppColors.background,

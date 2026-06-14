@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/task_provider.dart';
 import '../models/task_model.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/custom_text_field.dart';
 import '../core/theme/app_theme.dart';
 import 'submit_report_screen.dart';
 
@@ -12,6 +15,7 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import '../utils/image_upload_util.dart';
 
+// Task detail screen v2 — clean cards + updated comments section + modern image selectors
 class TaskDetailScreen extends StatefulWidget {
   final String taskId;
 
@@ -66,7 +70,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Task status updated to ${newStatus.replaceAll('_', ' ')}'), backgroundColor: AppColors.secondary),
+          SnackBar(content: Text('Task status updated to ${newStatus.replaceAll('_', ' ')}'), backgroundColor: AppColors.success),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +80,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  // Send button wired to task message API
   Future<void> _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) {
@@ -92,12 +95,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     final success = await taskProvider.addComment(widget.taskId, text);
 
     if (success) {
-      // Clear input field on success
       _commentController.clear();
       _loadComments();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Comment sent successfully!'), backgroundColor: AppColors.secondary),
+          const SnackBar(content: Text('Comment sent successfully!'), backgroundColor: AppColors.success),
         );
       }
     } else {
@@ -127,28 +129,36 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Complete Task'),
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Complete Task',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextField(
+                    TextFormField(
                       controller: noteController,
-                      decoration: InputDecoration(
+                      maxLines: 3,
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                      decoration: modernInputDecoration(
+                        hint: 'Describe what was completed...',
+                      ).copyWith(
                         labelText: 'Completion Note *',
-                        hintText: 'Describe what was completed...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         errorText: noteController.text.trim().isEmpty && base64TaskImage != null
                             ? 'Completion note is required'
                             : null,
                       ),
-                      maxLines: 3,
-                      onChanged: (_) => setState(() {}), // rebuild to update error
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
+                        // Task Proof column
                         Column(
                           children: [
                             if (base64TaskImage != null)
@@ -157,19 +167,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 child: Image.memory(base64Decode(base64TaskImage!), height: 60, width: 60, fit: BoxFit.cover),
                               )
                             else
-                              const Icon(Icons.image, size: 40, color: Colors.grey),
+                              const Icon(Icons.image, size: 40, color: AppColors.textTertiary),
                             const SizedBox(height: 4),
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(80, 36),
+                                backgroundColor: base64TaskImage != null ? AppColors.successSoft : AppColors.primarySoft,
+                                foregroundColor: base64TaskImage != null ? AppColors.success : AppColors.primary,
+                                minimumSize: const Size(100, 36),
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
                               icon: const Icon(Icons.camera_alt, size: 14),
-                              label: const Text('Task Proof', style: TextStyle(fontSize: 10)),
+                              label: Text('Task Proof', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
                               onPressed: isPicking ? null : () async {
                                 setState(() => isPicking = true);
                                 try {
-                                  // Reusable image upload utility: checks camera/gallery permission, lets user choose, formats/sizes under 1MB
                                   final result = await ImageUploadUtil.pickAndCompressImage(
                                     context,
                                     cameraOnly: false,
@@ -185,6 +196,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ],
                         ),
+                        // Selfie column
                         Column(
                           children: [
                             if (base64SelfieImage != null)
@@ -193,19 +205,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 child: Image.memory(base64Decode(base64SelfieImage!), height: 60, width: 60, fit: BoxFit.cover),
                               )
                             else
-                              const Icon(Icons.face, size: 40, color: Colors.grey),
+                              const Icon(Icons.face, size: 40, color: AppColors.textTertiary),
                             const SizedBox(height: 4),
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(80, 36),
+                                backgroundColor: base64SelfieImage != null ? AppColors.successSoft : AppColors.primarySoft,
+                                foregroundColor: base64SelfieImage != null ? AppColors.success : AppColors.primary,
+                                minimumSize: const Size(100, 36),
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
                               icon: const Icon(Icons.camera_front, size: 14),
-                              label: const Text('Selfie', style: TextStyle(fontSize: 10)),
+                              label: Text('Selfie', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
                               onPressed: isPicking ? null : () async {
                                 setState(() => isPicking = true);
                                 try {
-                                  // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
                                   final result = await ImageUploadUtil.pickAndCompressImage(
                                     context,
                                     cameraOnly: true,
@@ -223,8 +236,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    // Mandatory fields validation notice
+                    const SizedBox(height: 16),
                     if (noteController.text.trim().isEmpty || base64TaskImage == null || base64SelfieImage == null)
                       Container(
                         padding: const EdgeInsets.all(10),
@@ -236,11 +248,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (noteController.text.trim().isEmpty)
-                              const Text('• Completion note is required', style: TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
+                              Text('• Completion note is required', style: GoogleFonts.inter(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
                             if (base64TaskImage == null)
-                              const Text('• Task Proof photo is required', style: TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
+                              Text('• Task Proof photo is required', style: GoogleFonts.inter(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
                             if (base64SelfieImage == null)
-                              const Text('• Selfie verification is required', style: TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
+                              Text('• Selfie verification is required', style: GoogleFonts.inter(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -250,19 +262,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     minimumSize: const Size(80, 36),
                   ),
-                  // Submit disabled unless ALL mandatory fields are filled
                   onPressed: (noteController.text.trim().isEmpty ||
                           base64TaskImage == null ||
                           base64SelfieImage == null)
                       ? null
                       : () => Navigator.pop(ctx, true),
-                  child: const Text('Submit'),
+                  child: Text('Submit', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -285,7 +298,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
     
-    // Find task from local list
     final task = taskProvider.tasks.firstWhere(
       (t) => t.id == widget.taskId,
       orElse: () => TaskModel(
@@ -300,12 +312,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     if (task.id.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Loading Task...')),
-        body: Center(
-          child: _isLoadingTask
-              ? const CircularProgressIndicator()
-              : const Text('Task not found.'),
-        ),
+        appBar: AppBar(title: Text('Loading Task...', style: GoogleFonts.inter(fontWeight: FontWeight.bold))),
+        body: _isLoadingTask
+            ? const SkeletonDetails()
+            : Center(
+                child: Text('Task not found.', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+              ),
       );
     }
 
@@ -313,10 +325,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     final assignmentStatus = assignment?.status ?? task.status;
 
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text('Task Detail', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Task Detail', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary)),
         backgroundColor: AppColors.surface,
-        elevation: 0.5,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -338,24 +355,34 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(task.title, style: Theme.of(context).textTheme.headlineLarge),
+                  Text(
+                    task.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (task.description != null && task.description!.isNotEmpty) ...[
                     Text(
                       task.description!,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
-                  const Divider(),
-                  const SizedBox(height: 8),
+                  const Divider(height: 24),
                   
-                  // Metadata grid
+                  // Metadata block
                   _buildDetailRow(context, Icons.folder_open, 'Project', task.projectName ?? 'No Project'),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   _buildDetailRow(context, Icons.location_on_outlined, 'Territory', task.territoryName ?? 'No Territory'),
                   if (task.createdBy != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     _buildDetailRow(
                       context,
                       Icons.person_pin_outlined,
@@ -363,7 +390,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       '${task.createdBy!.name} (${task.createdBy!.displayRole})',
                     ),
                   ],
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   _buildDetailRow(
                     context,
                     Icons.calendar_today_outlined,
@@ -385,28 +412,48 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         text: 'Start Task',
                         isLoading: _isActionInProgress,
                         onPressed: () => _handleStatusUpdate(assignment.id, 'IN_PROGRESS'),
-                        backgroundColor: AppColors.primary,
                       ),
                     if (assignmentStatus == 'IN_PROGRESS') ...[
                       CustomButton(
                         text: 'Complete Task',
                         isLoading: _isActionInProgress,
                         onPressed: () => _showCompletionDialog(assignment.id),
-                        backgroundColor: AppColors.secondary,
                       ),
                       const SizedBox(height: 12),
-                      CustomButton(
-                        text: 'Submit Visit Report',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SubmitReportScreen(assignmentId: assignment.id),
+                      Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(color: AppColors.primary, width: 1.5),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SubmitReportScreen(assignmentId: assignment.id),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            disabledBackgroundColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                             ),
-                          );
-                        },
-                        backgroundColor: AppColors.surface,
-                        textColor: AppColors.primary,
+                          ),
+                          child: Text(
+                            'Submit Visit Report',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -416,31 +463,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
             // Comments section header
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
                 'Comments & Updates',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
 
             // Comments input box
             Container(
               color: AppColors.surface,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _commentController,
-                      decoration: InputDecoration(
-                        hintText: 'Add a comment...',
-                        filled: true,
-                        fillColor: AppColors.background,
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                      decoration: modernInputDecoration(
+                        hint: 'Add a comment...',
+                      ).copyWith(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
                       ),
                     ),
                   ),
@@ -455,15 +502,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
             // Comments List
             if (_isLoadingComments)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(),
-              ))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
             else if (_comments.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24.0),
+              Padding(
+                padding: const EdgeInsets.all(32.0),
                 child: Center(
-                  child: Text('No comments yet.', style: TextStyle(color: AppColors.outline)),
+                  child: Text(
+                    'No comments yet.',
+                    style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 13),
+                  ),
                 ),
               )
             else
@@ -477,7 +529,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: AppColors.outlineVariant, width: 0.5)),
+                      color: AppColors.surface,
+                      border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,21 +540,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           children: [
                             Text(
                               comment.userName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                             ),
                             Text(
                               timeStr,
-                              style: const TextStyle(color: AppColors.outline, fontSize: 11),
+                              style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 11),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(comment.content, style: const TextStyle(fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Text(
+                          comment.content,
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        ),
                       ],
                     ),
                   );
                 },
               ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -511,21 +568,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.outline),
+        Icon(icon, size: 20, color: AppColors.textSecondary),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11, color: AppColors.outline, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.onSurface),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
         ),
       ],
     );

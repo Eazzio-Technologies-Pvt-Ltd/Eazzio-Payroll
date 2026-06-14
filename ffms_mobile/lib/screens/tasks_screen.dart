@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
 import '../widgets/task_card.dart';
@@ -8,11 +9,10 @@ import '../core/theme/app_theme.dart';
 import 'task_detail_screen.dart';
 import '../widgets/task_skeleton.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/custom_text_field.dart';
+import '../widgets/custom_button.dart';
 
-/// Task screen with unified single list — no "Assigned to Me" / "Created by Me" tabs.
-/// Each task card shows:
-/// - is_personal == true → badge: Personal Task
-/// - Assigned by manager/admin → Assigned by [assigned_by_name]
+// Task list screen v2 — clean search input + custom tabs + bottom sheet styling
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -62,7 +62,6 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
 
   void _fetchTasksForCurrentTab() {
     final status = _tabs[_tabController.index]['status'];
-    // Unified list — fetch all task types without type segmentation
     Provider.of<TaskProvider>(context, listen: false).fetchMyTasks(status: status);
   }
 
@@ -74,7 +73,6 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  /// Show Personal Task creation bottom sheet
   void _showPersonalTaskSheet() {
     showModalBottomSheet(
       context: context,
@@ -101,22 +99,32 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
     }).toList();
 
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'My Tasks',
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
         backgroundColor: AppColors.surface,
-        elevation: 0.5,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.outline,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          tabs: _tabs.map((t) => Tab(text: t['label'])).toList(),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 3,
+                labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
+                tabs: _tabs.map((t) => Tab(text: t['label'])).toList(),
+              ),
+              Container(color: AppColors.border, height: 1),
+            ],
+          ),
         ),
       ),
       body: Column(
@@ -129,35 +137,24 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
               onChanged: (val) {
                 setState(() => _searchQuery = val);
               },
-              decoration: InputDecoration(
-                hintText: 'Search tasks...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.outline),
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+              decoration: modernInputDecoration(
+                hint: 'Search tasks...',
+                prefixIcon: Icons.search,
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, size: 18, color: AppColors.textSecondary),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
                         },
                       )
                     : null,
-                filled: true,
-                fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
-                ),
               ),
             ),
           ),
 
           // Tasks List — single unified list
-// UI/UX v2 — modern premium design — Antigravity 2026
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primary,
@@ -191,7 +188,6 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
                             return TaskCard(
                               task: task,
                               onTap: () {
-                                // Local personal tasks cannot be opened in detail
                                 if (task.id.startsWith('local_')) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -214,20 +210,17 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           ),
         ],
       ),
-      // + Personal Task floating action button
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showPersonalTaskSheet,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Personal Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text('Personal Task', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
 }
 
 // ─── Personal Task Creation Bottom Sheet ──────────────────────────────────────
-// is_personal flag tells backend to hide this from admin/manager
-// Personal tasks saved locally first, synced to backend when online
 
 class _PersonalTaskSheet extends StatefulWidget {
   final VoidCallback onCreated;
@@ -297,7 +290,7 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
         Navigator.pop(context);
         widget.onCreated();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Personal task created!'), backgroundColor: AppColors.secondary),
+          const SnackBar(content: Text('Personal task created!'), backgroundColor: AppColors.success),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -311,7 +304,7 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.bgCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -332,31 +325,40 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Create Personal Task',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'This task is private to you and hidden from admin/manager.',
-                style: TextStyle(fontSize: 11, color: AppColors.outline),
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
 
               // Title field
+              Text(
+                'Task Title *',
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Task Title *',
-                  hintText: 'What do you need to do?',
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                decoration: modernInputDecoration(
+                  hint: 'What do you need to do?',
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Title is required';
@@ -366,12 +368,21 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               const SizedBox(height: 16),
 
               // Notes field
+              Text(
+                'Notes (optional)',
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _notesController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
-                  hintText: 'Add details...',
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                decoration: modernInputDecoration(
+                  hint: 'Add details...',
                 ),
               ),
               const SizedBox(height: 16),
@@ -381,30 +392,26 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                 onTap: _selectDueDate,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.outlineVariant),
-                  ),
+                  decoration: AppTheme.cardDecoration,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Due Date (optional)',
-                            style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             _dueDate != null
                                 ? DateFormat('dd MMM yyyy').format(_dueDate!)
                                 : 'Select date',
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: _dueDate != null ? AppColors.onSurface : AppColors.outline,
+                              color: _dueDate != null ? AppColors.textPrimary : AppColors.textTertiary,
                             ),
                           ),
                         ],
@@ -417,21 +424,10 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               const SizedBox(height: 24),
 
               // Submit Button
-              ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('Create Task', style: TextStyle(fontWeight: FontWeight.bold)),
+              CustomButton(
+                text: 'Create Task',
+                onPressed: _submit,
+                isLoading: _submitting,
               ),
             ],
           ),

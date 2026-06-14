@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../utils/image_upload_util.dart';
 import '../providers/task_provider.dart';
@@ -14,14 +15,16 @@ import '../providers/attendance_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/travel_provider.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/custom_text_field.dart';
 import '../widgets/user_avatar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/utils/constants.dart';
 import 'permissions_screen.dart';
 import 'request_advance_screen.dart';
+import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
 
-
+// Home screen v2 — premium card layouts + modern gradients
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -47,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Count-up timer removed — punch times now show real clock time, not elapsed duration
     // A lightweight 1-minute ticker keeps the "Hours Worked" calculation fresh without
     // flooding setState every second.
     _countUpTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -86,8 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
       travelProvider.fetchMonthlySummary(),
       travelProvider.fetchTravelHistory(limit: 30),
     ]);
-    // NOTE: retrieveLostData() removed — it was re-triggering punch-in flows
-    // when the camera app returned, causing the splash-screen-like blank refresh.
   }
 
   Future<void> _handleAttendanceAction() async {
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
             content: Text(success
                 ? (wasPunchedIn ? 'Punched Out Successfully!' : 'Punched In Successfully!')
                 : (attendanceProvider.errorMessage ?? 'Operation failed')),
-            backgroundColor: success ? AppColors.secondary : AppColors.error,
+            backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       }
@@ -192,6 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Uses Responsive helper — no hardcoded sizes
+    final r = Responsive(context);
     final authUser = Provider.of<AuthProvider>(context).currentUser;
     final attendanceProvider = Provider.of<AttendanceProvider>(context);
     final notifProvider = Provider.of<NotificationProvider>(context);
@@ -238,16 +240,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Eazzio Payroll',
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),
         ),
         actions: [
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined),
+                icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
                 onPressed: () => Navigator.pushNamed(context, '/notifications'),
               ),
               if (notifProvider.unreadCount > 0)
@@ -270,17 +273,20 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
         backgroundColor: AppColors.surface,
-        elevation: 0.5,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: RefreshIndicator(
-        // UI/UX v2 — modern premium design — Antigravity 2026
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         strokeWidth: 2.5,
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(r.screenPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -294,25 +300,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           '$greeting, ${authUser?.name.split(' ').first ?? 'Employee'} 👋',
-                          style: Theme.of(context).textTheme.headlineLarge,
+                          style: GoogleFonts.inter(
+                            fontSize: r.fontXXL,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
-                        Text(todayDate, style: Theme.of(context).textTheme.bodyMedium),
+                        SizedBox(height: r.spaceXS),
+                        Text(
+                          todayDate,
+                          style: GoogleFonts.inter(
+                            fontSize: r.fontSM,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  // Profile photo shown in greeting — fetched from logged-in user session
                   UserAvatar(
                     photoUrl: authUser?.profileImage,
                     name: authUser?.name ?? 'Employee',
-                    radius: 24,
+                    radius: r.iconSizeMD,
                     onTap: () => Navigator.pushNamed(context, '/profile'),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: r.spaceMD),
 
               // ─── Punch Action Button ─────────────────────────────────
               (() {
@@ -322,19 +338,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF16A34A).withOpacity(0.1),
-                        border: Border.all(color: const Color(0xFF16A34A), width: 1.5),
+                        color: AppColors.successSoft,
+                        border: Border.all(color: AppColors.success, width: 1.5),
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 24),
-                          SizedBox(width: 8),
+                          const Icon(Icons.check_circle, color: AppColors.success, size: 24),
+                          const SizedBox(width: 8),
                           Text(
                             'Day Complete',
-                            style: TextStyle(
-                              color: Color(0xFF16A34A),
+                            style: GoogleFonts.inter(
+                              color: AppColors.success,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -364,14 +380,56 @@ class _HomeScreenState extends State<HomeScreen> {
                   buttonIcon = Icons.logout;
                 }
 
-                return CustomButton(
-                  text: buttonText,
-                  isLoading: attendanceProvider.isLoading,
-                  backgroundColor: isPunchedIn ? AppColors.error : const Color(0xFF2563EB),
-                  textColor: Colors.white,
-                  icon: buttonIcon,
-                  onPressed: _handleAttendanceAction,
+                // Gradient punch buttons with custom shadows
+                return Container(
+                  width: double.infinity,
                   height: 56,
+                  decoration: BoxDecoration(
+                    gradient: isPunchedIn ? AppTheme.punchOutGradient : AppTheme.punchInGradient,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isPunchedIn ? AppColors.error : AppColors.success).withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      disabledBackgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                    ),
+                    onPressed: attendanceProvider.isLoading ? null : _handleAttendanceAction,
+                    child: attendanceProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(buttonIcon, size: 20, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Text(
+                                buttonText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 );
               })(),
               const SizedBox(height: 20),
@@ -379,40 +437,36 @@ class _HomeScreenState extends State<HomeScreen> {
               // ─── 2b: Three-Card Punch Layout ──────────────────────────────
               Row(
                 children: [
-                  // Card 1: Punch In Time / Timer
+                  // Card 1: Punch In Time
                   Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Punch In Time',
-                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                      decoration: AppTheme.cardDecoration,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Punch In Time',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            firstPunchIn != null
+                                ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
+                                : '--:--:--',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.success,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              // Show the real punch-in clock time in HH:MM:SS format.
-                              // This is the moment the user actually punched in — not an elapsed timer.
-                              // Source: phone clock at the moment of punch, stored in punchInTime from server.
-                              firstPunchIn != null
-                                  ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
-                                  : '--:--:--',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.secondary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              firstPunchIn != null ? 'Started' : 'Not Active',
-                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
-                            ),
-                          ],
-                        ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            firstPunchIn != null ? 'Started' : 'Not Active',
+                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -420,37 +474,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Card 2: Punch Out Time
                   Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Punch Out Time',
-                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                      decoration: AppTheme.cardDecoration,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Punch Out Time',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            lastPunchOut != null
+                                ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
+                                : '--:--:--',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.error,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              // Show the real punch-out clock time in HH:MM:SS format.
-                              // Source: phone clock at the moment of punch-out, stored from server response.
-                              lastPunchOut != null
-                                  ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
-                                  : '--:--:--',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.error,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              lastPunchOut != null ? 'Completed' : 'Pending',
-                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
-                            ),
-                          ],
-                        ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            lastPunchOut != null ? 'Completed' : 'Pending',
+                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -458,33 +509,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Card 3: Hours Worked Today
                   Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Hours Worked Today',
-                              style: TextStyle(fontSize: 10, color: AppColors.outline, fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                      decoration: AppTheme.cardDecoration,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Hours Worked',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${totalHours.toStringAsFixed(1)} hrs',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${totalHours.toStringAsFixed(1)} hrs',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Target: 9h',
-                              style: const TextStyle(fontSize: 9, color: AppColors.outline),
-                            ),
-                          ],
-                        ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Target: 9h',
+                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -493,465 +543,474 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 8),
 
               // Target 9h progress bar
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Shift Progress',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                          ),
-                          Text(
-                            '${(totalHours * 60).round() ~/ 60}h ${(totalHours * 60).round() % 60}m / 9h 00m',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (totalHours / 9.0).clamp(0.0, 1.0),
-                          backgroundColor: AppColors.outlineVariant,
-                          color: AppColors.primary,
-                          minHeight: 8,
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: AppTheme.cardDecoration,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Shift Progress',
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
+                        Text(
+                          '${(totalHours * 60).round() ~/ 60}h ${(totalHours * 60).round() % 60}m / 9h 00m',
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (totalHours / 9.0).clamp(0.0, 1.0),
+                        backgroundColor: AppColors.border,
+                        color: AppColors.primary,
+                        minHeight: 8,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
 
               // ─── 2c: Two-Column Distance Travel Block ───────────────────
-              SizedBox(
+              Container(
                 width: double.infinity,
-                child: Card(
-                  child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Travel & Odometer Summary',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.onSurface),
-                      ),
-                      const SizedBox(height: 12),
-                      (() {
-                        final leftCol = Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.outlineVariant),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Text(
-                                "Today's Entry",
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                decoration: AppTheme.cardDecoration,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Travel & Odometer Summary',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+                    (() {
+                      final leftCol = Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgInput,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              "Today's Entry",
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            ),
+                            const SizedBox(height: 12),
+                            if (travelProvider.todayLog == null) ...[
+                              Text(
+                                'No odometer readings recorded for today.',
+                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
                               ),
                               const SizedBox(height: 12),
-                              if (travelProvider.todayLog == null) ...[
-                                const Text(
-                                  'No odometer readings recorded for today.',
-                                  style: TextStyle(fontSize: 11, color: AppColors.outline),
+                              ElevatedButton(
+                                onPressed: () => _showTravelEntrySheet(context, travelProvider),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
+                                child: Text('Are You Travelling Today?', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            ] else ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Start Meter:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                                  Text('${travelProvider.todayLog!.meterStart?.toStringAsFixed(0) ?? "--"} KM', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('End Meter:', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                                  Text('${travelProvider.todayLog!.meterEnd?.toStringAsFixed(0) ?? "--"} KM', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Divider(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Distance:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  Text('${travelProvider.todayDistanceKm.toStringAsFixed(1)} KM', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Allowance:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  Text('₹${travelProvider.todayAllowance.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success)),
+                                ],
+                              ),
+                              if (travelProvider.todayLog!.meterEnd == null) ...[
                                 const SizedBox(height: 12),
                                 ElevatedButton(
-                                  onPressed: () => _showTravelEntrySheet(context, travelProvider),
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (sheetContext) => TravelEntrySheet(travelProvider: travelProvider),
+                                    );
+                                  },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  child: const Text('Are You Travelling Today?', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  child: Text('Complete Travel Log', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
                                 ),
-                              ] else ...[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Start Meter:', style: TextStyle(fontSize: 11, color: AppColors.outline)),
-                                    Text('${travelProvider.todayLog!.meterStart?.toStringAsFixed(0) ?? "--"} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('End Meter:', style: TextStyle(fontSize: 11, color: AppColors.outline)),
-                                    Text('${travelProvider.todayLog!.meterEnd?.toStringAsFixed(0) ?? "--"} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Distance:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                    Text('${travelProvider.todayDistanceKm.toStringAsFixed(1)} KM', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Allowance:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                    Text('₹${travelProvider.todayAllowance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                                  ],
-                                ),
-                                if (travelProvider.todayLog!.meterEnd == null) ...[
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (sheetContext) => TravelEntrySheet(travelProvider: travelProvider),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    child: const Text('Complete Travel Log', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
                               ],
                             ],
-                          ),
-                        );
+                          ],
+                        ),
+                      );
 
-                        final rightCol = Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.outlineVariant),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'History',
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                  DropdownButton<String>(
-                                    value: _travelFilter,
-                                    isDense: true,
-                                    style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold),
-                                    underline: const SizedBox(),
-                                    items: const [
-                                      DropdownMenuItem(value: 'today', child: Text('Today')),
-                                      DropdownMenuItem(value: '7', child: Text('7 Days')),
-                                      DropdownMenuItem(value: '15', child: Text('15 Days')),
-                                      DropdownMenuItem(value: '30', child: Text('30 Days')),
-                                      DropdownMenuItem(value: 'custom', child: Text('Custom')),
-                                    ],
-                                    onChanged: (val) async {
-                                      if (val == 'custom') {
-                                        final range = await showDateRangePicker(
-                                          context: context,
-                                          firstDate: DateTime.now().subtract(const Duration(days: 90)),
-                                          lastDate: DateTime.now(),
-                                        );
-                                        if (range != null) {
-                                          setState(() {
-                                            _customDateRange = range;
-                                            _travelFilter = 'custom';
-                                          });
-                                        }
-                                      } else if (val != null) {
-                                        setState(() {
-                                          _travelFilter = val;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              (() {
-                                final now = DateTime.now();
-                                final filteredLogs = travelProvider.history.where((log) {
-                                  final logDate = log.date.toLocal();
-                                  if (_travelFilter == 'today') {
-                                    return logDate.year == now.year && logDate.month == now.month && logDate.day == now.day;
-                                  } else if (_travelFilter == '7') {
-                                    return now.difference(logDate).inDays <= 7;
-                                  } else if (_travelFilter == '15') {
-                                    return now.difference(logDate).inDays <= 15;
-                                  } else if (_travelFilter == '30') {
-                                    return now.difference(logDate).inDays <= 30;
-                                  } else if (_travelFilter == 'custom' && _customDateRange != null) {
-                                    return logDate.isAfter(_customDateRange!.start.subtract(const Duration(days: 1))) &&
-                                        logDate.isBefore(_customDateRange!.end.add(const Duration(days: 1)));
-                                  }
-                                  return true;
-                                }).toList();
-
-                                if (filteredLogs.isEmpty) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 20.0),
-                                    child: Text(
-                                      'No travel logs found.',
-                                      style: TextStyle(fontSize: 10, color: AppColors.outline),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  );
-                                }
-
-                                double totalAllowance = filteredLogs.fold(0.0, (sum, log) => sum + log.allowanceAmount);
-
-                                return Column(
-                                  children: [
-                                    SizedBox(
-                                      height: 100,
-                                      child: ListView.separated(
-                                        shrinkWrap: true,
-                                        itemCount: filteredLogs.length,
-                                        separatorBuilder: (_, __) => const Divider(height: 8),
-                                        itemBuilder: (context, index) {
-                                          final log = filteredLogs[index];
-                                          return Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                DateFormat('dd MMM').format(log.date.toLocal()),
-                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                                              ),
-                                              Text(
-                                                '${log.totalDistanceKm.toStringAsFixed(0)} KM',
-                                                style: const TextStyle(fontSize: 10),
-                                              ),
-                                              Text(
-                                                '₹${log.allowanceAmount.toStringAsFixed(0)}',
-                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    const Divider(height: 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text('Total:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                        Text('₹${totalAllowance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                                      ],
-                                    ),
-                                  ],
-                                );
-                              })(),
-                            ],
-                          ),
-                        );
-
-                        if (MediaQuery.of(context).size.width < 500) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              leftCol,
-                              const SizedBox(height: 12),
-                              rightCol,
-                            ],
-                          );
-                        } else {
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 6, child: leftCol),
-                              const SizedBox(width: 8),
-                              Expanded(flex: 7, child: rightCol),
-                            ],
-                          );
-                        }
-                      })(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-              const SizedBox(height: 16),
-
-              // ─── 2d: Dynamic Salary Block ──────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                child: Card(
-                  child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Salary Earned',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.onSurface),
-                      ),
-                      const SizedBox(height: 12),
-                      (() {
-                        final baseSalary = authUser?.baseSalary ?? 0.0;
-                        if (baseSalary == 0.0) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: Text(
-                              'Base salary not configured in your profile. Please contact HR.',
-                              style: TextStyle(fontSize: 11, color: AppColors.outline),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        }
-
-                        final logs = attendanceProvider.attendanceHistory;
-                        if (logs.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: Text(
-                              'No attendance history to calculate salary.',
-                              style: TextStyle(fontSize: 11, color: AppColors.outline),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        }
-
-                        // Calculate daily salary components (standard 26 working days)
-                        final dailySalaryRate = baseSalary / 26.0;
-
-                        // Group sessions by date to prevent duplicate rows
-                        // LATE status treated as full day pay per business rules
-                        final Map<String, List<dynamic>> groupedByDate = {};
-                        for (final log in logs) {
-                          final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
-                          groupedByDate.putIfAbsent(dateStr, () => []).add(log);
-                        }
-
-                        // Define status ranking to determine the highest status for multiple sessions
-                        int getStatusRank(String status) {
-                          final upper = status.toUpperCase();
-                          if (upper == 'PRESENT' || upper == 'ON_DUTY') return 4;
-                          if (upper == 'LATE') return 3;
-                          if (upper == 'HALF_DAY') return 2;
-                          if (upper == 'ABSENT') return 1;
-                          return 0;
-                        }
-
-                        final List<Map<String, dynamic>> groupedLogs = groupedByDate.entries.map((entry) {
-                          final dateLogs = entry.value;
-
-                          // Sum total working hours for the date
-                          double totalHours = 0.0;
-                          for (final l in dateLogs) {
-                            totalHours += l.totalWorkingHours ?? 0.0;
-                          }
-
-                          // Get highest status session of the date
-                          dynamic highestLog = dateLogs.first;
-                          int highestRank = getStatusRank(highestLog.status);
-                          for (final l in dateLogs) {
-                            final rank = getStatusRank(l.status);
-                            if (rank > highestRank) {
-                              highestRank = rank;
-                              highestLog = l;
-                            }
-                          }
-
-                          final finalStatus = highestLog.status.toUpperCase();
-                          double salaryFactor = 0.0;
-                          bool isPayable = false;
-
-                          // PRESENT -> 100%, LATE -> 100%, HALF_DAY -> 50%, ABSENT or other -> 0%
-                          if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
-                            salaryFactor = 1.0;
-                            isPayable = true;
-                          } else if (finalStatus == 'HALF_DAY') {
-                            salaryFactor = 0.5;
-                            isPayable = true;
-                          }
-
-                          final dailySalary = dailySalaryRate * salaryFactor;
-
-                          return {
-                            'date': highestLog.date as DateTime,
-                            'totalHours': totalHours,
-                            'dailySalary': dailySalary,
-                            'isPayable': isPayable,
-                          };
-                        }).toList();
-
-                        // Sort grouped logs by date descending
-                        groupedLogs.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
-
-                        return Column(
+                      final rightCol = Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgInput,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: groupedLogs.take(5).length,
-                              separatorBuilder: (_, __) => const Divider(height: 8),
-                              itemBuilder: (context, index) {
-                                final gLog = groupedLogs[index];
-                                final isPayable = gLog['isPayable'] as bool;
-                                final dailySalary = gLog['dailySalary'] as double;
-                                final date = gLog['date'] as DateTime;
-                                final totalHours = gLog['totalHours'] as double;
-
-                                return Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      DateFormat('dd MMM yyyy').format(date),
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                                    ),
-                                    Text(
-                                      '${totalHours.toStringAsFixed(1)} hrs',
-                                      style: const TextStyle(fontSize: 11),
-                                    ),
-                                    Text(
-                                      '₹${dailySalary.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: isPayable ? const Color(0xFF16A34A) : AppColors.error,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const Divider(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Accrued Salary (This Month):',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
                                 Text(
-                                  '₹${groupedLogs.fold<double>(0.0, (sum, gLog) {
-                                    return sum + (gLog['dailySalary'] as double);
-                                  }).toStringAsFixed(2)}',
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                                  'History',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                ),
+                                DropdownButton<String>(
+                                  value: _travelFilter,
+                                  isDense: true,
+                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold),
+                                  underline: const SizedBox(),
+                                  items: const [
+                                    DropdownMenuItem(value: 'today', child: Text('Today')),
+                                    DropdownMenuItem(value: '7', child: Text('7 Days')),
+                                    DropdownMenuItem(value: '15', child: Text('15 Days')),
+                                    DropdownMenuItem(value: '30', child: Text('30 Days')),
+                                    DropdownMenuItem(value: 'custom', child: Text('Custom')),
+                                  ],
+                                  onChanged: (val) async {
+                                    if (val == 'custom') {
+                                      final range = await showDateRangePicker(
+                                        context: context,
+                                        firstDate: DateTime.now().subtract(const Duration(days: 90)),
+                                        lastDate: DateTime.now(),
+                                      );
+                                      if (range != null) {
+                                        setState(() {
+                                          _customDateRange = range;
+                                          _travelFilter = 'custom';
+                                        });
+                                      }
+                                    } else if (val != null) {
+                                      setState(() {
+                                        _travelFilter = val;
+                                      });
+                                    }
+                                  },
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 8),
+                            (() {
+                              final now = DateTime.now();
+                              final filteredLogs = travelProvider.history.where((log) {
+                                final logDate = log.date.toLocal();
+                                if (_travelFilter == 'today') {
+                                  return logDate.year == now.year && logDate.month == now.month && logDate.day == now.day;
+                                } else if (_travelFilter == '7') {
+                                  return now.difference(logDate).inDays <= 7;
+                                } else if (_travelFilter == '15') {
+                                  return now.difference(logDate).inDays <= 15;
+                                } else if (_travelFilter == '30') {
+                                  return now.difference(logDate).inDays <= 30;
+                                } else if (_travelFilter == 'custom' && _customDateRange != null) {
+                                  return logDate.isAfter(_customDateRange!.start.subtract(const Duration(days: 1))) &&
+                                      logDate.isBefore(_customDateRange!.end.add(const Duration(days: 1)));
+                                }
+                                  return true;
+                              }).toList();
+
+                              if (filteredLogs.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                                  child: Text(
+                                    'No travel logs found.',
+                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                );
+                              }
+
+                              double totalAllowance = filteredLogs.fold(0.0, (sum, log) => sum + log.allowanceAmount);
+
+                              return Column(
+                                children: [
+                                  SizedBox(
+                                    height: 100,
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      itemCount: filteredLogs.length,
+                                      separatorBuilder: (_, __) => const Divider(height: 8),
+                                      itemBuilder: (context, index) {
+                                        final log = filteredLogs[index];
+                                        return Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              DateFormat('dd MMM').format(log.date.toLocal()),
+                                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                            ),
+                                            Text(
+                                              '${log.totalDistanceKm.toStringAsFixed(0)} KM',
+                                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                            ),
+                                            Text(
+                                              '₹${log.allowanceAmount.toStringAsFixed(0)}',
+                                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const Divider(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Total:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                      Text('₹${totalAllowance.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success)),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            })(),
+                          ],
+                        ),
+                      );
+
+                      if (MediaQuery.of(context).size.width < 500) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            leftCol,
                             const SizedBox(height: 12),
-                            // Advance pay backend endpoint not yet available
-                            // UI ready — waiting for backend implementation
-                            ElevatedButton.icon(
+                            rightCol,
+                          ],
+                        );
+                      } else {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 6, child: leftCol),
+                            const SizedBox(width: 8),
+                            Expanded(flex: 7, child: rightCol),
+                          ],
+                        );
+                      }
+                    })(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ─── 2d: Dynamic Salary Block ──────────────────────────────────
+              Container(
+                width: double.infinity,
+                decoration: AppTheme.cardDecoration,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Salary Earned',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+                    (() {
+                      final baseSalary = authUser?.baseSalary ?? 0.0;
+                      if (baseSalary == 0.0) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            'Base salary not configured in your profile. Please contact HR.',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+
+                      final logs = attendanceProvider.attendanceHistory;
+                      if (logs.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            'No attendance history to calculate salary.',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+
+                      // Calculate daily salary components (standard 26 working days)
+                      final dailySalaryRate = baseSalary / 26.0;
+
+                      // Group sessions by date to prevent duplicate rows
+                      // LATE status treated as full day pay per business rules
+                      final Map<String, List<dynamic>> groupedByDate = {};
+                      for (final log in logs) {
+                        final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
+                        groupedByDate.putIfAbsent(dateStr, () => []).add(log);
+                      }
+
+                      // Define status ranking to determine the highest status for multiple sessions
+                      int getStatusRank(String status) {
+                        final upper = status.toUpperCase();
+                        if (upper == 'PRESENT' || upper == 'ON_DUTY') return 4;
+                        if (upper == 'LATE') return 3;
+                        if (upper == 'HALF_DAY') return 2;
+                        if (upper == 'ABSENT') return 1;
+                        return 0;
+                      }
+
+                      final List<Map<String, dynamic>> groupedLogs = groupedByDate.entries.map((entry) {
+                        final dateLogs = entry.value;
+
+                        // Sum total working hours for the date
+                        double totalHours = 0.0;
+                        for (final l in dateLogs) {
+                          totalHours += l.totalWorkingHours ?? 0.0;
+                        }
+
+                        // Get highest status session of the date
+                        dynamic highestLog = dateLogs.first;
+                        int highestRank = getStatusRank(highestLog.status);
+                        for (final l in dateLogs) {
+                          final rank = getStatusRank(l.status);
+                          if (rank > highestRank) {
+                            highestRank = rank;
+                            highestLog = l;
+                          }
+                        }
+
+                        final finalStatus = highestLog.status.toUpperCase();
+                        double salaryFactor = 0.0;
+                        bool isPayable = false;
+
+                        // PRESENT -> 100%, LATE -> 100%, HALF_DAY -> 50%, ABSENT or other -> 0%
+                        if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
+                          salaryFactor = 1.0;
+                          isPayable = true;
+                        } else if (finalStatus == 'HALF_DAY') {
+                          salaryFactor = 0.5;
+                          isPayable = true;
+                        }
+
+                        final dailySalary = dailySalaryRate * salaryFactor;
+
+                        return {
+                          'date': highestLog.date as DateTime,
+                          'totalHours': totalHours,
+                          'dailySalary': dailySalary,
+                          'isPayable': isPayable,
+                        };
+                      }).toList();
+
+                      // Sort grouped logs by date descending
+                      groupedLogs.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: groupedLogs.take(5).length,
+                            separatorBuilder: (_, __) => const Divider(height: 8),
+                            itemBuilder: (context, index) {
+                              final gLog = groupedLogs[index];
+                              final isPayable = gLog['isPayable'] as bool;
+                              final dailySalary = gLog['dailySalary'] as double;
+                              final date = gLog['date'] as DateTime;
+                              final totalHours = gLog['totalHours'] as double;
+
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    DateFormat('dd MMM yyyy').format(date),
+                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                  ),
+                                  Text(
+                                    '${totalHours.toStringAsFixed(1)} hrs',
+                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                  Text(
+                                    '₹${dailySalary.toStringAsFixed(2)}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isPayable ? AppColors.success : AppColors.error,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          const Divider(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Accrued Salary (This Month):',
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              ),
+                              Text(
+                                '₹${groupedLogs.fold<double>(0.0, (sum, gLog) {
+                                  return sum + (gLog['dailySalary'] as double);
+                                }).toStringAsFixed(2)}',
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // Salary Advance Gradient Action Button
+                          Container(
+                            width: double.infinity,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.salaryGradient,
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withOpacity(0.20),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -961,27 +1020,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.onPrimary,
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                disabledBackgroundColor: Colors.transparent,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
                               ),
-                              icon: const Icon(Icons.payment, size: 16),
-                              label: const Text(
+                              icon: const Icon(Icons.payment, size: 18, color: Colors.white),
+                              label: Text(
                                 'Request Salary Advance',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
-                          ],
-                        );
-                      })(),
-                    ],
-                  ),
+                          ),
+                        ],
+                      );
+                    })(),
+                  ],
                 ),
               ),
-            ),
               const SizedBox(height: 24),
             ],
           ),
@@ -995,18 +1053,19 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Are You Travelling Today?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
+        title: Text('Are You Travelling Today?', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        content: Text(
           'If you are travelling for field force visits, please log your start and end odometer readings to claim travel allowance.',
-          style: TextStyle(fontSize: 13, height: 1.4),
+          style: GoogleFonts.inter(fontSize: 13, height: 1.4, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext); // Close dialog, no further action
+              Navigator.pop(dialogContext);
             },
-            child: const Text('No, I\'m Not', style: TextStyle(color: AppColors.outline, fontWeight: FontWeight.bold)),
+            child: Text('No, I\'m Not', style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1015,8 +1074,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
-              Navigator.pop(dialogContext); // Close dialog
-              // Show the full travel form bottom sheet
+              Navigator.pop(dialogContext);
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -1024,7 +1082,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (sheetContext) => TravelEntrySheet(travelProvider: travelProvider),
               );
             },
-            child: const Text('Yes, I Am', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text('Yes, I Am', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1032,7 +1090,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ─── 2c: Stateful Bottom Sheet for Travel Meter Entry ────────────────────────
+// ─── Stateful Bottom Sheet for Travel Meter Entry ────────────────────────
 
 class TravelEntrySheet extends StatefulWidget {
   final TravelProvider travelProvider;
@@ -1086,16 +1144,13 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
   }
 
   double _getTravelRate() {
-    // 1. Check todayLog rate
     if (widget.travelProvider.todayLog != null) {
       return widget.travelProvider.todayLog!.allowanceRate;
     }
-    // 2. Check current user profile rate
     final auth = Provider.of<AuthProvider>(context, listen: false);
     if (auth.currentUser?.travelAllowanceRate != null) {
       return auth.currentUser!.travelAllowanceRate!;
     }
-    // 3. Fall back to constant
     return AppConstants.defaultTravelAllowanceRate;
   }
 
@@ -1106,7 +1161,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
       setState(() {
         _distance = endVal - startVal;
         if (endVal < startVal) {
-          _validationError = 'End-of-Day odometer reading must be greater than Start-of-Day reading';
+          _validationError = 'End odometer reading must be greater than Start reading';
         } else {
           _validationError = null;
         }
@@ -1120,7 +1175,6 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
   }
 
   Future<void> _pickPhoto(bool isStart) async {
-    // Reusable image upload utility: checks camera/gallery permission, lets user choose, formats/sizes under 1MB
     final result = await ImageUploadUtil.pickAndCompressImage(
       context,
       cameraOnly: false,
@@ -1139,36 +1193,19 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
 
   Future<void> _submit() async {
     try {
-      debugPrint('[TravelEntrySheet] _submit called');
       final isValidated = _formKey.currentState?.validate() ?? false;
-      debugPrint('[TravelEntrySheet] Form validation status: $isValidated');
-      if (!isValidated) {
-        debugPrint('[TravelEntrySheet] Form validation failed. Returning.');
-        return;
-      }
-      debugPrint('[TravelEntrySheet] Form validation passed.');
-      
-      debugPrint('[TravelEntrySheet] Current _validationError: $_validationError');
-      if (_validationError != null) {
-        debugPrint('[TravelEntrySheet] _validationError is not null. Returning.');
-        return;
-      }
+      if (!isValidated) return;
+      if (_validationError != null) return;
 
       final log = widget.travelProvider.todayLog;
       final isStartLogged = log != null && log.meterStart != null;
-      debugPrint('[TravelEntrySheet] isStartLogged: $isStartLogged');
 
       final startVal = double.tryParse(_startOdometerController.text);
       final endVal = double.tryParse(_endOdometerController.text);
-      debugPrint('[TravelEntrySheet] startVal: $startVal, endVal: $endVal');
 
       if (!isStartLogged) {
-        if (startVal == null) {
-          debugPrint('[TravelEntrySheet] startVal is null! Returning.');
-          return;
-        }
+        if (startVal == null) return;
         if (_startPhoto == null) {
-          debugPrint('[TravelEntrySheet] _startPhoto is null!');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Please capture Start-of-Day odometer photo'),
@@ -1178,34 +1215,26 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
           return;
         }
         
-        debugPrint('[TravelEntrySheet] Reading start photo bytes...');
         final bytes = await _startPhoto!.readAsBytes();
-        debugPrint('[TravelEntrySheet] Encoding start photo bytes to Base64...');
         final base64Image = base64Encode(bytes);
-        debugPrint('[TravelEntrySheet] Base64 string length: ${base64Image.length}');
 
-        debugPrint('[TravelEntrySheet] Calling submitTravelLog for meterStart...');
         final success = await widget.travelProvider.submitTravelLog(
           meterStart: startVal,
           proofImageBase64: base64Image,
           notes: 'Logged start-of-day odometer reading',
         );
-        debugPrint('[TravelEntrySheet] submitTravelLog result success: $success');
 
         if (success && mounted) {
-          debugPrint('[TravelEntrySheet] Closing dialog and showing success SnackBar');
-          // Refresh travel block after submit so UI reflects latest data
           widget.travelProvider.fetchTodayTravel();
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Travel log submitted successfully'),
-              backgroundColor: AppColors.secondary,
+              backgroundColor: AppColors.success,
             ),
           );
         } else if (mounted) {
           final errorMsg = widget.travelProvider.errorMessage ?? 'Submission failed';
-          debugPrint('[TravelEntrySheet] Submission failed error message: $errorMsg');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMsg),
@@ -1215,12 +1244,8 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
         }
       } else {
         // Logging End of Day
-        if (endVal == null) {
-          debugPrint('[TravelEntrySheet] endVal is null! Returning.');
-          return;
-        }
+        if (endVal == null) return;
         if (_endPhoto == null) {
-          debugPrint('[TravelEntrySheet] _endPhoto is null!');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Please capture End-of-Day odometer photo'),
@@ -1230,34 +1255,26 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
           return;
         }
         
-        debugPrint('[TravelEntrySheet] Reading end photo bytes...');
         final bytes = await _endPhoto!.readAsBytes();
-        debugPrint('[TravelEntrySheet] Encoding end photo bytes to Base64...');
         final base64Image = base64Encode(bytes);
-        debugPrint('[TravelEntrySheet] Base64 string length: ${base64Image.length}');
 
-        debugPrint('[TravelEntrySheet] Calling submitTravelLog for meterEnd...');
         final success = await widget.travelProvider.submitTravelLog(
           meterEnd: endVal,
           proofImageBase64: base64Image,
           notes: 'Logged end-of-day odometer reading',
         );
-        debugPrint('[TravelEntrySheet] submitTravelLog result success: $success');
 
         if (success && mounted) {
-          debugPrint('[TravelEntrySheet] Closing dialog and showing success SnackBar');
-          // Refresh travel block after submit so UI reflects latest data
           widget.travelProvider.fetchTodayTravel();
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Travel log submitted successfully'),
-              backgroundColor: AppColors.secondary,
+              backgroundColor: AppColors.success,
             ),
           );
         } else if (mounted) {
           final errorMsg = widget.travelProvider.errorMessage ?? 'Submission failed';
-          debugPrint('[TravelEntrySheet] Submission failed error message: $errorMsg');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMsg),
@@ -1266,9 +1283,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
           );
         }
       }
-    } catch (e, stack) {
-      debugPrint('[TravelEntrySheet] CRITICAL ERROR IN _submit: $e');
-      debugPrint(stack.toString());
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Submission Error: $e'),
@@ -1283,7 +1298,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
     if (_isLoadingTodayLog) {
       return Container(
         decoration: const BoxDecoration(
-          color: AppColors.background,
+          color: AppColors.bgCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(40),
@@ -1300,7 +1315,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.bgCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -1321,7 +1336,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1329,44 +1344,41 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
               const SizedBox(height: 16),
               Text(
                 isStartLogged ? 'Complete Today\'s Travel Log' : 'Start Today\'s Travel Log',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
 
               // 1. Start-of-Day Odometer Reading
-              const Text(
+              Text(
                 'Start-of-Day Odometer Reading (KM)',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextFormField(
-                  controller: _startOdometerController,
-                  keyboardType: TextInputType.number,
-                  enabled: !isStartLogged,
-                  decoration: InputDecoration(
-                    hintText: 'Enter start-of-day odometer reading',
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    fillColor: isStartLogged ? Colors.grey[200] : Colors.transparent,
-                    filled: isStartLogged,
-                  ),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Required';
-                    if (double.tryParse(val) == null) return 'Invalid number';
-                    return null;
-                  },
+              TextFormField(
+                controller: _startOdometerController,
+                keyboardType: TextInputType.number,
+                enabled: !isStartLogged,
+                style: GoogleFonts.inter(color: AppColors.textPrimary),
+                decoration: modernInputDecoration(
+                  hint: 'Enter start-of-day odometer reading',
+                ).copyWith(
+                  fillColor: isStartLogged ? AppColors.border : AppColors.bgInput,
+                  filled: true,
                 ),
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Required';
+                  if (double.tryParse(val) == null) return 'Invalid number';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
               // 2. Start-of-Day Odometer Photo
               if (!isStartLogged) ...[
-                const Text(
+                Text(
                   'Start-of-Day Odometer Photo',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -1374,10 +1386,10 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   child: ElevatedButton.icon(
                     onPressed: () => _pickPhoto(true),
                     icon: Icon(_startPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
-                    label: Text(_startPhoto != null ? 'Photo Captured' : 'Upload Start-of-Day Photo', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(_startPhoto != null ? 'Photo Captured' : 'Upload Start-of-Day Photo', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _startPhoto != null ? AppColors.secondaryContainer : AppColors.primaryContainer,
-                      foregroundColor: _startPhoto != null ? AppColors.secondary : AppColors.primary,
+                      backgroundColor: _startPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
+                      foregroundColor: _startPhoto != null ? AppColors.success : AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -1399,23 +1411,23 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                 ],
                 const SizedBox(height: 20),
               ] else ...[
-                const Text(
+                Text(
                   'Start-of-Day Photo Status',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: AppColors.successSoft,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(color: AppColors.success.withOpacity(0.2)),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.check_circle, color: AppColors.secondary, size: 20),
-                      SizedBox(width: 8),
-                      Text('Start-of-day odometer photo uploaded successfully', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                    children: [
+                      const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Start-of-day odometer photo uploaded successfully', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
@@ -1424,38 +1436,35 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
 
               // 3. End-of-Day Odometer Reading
               if (isStartLogged) ...[
-                const Text(
+                Text(
                   'End-of-Day Odometer Reading (KM)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextFormField(
-                    controller: _endOdometerController,
-                    keyboardType: TextInputType.number,
-                    enabled: !isEndLogged,
-                    decoration: InputDecoration(
-                      hintText: 'Enter end-of-day odometer reading',
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      fillColor: isEndLogged ? Colors.grey[200] : Colors.transparent,
-                      filled: isEndLogged,
-                    ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Required';
-                      if (double.tryParse(val) == null) return 'Invalid number';
-                      return null;
-                    },
+                TextFormField(
+                  controller: _endOdometerController,
+                  keyboardType: TextInputType.number,
+                  enabled: !isEndLogged,
+                  style: GoogleFonts.inter(color: AppColors.textPrimary),
+                  decoration: modernInputDecoration(
+                    hint: 'Enter end-of-day odometer reading',
+                  ).copyWith(
+                    fillColor: isEndLogged ? AppColors.border : AppColors.bgInput,
+                    filled: true,
                   ),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Required';
+                    if (double.tryParse(val) == null) return 'Invalid number';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
                 // 4. End-of-Day Odometer Photo
                 if (!isEndLogged) ...[
-                  const Text(
+                  Text(
                     'End-of-Day Odometer Photo',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -1463,10 +1472,10 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                     child: ElevatedButton.icon(
                       onPressed: () => _pickPhoto(false),
                       icon: Icon(_endPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
-                      label: Text(_endPhoto != null ? 'Photo Captured' : 'Upload End-of-Day Photo', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(_endPhoto != null ? 'Photo Captured' : 'Upload End-of-Day Photo', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _endPhoto != null ? AppColors.secondaryContainer : AppColors.primaryContainer,
-                        foregroundColor: _endPhoto != null ? AppColors.secondary : AppColors.primary,
+                        backgroundColor: _endPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
+                        foregroundColor: _endPhoto != null ? AppColors.success : AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -1488,23 +1497,23 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   ],
                   const SizedBox(height: 8),
                 ] else ...[
-                  const Text(
+                  Text(
                     'End-of-Day Photo Status',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: AppColors.successSoft,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: AppColors.success.withOpacity(0.2)),
                     ),
                     child: Row(
-                      children: const [
-                        Icon(Icons.check_circle, color: AppColors.secondary, size: 20),
-                        SizedBox(width: 8),
-                        Text('End-of-day odometer photo uploaded successfully', style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant)),
+                      children: [
+                        const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                        const SizedBox(width: 8),
+                        Text('End-of-day odometer photo uploaded successfully', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
@@ -1516,44 +1525,44 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                     padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
                     child: Text(
                       _validationError!,
-                      style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.inter(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
                 const SizedBox(height: 20),
 
                 // 5. Distance & Allowance Display
-                const Text(
+                Text(
                   'Distance & Allowance Calculation',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryContainer.withValues(alpha: 0.1),
+                    color: AppColors.primarySoft,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryContainer),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                   ),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Traveled Distance:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                          Text('Total Traveled Distance:', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
                           Text(
                             '${_distance >= 0 ? _distance.toStringAsFixed(1) : "0.0"} KM',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
                           ),
                         ],
                       ),
-                      const Divider(height: 20, color: AppColors.outlineVariant),
+                      const Divider(height: 20, color: AppColors.border),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Rate per KM:', style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant)),
+                          Text('Rate per KM:', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                           Text(
                             '₹${rate.toStringAsFixed(2)} / KM',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.onSurface),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                           ),
                         ],
                       ),
@@ -1561,10 +1570,10 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Calculated Allowance Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF16A34A))),
+                          Text('Calculated Allowance Amount:', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.success)),
                           Text(
                             '₹${(_distance >= 0 ? _distance * rate : 0.0).toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF16A34A)),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.success),
                           ),
                         ],
                       ),

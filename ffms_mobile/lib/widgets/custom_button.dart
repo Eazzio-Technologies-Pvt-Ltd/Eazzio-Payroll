@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/theme/app_theme.dart';
 
+// Modern gradient primary button with shadow
+// Replaces flat button — same onPressed behavior kept intact
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -19,27 +22,32 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.backgroundColor,
     this.textColor,
-    this.height = 48,
+    this.height = 52, // Modernized default height
     this.side,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? AppColors.primary;
-    final fg = textColor ?? AppColors.onPrimary;
+    final bool hasCustomBg = backgroundColor != null;
+    final fg = textColor ?? Colors.white;
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
       height: height,
+      decoration: BoxDecoration(
+        gradient: hasCustomBg ? null : AppTheme.headerGradient,
+        color: hasCustomBg ? backgroundColor : null,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: hasCustomBg ? null : AppTheme.buttonShadow,
+      ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          disabledBackgroundColor: bg.withOpacity(0.6),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: fg.withOpacity(0.6),
-          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16), // 16px corner radius
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
             side: side ?? BorderSide.none,
           ),
         ),
@@ -57,16 +65,16 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20, color: fg),
+                    Icon(icon, size: 18, color: fg),
                     const SizedBox(width: 8),
                   ],
                   Text(
                     text,
-                    style: TextStyle(
-                      fontFamily: 'Plus Jakarta Sans',
-                      fontSize: 14,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: fg,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],

@@ -1,39 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// ============================================================
+// EAZZIO PAYROLL — DESIGN SYSTEM v2
+// Modern Employee Management App UI
+// Reference: Petpooja Payroll + 2025 Material Design trends
+// ============================================================
+
 class AppColors {
-  // Admin Panel Blue
-  static const Color primary = Color(0xFF3B82F6);
+  // --- PRIMARY COLORS ---
+  static const Color primary = Color(0xFF2563EB);        // Bold blue
+  static const Color primaryLight = Color(0xFF3B82F6);   // Medium blue
+  static const Color primarySoft = Color(0xFFEFF6FF);    // Very light blue bg
+  static const Color primaryDark = Color(0xFF1D4ED8);    // Dark blue
+
+  // --- ACCENT COLORS ---
+  static const Color accent = Color(0xFF7C3AED);         // Purple accent
+  static const Color accentSoft = Color(0xFFF5F3FF);     // Soft purple bg
+
+  // --- SEMANTIC COLORS ---
+  static const Color success = Color(0xFF059669);        // Green — punch in
+  static const Color successSoft = Color(0xFFECFDF5);    // Soft green bg
+  static const Color warning = Color(0xFFD97706);        // Amber — pending
+  static const Color warningSoft = Color(0xFFFFFBEB);    // Soft amber bg
+  static const Color error = Color(0xFFDC2626);          // Red — punch out
+  static const Color errorSoft = Color(0xFFFEF2F2);      // Soft red bg
+  static const Color info = Color(0xFF0891B2);           // Cyan — info
+
+  // --- NEUTRAL COLORS ---
+  static const Color bgPage = Color(0xFFF1F5F9);         // Page background
+  static const Color bgCard = Color(0xFFFFFFFF);         // Card background
+  static const Color bgInput = Color(0xFFF8FAFC);        // Input background
+  static const Color border = Color(0xFFE2E8F0);         // Border color
+  static const Color divider = Color(0xFFF1F5F9);        // Divider
+
+  // --- TEXT COLORS ---
+  static const Color textPrimary = Color(0xFF0F172A);    // Almost black
+  static const Color textSecondary = Color(0xFF475569);  // Slate grey
+  static const Color textTertiary = Color(0xFF94A3B8);   // Light grey
+  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on blue
+
+  // Backward compatibility mappings
   static const Color onPrimary = Colors.white;
-  static const Color primaryContainer = Color(0xFFEFF6FF); // Blue-50
-  static const Color onPrimaryContainer = Color(0xFF1E3A8A); // Blue-900
+  static const Color primaryContainer = primarySoft;
+  static const Color onPrimaryContainer = primaryDark;
   
-  // Admin Panel Green
-  static const Color secondary = Color(0xFF22C55E);
+  static const Color secondary = success;
   static const Color onSecondary = Colors.white;
-  static const Color secondaryContainer = Color(0xFFDCFCE7); // Green-50
-  static const Color onSecondaryContainer = Color(0xFF14532D); // Green-900
+  static const Color secondaryContainer = successSoft;
+  static const Color onSecondaryContainer = success;
   
-  static const Color tertiary = Color(0xFF0F172A); // Slate-900 (Used for AppBars like Web sidebar)
+  static const Color tertiary = accent;
   static const Color onTertiary = Colors.white;
   
-  static const Color error = Color(0xFFEF4444); // Red-500
   static const Color onError = Colors.white;
-  static const Color errorContainer = Color(0xFFFEE2E2); // Red-100
-  static const Color onErrorContainer = Color(0xFF7F1D1D); // Red-900
+  static const Color errorContainer = errorSoft;
+  static const Color onErrorContainer = error;
   
-  static const Color background = Color(0xFFF8FAFC); // Slate-50
-  static const Color onBackground = Color(0xFF0F172A); // Slate-900
+  static const Color background = bgPage;
+  static const Color onBackground = textPrimary;
   
-  static const Color surface = Colors.white;
-  static const Color onSurface = Color(0xFF1E293B); // Slate-800
-  static const Color onSurfaceVariant = Color(0xFF475569); // Slate-600
+  static const Color surface = bgCard;
+  static const Color onSurface = textPrimary;
+  static const Color onSurfaceVariant = textSecondary;
   
-  static const Color outline = Color(0xFF94A3B8); // Slate-400
-  static const Color outlineVariant = Color(0xFFE2E8F0); // Slate-200
+  static const Color outline = textTertiary;
+  static const Color outlineVariant = border;
 }
 
 class AppTheme {
+  // --- GRADIENTS ---
+  static const LinearGradient headerGradient = LinearGradient(
+    colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF3B82F6)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient punchInGradient = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF10B981)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient punchOutGradient = LinearGradient(
+    colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient salaryGradient = LinearGradient(
+    colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // --- SHADOWS ---
+  static List<BoxShadow> cardShadow = [
+    BoxShadow(
+      color: const Color(0xFF0F172A).withOpacity(0.06),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+      spreadRadius: 0,
+    ),
+  ];
+  static List<BoxShadow> buttonShadow = [
+    BoxShadow(
+      color: const Color(0xFF2563EB).withOpacity(0.30),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
+      spreadRadius: 0,
+    ),
+  ];
+
+  // --- BORDER RADIUS ---
+  static const double radiusSmall = 8.0;
+  static const double radiusMedium = 12.0;
+  static const double radiusLarge = 16.0;
+  static const double radiusXL = 20.0;
+  static const double radiusXXL = 24.0;
+
+  // --- SPACING ---
+  static const double spacingXS = 4.0;
+  static const double spacingSM = 8.0;
+  static const double spacingMD = 16.0;
+  static const double spacingLG = 24.0;
+  static const double spacingXL = 32.0;
+
+  // --- CARD DECORATION ---
+  static BoxDecoration cardDecoration = BoxDecoration(
+    color: AppColors.bgCard,
+    borderRadius: BorderRadius.circular(radiusLarge),
+    border: Border.all(color: AppColors.border, width: 1),
+    boxShadow: cardShadow,
+  );
+
+  // --- GLASS CARD (for hero sections) ---
+  static BoxDecoration glassDecoration = BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Colors.white.withOpacity(0.95),
+        Colors.white.withOpacity(0.80),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(radiusXL),
+    border: Border.all(
+      color: Colors.white.withOpacity(0.9),
+      width: 1.5,
+    ),
+    boxShadow: cardShadow,
+  );
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -63,52 +178,52 @@ class AppTheme {
         outlineVariant: AppColors.outlineVariant,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
-        headlineLarge: TextStyle(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
+        headlineLarge: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           height: 1.33,
           color: AppColors.onSurface,
         ),
-        headlineMedium: TextStyle(
+        headlineMedium: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           height: 1.4,
           color: AppColors.onSurface,
         ),
-        headlineSmall: TextStyle(
+        headlineSmall: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           height: 1.33,
           color: AppColors.onSurface,
         ),
-        bodyLarge: TextStyle(
+        bodyLarge: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           height: 1.5,
           color: AppColors.onSurface,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           height: 1.43,
           color: AppColors.onSurfaceVariant,
         ),
-        labelLarge: TextStyle(
+        labelLarge: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           height: 1.43,
           letterSpacing: 0.1,
           color: AppColors.onSurface,
         ),
-        labelMedium: TextStyle(
+        labelMedium: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           height: 1.33,
           letterSpacing: 0.2,
           color: AppColors.onSurfaceVariant,
         ),
-        labelSmall: TextStyle(
+        labelSmall: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
           height: 1.27,
@@ -116,44 +231,44 @@ class AppTheme {
         ),
       ),
       
-      // Elevated Button Theme (48px height, 16px radius)
+      // Elevated Button Theme (52px height, radiusMedium radius)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size.fromHeight(52),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(radiusMedium),
           ),
           textStyle: const TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontSize: 14,
+            fontFamily: 'Inter',
+            fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
       
-      // Text Field Theme (48px height, 16px radius)
+      // Text Field Theme (radiusMedium radius)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.bgInput,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
+          borderRadius: BorderRadius.circular(radiusMedium),
+          borderSide: const BorderSide(color: AppColors.border, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
+          borderRadius: BorderRadius.circular(radiusMedium),
+          borderSide: const BorderSide(color: AppColors.border, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(radiusMedium),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderRadius: BorderRadius.circular(radiusMedium),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         labelStyle: const TextStyle(
           fontSize: 14,
@@ -166,13 +281,13 @@ class AppTheme {
         ),
       ),
       
-      // Card Theme (16px radius, Level 1 tonal shadow)
+      // Card Theme (radiusLarge radius)
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 1,
         shadowColor: Colors.black.withOpacity(0.02),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radiusLarge),
           side: const BorderSide(color: AppColors.outlineVariant, width: 1),
         ),
         margin: EdgeInsets.zero,

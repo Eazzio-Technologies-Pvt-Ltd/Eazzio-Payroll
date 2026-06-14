@@ -79,6 +79,38 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  // Mark single read silently under the hood
+  Future<void> markAsReadSilent(String notificationId) async {
+    final index = _notifications.indexWhere((notif) => notif.id == notificationId);
+    if (index != -1) {
+      final oldNotif = _notifications[index];
+      if (!oldNotif.isRead) {
+        // Create updated instance with isRead = true
+        _notifications[index] = NotificationModel(
+          id: oldNotif.id,
+          userId: oldNotif.userId,
+          title: oldNotif.title,
+          message: oldNotif.message,
+          type: oldNotif.type,
+          referenceId: oldNotif.referenceId,
+          isRead: true,
+          createdAt: oldNotif.createdAt,
+        );
+        if (_unreadCount > 0) {
+          _unreadCount--;
+        }
+        notifyListeners();
+      }
+    }
+
+    // Call API in the background without awaiting and without reloading the list
+    try {
+      ApiService.client.put('/notifications/$notificationId/read');
+    } catch (e) {
+      // Log or ignore silent error
+    }
+  }
+
   // Mark all read
   Future<void> markAllAsRead() async {
     try {

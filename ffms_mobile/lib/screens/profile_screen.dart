@@ -1,17 +1,17 @@
-// UI/UX v2 — modern premium design — Antigravity 2026
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../utils/image_upload_util.dart';
 import '../providers/travel_provider.dart';
-import '../widgets/custom_button.dart';
 import '../widgets/user_avatar.dart';
 import '../core/theme/app_theme.dart';
 import 'expenses_screen.dart';
 import 'feedback_screen.dart';
 import 'permissions_screen.dart';
 
+// Profile screen v2 — gradient header + modern stat cards + clean settings list
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -62,22 +62,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final success = await authProvider.uploadProfileImage(base64Image);
 
       if (context.mounted) {
-        Navigator.pop(context); // Pop loading spinner
+        Navigator.pop(context);
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile photo uploaded and locked successfully!')),
+            const SnackBar(content: Text('Profile photo uploaded and locked successfully!'), backgroundColor: AppColors.success),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(authProvider.errorMessage ?? 'Upload failed.')),
+            SnackBar(content: Text(authProvider.errorMessage ?? 'Upload failed.'), backgroundColor: AppColors.error),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Pop loading spinner
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An error occurred: $e')),
+          SnackBar(content: Text('An error occurred: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -87,18 +87,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-        ),
+        decoration: AppTheme.cardDecoration,
         child: Column(
           children: [
             Icon(icon, color: AppColors.primary, size: 20),
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
@@ -107,9 +103,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 11,
-                color: AppColors.onSurfaceVariant,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -127,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primarySoft,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: AppColors.primary, size: 18),
@@ -139,12 +135,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
               ],
             ),
@@ -165,17 +161,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.08),
+          color: AppColors.primarySoft,
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: AppColors.primary, size: 18),
       ),
       title: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.onSurface),
+        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
       ),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.outline),
+      trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildSalaryStat(String label, String value, {Color? valueColor, String? sublabel}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+            if (sublabel != null) ...[
+              const SizedBox(height: 2),
+              Text(sublabel, style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 10)),
+            ],
+          ],
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: valueColor ?? AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -199,10 +222,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final totalDistance = travelProvider.history.fold<double>(0.0, (sum, log) => sum + log.totalDistanceKm);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('My Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          'My Profile',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -210,19 +236,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Overlapping Header Design
+            // Overlapping Header with design system gradient
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
                   height: 220,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF070425), Color(0xFF1B0F85)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.headerGradient,
                   ),
                 ),
                 Positioned(
@@ -236,6 +258,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.2),
+                                blurRadius: 16,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: UserAvatar(
                             radius: 44,
@@ -263,20 +293,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 56),
+            const SizedBox(height: 60),
 
-            // User Info Details
+            // User Name & Role
             Text(
               authUser?.name ?? 'Employee Name',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.onSurface,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               authUser?.role.replaceAll('_', ' ').toUpperCase() ?? 'STAFF',
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
@@ -310,25 +341,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Profile Tile Details Container
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-                ),
+                decoration: AppTheme.cardDecoration,
                 child: Column(
                   children: [
                     if (authUser?.employeeId != null) ...[
                       _buildProfileRowItem(Icons.perm_identity_outlined, 'Employee ID', authUser!.employeeId!),
-                      const Divider(height: 1, color: Color(0xFFE8E8F0)),
+                      Divider(height: 1, color: AppColors.border),
                     ],
                     _buildProfileRowItem(Icons.business_outlined, 'Organization', authUser?.organization?.name ?? 'Not Assigned'),
-                    const Divider(height: 1, color: Color(0xFFE8E8F0)),
+                    Divider(height: 1, color: AppColors.border),
                     _buildProfileRowItem(Icons.location_on_outlined, 'Territory', authUser?.territory?.name ?? 'Not Assigned'),
                   ],
                 ),
@@ -342,89 +369,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-                  ),
+                  decoration: AppTheme.cardDecoration,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Salary & Allowance Configuration',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSalaryStat(
+                        'Base Salary (Monthly)',
+                        authUser.baseSalary != null ? '₹${authUser.baseSalary!.toStringAsFixed(2)}' : 'Not Configured',
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Base Salary (Monthly)',
-                            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
-                          ),
-                          Text(
-                            authUser.baseSalary != null ? '₹${authUser.baseSalary!.toStringAsFixed(2)}' : 'Not Configured',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Divider(color: Color(0xFFE8E8F0), height: 1),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Travel Allowance Rate',
-                            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
-                          ),
-                          Text(
-                            '₹${authUser.travelAllowanceRate?.toStringAsFixed(2) ?? '4.00'}/KM',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ],
+                      Divider(height: 1, color: AppColors.border),
+                      const SizedBox(height: 12),
+                      _buildSalaryStat(
+                        'Travel Allowance Rate',
+                        '₹${authUser.travelAllowanceRate?.toStringAsFixed(2) ?? '4.00'}/KM',
                       ),
                       if (authUser.baseSalary != null) ...[
-                        const SizedBox(height: 8),
-                        const Divider(color: Color(0xFFE8E8F0), height: 1),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Accrued Salary (This Month)',
-                                  style: TextStyle(color: AppColors.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Based on $present worked days this month',
-                                  style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 10),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              '₹${accruedSalary.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppColors.secondary,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 12),
+                        Divider(height: 1, color: AppColors.border),
+                        const SizedBox(height: 12),
+                        _buildSalaryStat(
+                          'Accrued Salary (This Month)',
+                          '₹${accruedSalary.toStringAsFixed(2)}',
+                          valueColor: AppColors.success,
+                          sublabel: 'Based on $present worked days this month',
                         ),
                       ],
                     ],
@@ -437,11 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
-                ),
+                decoration: AppTheme.cardDecoration,
                 child: Column(
                   children: [
                     _buildNavigationRowItem(
@@ -449,7 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Leave Details',
                       onTap: () => Navigator.pushNamed(context, '/leave-details'),
                     ),
-                    const Divider(height: 1, color: Color(0xFFE8E8F0)),
+                    Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
                       icon: Icons.receipt_long,
                       title: 'My Expense Claims',
@@ -458,7 +431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(builder: (context) => const ExpensesScreen()),
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFE8E8F0)),
+                    Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
                       icon: Icons.feedback_outlined,
                       title: 'Anonymous Feedback',
@@ -467,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(builder: (context) => const FeedbackScreen()),
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFE8E8F0)),
+                    Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
                       icon: Icons.security_outlined,
                       title: 'System Permissions',
@@ -487,28 +460,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: OutlinedButton(
+                height: 52,
+                child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: const BorderSide(color: AppColors.error, width: 1.2),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                     ),
                   ),
-                  onPressed: () => _handleLogout(context),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout, size: 18),
-                      SizedBox(width: 8),
-                      Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ],
+                  icon: const Icon(Icons.logout, size: 18),
+                  label: Text(
+                    'Log Out',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
+                  onPressed: () => _handleLogout(context),
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
           ],
         ),
       ),

@@ -1,17 +1,19 @@
-// UI/UX v2 — modern premium design — Antigravity 2026
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/expense_provider.dart';
 import '../utils/image_upload_util.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_toast.dart';
 import '../core/theme/app_theme.dart';
+import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
 
+// Add/Create expense screen v2 — modern input wrappers + styled actions
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
 
@@ -25,12 +27,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _amountController = TextEditingController();
   final _descController = TextEditingController();
 
-  String _selectedCategory = 'FOOD'; // Travel claims moved to Home screen Distance Travel block (Task 2c)
+  String _selectedCategory = 'FOOD';
   DateTime _selectedDate = DateTime.now();
   File? _receiptFile;
   bool _isSaving = false;
 
-  final List<String> _categories = ['FOOD', 'LODGING', 'OTHER']; // Travel claims moved to Home screen Distance Travel block (Task 2c)
+  final List<String> _categories = ['FOOD', 'LODGING', 'OTHER'];
 
   Future<void> _selectDate() async {
     final picked = await showDatePicker(
@@ -44,7 +46,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
-              onSurface: AppColors.onSurface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -117,16 +119,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Uses Responsive helper — no hardcoded sizes
+    final r = Responsive(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text('Add Expense', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Add Expense', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary)),
         backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        // Responsive page padding — no hardcoded values
+        padding: EdgeInsets.all(r.cardPadding),
         child: Form(
           key: _formKey,
           child: Column(
@@ -135,19 +144,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Core Form Card Container
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.03),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  border: Border.all(color: AppColors.outlineVariant, width: 1),
-                ),
+                decoration: AppTheme.cardDecoration,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -178,38 +175,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             children: [
                               Text(
                                 'Category',
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 value: _selectedCategory,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: AppColors.background,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(color: AppColors.outlineVariant),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(color: AppColors.outlineVariant),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                                  ),
-                                ),
+                                isExpanded: true, // isExpanded:true on dropdown prevents overflow
+                                decoration: modernInputDecoration(hint: 'Select Category'),
                                 dropdownColor: AppColors.surface,
                                 items: _categories.map((type) {
                                   return DropdownMenuItem<String>(
                                     value: type,
                                     child: Text(
                                       type,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
                                     ),
                                   );
                                 }).toList(),
@@ -226,15 +209,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         Expanded(
                           child: CustomTextField(
                             controller: _amountController,
-                            label: 'Amount (\$)',
+                            label: 'Amount (₹)',
                             hint: '0.00',
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Enter amount';
+                                  return 'Enter amount';
                               }
                               if (double.tryParse(value) == null) {
-                                return 'Enter valid number';
+                                  return 'Enter valid number';
                               }
                               return null;
                             },
@@ -247,20 +230,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     // Date Picker
                     Text(
                       'Expense Date',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
                       onTap: _selectDate,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.outlineVariant),
+                          color: AppColors.bgInput,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Row(
                           children: [
@@ -269,14 +254,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             Expanded(
                               child: Text(
                                 DateFormat('dd MMM yyyy').format(_selectedDate),
-                                style: const TextStyle(
+                                style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ),
-                            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.outline),
+                            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
                           ],
                         ),
                       ),
@@ -295,9 +280,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     // Receipt Attachment Box
                     Text(
                       'Receipt Attachment / Photo Proof',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -319,12 +305,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.1),
+                                        color: AppColors.primarySoft,
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.photo_camera_rounded, color: AppColors.primary),
                                     ),
-                                    title: const Text('Capture Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    title: Text('Capture Camera', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       _pickReceipt(ImageSource.camera);
@@ -334,12 +320,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.1),
+                                        color: AppColors.primarySoft,
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
                                     ),
-                                    title: const Text('From Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    title: Text('From Gallery', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                                     onTap: () {
                                       Navigator.pop(context);
                                       _pickReceipt(ImageSource.gallery);
@@ -355,10 +341,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         width: double.infinity,
                         height: 160,
                         decoration: BoxDecoration(
-                          color: _receiptFile != null ? AppColors.surface : AppColors.background,
+                          color: _receiptFile != null ? AppColors.surface : AppColors.bgInput,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _receiptFile != null ? AppColors.primary.withOpacity(0.4) : AppColors.outlineVariant,
+                            color: _receiptFile != null ? AppColors.primary.withOpacity(0.4) : AppColors.border,
                           ),
                         ),
                         child: _receiptFile != null
@@ -385,19 +371,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   )
                                 ],
                               )
-                            : const Column(
+                            : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.primary),
-                                  SizedBox(height: 8),
+                                  const Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.primary),
+                                  const SizedBox(height: 8),
                                   Text(
                                     'Tap to attach receipt photo',
-                                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+                                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
                                     'Supports Camera or Gallery upload',
-                                    style: TextStyle(color: AppColors.outline, fontSize: 11),
+                                    style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -412,13 +398,32 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: CustomButton(
-                      text: 'Save Draft',
-                      isLoading: _isSaving,
-                      onPressed: () => _handleSave(submitDirectly: false),
-                      backgroundColor: AppColors.surface,
-                      textColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        border: Border.all(color: AppColors.primary, width: 1.5),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : () => _handleSave(submitDirectly: false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          disabledBackgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          ),
+                        ),
+                        child: Text(
+                          'Save Draft',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -427,7 +432,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       text: 'Submit Claim',
                       isLoading: _isSaving,
                       onPressed: () => _handleSave(submitDirectly: true),
-                      backgroundColor: AppColors.primary,
                     ),
                   ),
                 ],

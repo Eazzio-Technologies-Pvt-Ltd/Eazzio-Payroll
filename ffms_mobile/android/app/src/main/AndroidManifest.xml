@@ -140,19 +140,9 @@
             android:foregroundServiceType="location"
             android:exported="false"/>
 
-        <!-- Boot Receiver for auto-launch on device reboot -->
-        <receiver
-            android:name="com.pravera.flutter_foreground_task.receiver.BootReceiver"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
+        <!-- BootReceiver removed: flutter_foreground_task v8.x registers its own
+             receiver internally via plugin's merged manifest. Manual declaration
+             of the old class path causes ClassNotFoundException at runtime. -->
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

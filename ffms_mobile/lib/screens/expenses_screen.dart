@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/expense_provider.dart';
 import '../providers/travel_provider.dart';
 import '../widgets/status_badge.dart';
 import '../core/theme/app_theme.dart';
 import 'add_expense_screen.dart';
 
+// Expenses listing dashboard screen v2 — modern summaries + categorized cards
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
 
@@ -31,7 +34,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Expense submitted successfully'), backgroundColor: AppColors.secondary),
+          const SnackBar(content: Text('Expense submitted successfully'), backgroundColor: AppColors.success),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -43,24 +46,24 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   Widget _buildSummaryRow(String label, double amount, {Color? color, String prefix = '₹', bool isBold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 13,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: isBold ? AppColors.onSurface : AppColors.onSurfaceVariant,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              color: isBold ? AppColors.textPrimary : AppColors.textSecondary,
             ),
           ),
           Text(
             '$prefix${amount.toStringAsFixed(0)}',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: isBold ? 15 : 13,
-              fontWeight: isBold || color != null ? FontWeight.bold : FontWeight.normal,
-              color: color ?? (isBold ? AppColors.primary : AppColors.onSurface),
+              fontWeight: isBold || color != null ? FontWeight.bold : FontWeight.w600,
+              color: color ?? (isBold ? AppColors.primary : AppColors.textPrimary),
             ),
           ),
         ],
@@ -73,8 +76,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final travelProvider = Provider.of<TravelProvider>(context);
 
-    // Group expenses by category client-side from API response
-    // Expenses grouped by category client-side from API response
     final grouped = <String, List<dynamic>>{};
     double totalSubmitted = 0.0;
     double totalApproved = 0.0;
@@ -102,12 +103,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
     if (expenseProvider.expenses.isEmpty) {
       listItems.add(
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 32.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32.0),
           child: Center(
             child: Text(
               'No expenses filed yet.',
-              style: TextStyle(color: AppColors.outline),
+              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
             ),
           ),
         ),
@@ -122,18 +123,22 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  category,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: AppColors.outline,
-                    letterSpacing: 0.5,
+                Flexible(
+                  child: Text(
+                    category,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                      letterSpacing: 0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
                 Text(
                   'Total: ₹${catTotal.toStringAsFixed(0)}',
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: AppColors.primary,
@@ -145,77 +150,80 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         );
 
         for (final expense in items) {
-          final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
+          final dateStr = DateFormat('dd MMM yyyy').format(expense.date);
           final amountStr = '₹${expense.amount.toStringAsFixed(0)}';
           
-          // Submitted to: [Manager Name]
-          // Fetch from expense record or user profile
           final managerName = expense.approvedById != null 
               ? 'Manager ID: ${expense.approvedById}' 
               : 'Manager';
 
           listItems.add(
-            Card(
+            Container(
+              decoration: AppTheme.cardDecoration,
               margin: const EdgeInsets.symmetric(vertical: 6),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            expense.title,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          expense.title,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        StatusBadge(status: expense.status),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
+                      ),
+                      StatusBadge(status: expense.status),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Description text — Flexible prevents overflow in Row
+                      Flexible(
+                        child: Text(
                           '$dateStr | ${expense.description ?? expense.category}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.outline),
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        Text(
-                          amountStr,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        amountStr,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Submitted to: $managerName',
+                        style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                      ),
+                      if (expense.status == 'DRAFT')
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: Size.zero,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
+                          onPressed: () => _submitDraft(expense.id),
+                          child: Text('Submit Claim', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Submitted to: $managerName',
-                          style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.outline),
-                        ),
-                        if (expense.status == 'DRAFT')
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              minimumSize: Size.zero,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            onPressed: () => _submitDraft(expense.id),
-                            child: const Text('Submit Claim', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
@@ -225,64 +233,62 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
     // Summary Card
     listItems.add(
-      Card(
-        color: AppColors.background,
+      Container(
+        decoration: AppTheme.cardDecoration,
         margin: const EdgeInsets.only(top: 24, bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'EXPENSE SUMMARY',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.outline),
-              ),
-              const Divider(height: 16),
-              _buildSummaryRow('Total Submitted', totalSubmitted),
-              _buildSummaryRow('Total Approved', totalApproved, color: const Color(0xFF007230)),
-              _buildSummaryRow('Total Pending', totalPending, color: const Color(0xFF8E3C00)),
-              _buildSummaryRow('Total Rejected', totalRejected, color: const Color(0xFFBA1A1A)),
-            ],
-          ),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'EXPENSE SUMMARY',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textTertiary),
+            ),
+            const Divider(height: 20),
+            _buildSummaryRow('Total Submitted', totalSubmitted),
+            _buildSummaryRow('Total Approved', totalApproved, color: const Color(0xFF10B981)),
+            _buildSummaryRow('Total Pending', totalPending, color: const Color(0xFFF59E0B)),
+            _buildSummaryRow('Total Rejected', totalRejected, color: const Color(0xFFEF4444)),
+          ],
         ),
       ),
     );
 
     // Salary Impact Card
-    // TODO: Backend API needed — GET /api/v1/payroll/my/breakdown
-    // Salary impact card shows how expenses affect net pay
     listItems.add(
-      Card(
-        color: AppColors.primaryContainer,
+      Container(
+        decoration: AppTheme.cardDecoration.copyWith(
+          color: AppColors.primarySoft,
+          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        ),
         margin: const EdgeInsets.only(top: 12, bottom: 24),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'SALARY IMPACT',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary),
-              ),
-              const Divider(height: 16),
-              _buildSummaryRow('Approved Expenses', totalApproved, prefix: '+₹'),
-              _buildSummaryRow('Travel Allowance', totalTravelAllowance, prefix: '+₹'),
-              const Divider(height: 16),
-              _buildSummaryRow('Total Addition to Salary', totalApproved + totalTravelAllowance, prefix: '+₹', isBold: true),
-            ],
-          ),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SALARY IMPACT',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary),
+            ),
+            const Divider(height: 20),
+            _buildSummaryRow('Approved Expenses', totalApproved, prefix: '+₹'),
+            _buildSummaryRow('Travel Allowance', totalTravelAllowance, prefix: '+₹'),
+            const Divider(height: 20),
+            _buildSummaryRow('Total Addition to Salary', totalApproved + totalTravelAllowance, prefix: '+₹', isBold: true),
+          ],
         ),
       ),
     );
 
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
       appBar: AppBar(
-        title: const Text('My Expenses', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('My Expenses', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary)),
         backgroundColor: AppColors.surface,
-        elevation: 0.5,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: AppColors.primary),
             onPressed: () {
               Navigator.push(
                 context,
@@ -292,9 +298,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
           const SizedBox(width: 8),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
       ),
       body: RefreshIndicator(
-        // UI/UX v2 — modern premium design — Antigravity 2026
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         strokeWidth: 2.5,
@@ -302,9 +311,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           await expenseProvider.fetchMyExpenses();
           await Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);
         },
-        child: expenseProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+        child: expenseProvider.isLoading ? const SkeletonList()
             : ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: listItems,
               ),

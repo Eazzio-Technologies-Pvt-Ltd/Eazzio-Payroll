@@ -11,6 +11,10 @@ class LeaveModel {
   final String? approvalNote;
   final String? attachmentUrl;
   final DateTime createdAt;
+  // Manager name — parsed from API's nested approvedBy.name field
+  // Displays manager name instead of raw approvedById in leave details
+  // Falls back to null if API response doesn’t include approvedBy object
+  final String? managerName;
 
   LeaveModel({
     required this.id,
@@ -25,9 +29,17 @@ class LeaveModel {
     this.approvalNote,
     this.attachmentUrl,
     required this.createdAt,
+    this.managerName, // optional — present only when API includes approvedBy object
   });
 
   factory LeaveModel.fromJson(Map<String, dynamic> json) {
+    // Defensive parse of nested approvedBy object for manager name
+    // API may return: approvedBy: { id: "...", name: "Rahul Kumar" }
+    // or just: approvedById: "..."
+    final approvedByObj = json['approvedBy'] as Map<String, dynamic>?;
+    final parsedManagerName = approvedByObj?['name'] as String?
+        ?? approvedByObj?['fullName'] as String?;
+
     return LeaveModel(
       id: json['id'] as String,
       userId: json['userId'] as String,
@@ -37,10 +49,12 @@ class LeaveModel {
       totalDays: ((json['totalDays'] ?? 0.0) as num).toDouble(),
       reason: json['reason'] as String? ?? '',
       status: json['status'] as String,
-      approvedById: json['approvedById'] as String?,
+      approvedById: json['approvedById'] as String?
+          ?? approvedByObj?['id'] as String?,
       approvalNote: json['approvalNote'] as String?,
       attachmentUrl: json['attachmentUrl'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      managerName: parsedManagerName, // null if API doesn't return approvedBy object
     );
   }
 }
