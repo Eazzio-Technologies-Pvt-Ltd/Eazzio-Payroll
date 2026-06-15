@@ -192,6 +192,7 @@ model User {
   payrollDeductions PayrollDeduction[]
   advances         Advance[]  @relation("UserAdvances")
   advancesApproved Advance[]  @relation("ApprovedAdvances")
+  comments         Comment[]
 
   @@unique([organizationId, employeeId])
   @@index([organizationId])
@@ -303,10 +304,12 @@ model Comment {
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   content   String
   createdAt DateTime @default(now())
   
   @@index([taskId])
+  @@index([userId])
 }
 
 model Attendance {

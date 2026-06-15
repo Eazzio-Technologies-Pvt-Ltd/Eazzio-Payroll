@@ -88,30 +88,7 @@ export default function CloudinaryImage({ url, placeholder = "No Receipt", alt =
           {/* Close button */}
           <button
             onClick={() => setIsOpen(false)}
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              background: "rgba(255, 255, 255, 0.15)",
-              border: "none",
-              borderRadius: "50%",
-              width: "44px",
-              height: "44px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "white",
-              transition: "background 0.2s ease, transform 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
+            className="absolute top-5 right-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-all duration-200 hover:bg-white/25 hover:scale-105 cursor-pointer border-none"
           >
             <X size={24} />
           </button>

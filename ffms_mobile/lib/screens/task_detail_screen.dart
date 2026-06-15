@@ -159,80 +159,97 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         // Task Proof column
-                        Column(
-                          children: [
-                            if (base64TaskImage != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(base64Decode(base64TaskImage!), height: 60, width: 60, fit: BoxFit.cover),
-                              )
-                            else
-                              const Icon(Icons.image, size: 40, color: AppColors.textTertiary),
-                            const SizedBox(height: 4),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: base64TaskImage != null ? AppColors.successSoft : AppColors.primarySoft,
-                                foregroundColor: base64TaskImage != null ? AppColors.success : AppColors.primary,
-                                minimumSize: const Size(100, 36),
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                              ),
-                              icon: const Icon(Icons.camera_alt, size: 14),
-                              label: Text('Task Proof', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
-                              onPressed: isPicking ? null : () async {
-                                setState(() => isPicking = true);
-                                try {
-                                  final result = await ImageUploadUtil.pickAndCompressImage(
-                                    context,
-                                    cameraOnly: false,
-                                    preferredCameraDevice: CameraDevice.rear,
-                                  );
-                                  if (result != null) {
-                                    setState(() => base64TaskImage = result.base64String);
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (base64TaskImage != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    base64Decode(base64TaskImage!.contains(',') ? base64TaskImage!.split(',').last : base64TaskImage!),
+                                    height: 60,
+                                    width: 60,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.image, size: 40, color: AppColors.textTertiary),
+                              const SizedBox(height: 4),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: base64TaskImage != null ? AppColors.successSoft : AppColors.primarySoft,
+                                  foregroundColor: base64TaskImage != null ? AppColors.success : AppColors.primary,
+                                  minimumSize: const Size(80, 32),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                ),
+                                icon: const Icon(Icons.camera_alt, size: 12),
+                                label: Text('Task Proof', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold)),
+                                onPressed: isPicking ? null : () async {
+                                  setState(() => isPicking = true);
+                                  try {
+                                    final result = await ImageUploadUtil.pickAndCompressImage(
+                                      context,
+                                      cameraOnly: false,
+                                      preferredCameraDevice: CameraDevice.rear,
+                                    );
+                                    if (result != null) {
+                                      setState(() => base64TaskImage = result.base64String);
+                                    }
+                                  } finally {
+                                    setState(() => isPicking = false);
                                   }
-                                } finally {
-                                  setState(() => isPicking = false);
-                                }
-                              },
-                            ),
-                          ],
+                                },
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         // Selfie column
-                        Column(
-                          children: [
-                            if (base64SelfieImage != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(base64Decode(base64SelfieImage!), height: 60, width: 60, fit: BoxFit.cover),
-                              )
-                            else
-                              const Icon(Icons.face, size: 40, color: AppColors.textTertiary),
-                            const SizedBox(height: 4),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: base64SelfieImage != null ? AppColors.successSoft : AppColors.primarySoft,
-                                foregroundColor: base64SelfieImage != null ? AppColors.success : AppColors.primary,
-                                minimumSize: const Size(100, 36),
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                              ),
-                              icon: const Icon(Icons.camera_front, size: 14),
-                              label: Text('Selfie', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
-                              onPressed: isPicking ? null : () async {
-                                setState(() => isPicking = true);
-                                try {
-                                  final result = await ImageUploadUtil.pickAndCompressImage(
-                                    context,
-                                    cameraOnly: true,
-                                    preferredCameraDevice: CameraDevice.front,
-                                  );
-                                  if (result != null) {
-                                    setState(() => base64SelfieImage = result.base64String);
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (base64SelfieImage != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    base64Decode(base64SelfieImage!.contains(',') ? base64SelfieImage!.split(',').last : base64SelfieImage!),
+                                    height: 60,
+                                    width: 60,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.face, size: 40, color: AppColors.textTertiary),
+                              const SizedBox(height: 4),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: base64SelfieImage != null ? AppColors.successSoft : AppColors.primarySoft,
+                                  foregroundColor: base64SelfieImage != null ? AppColors.success : AppColors.primary,
+                                  minimumSize: const Size(80, 32),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                ),
+                                icon: const Icon(Icons.camera_front, size: 12),
+                                label: Text('Selfie', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold)),
+                                onPressed: isPicking ? null : () async {
+                                  setState(() => isPicking = true);
+                                  try {
+                                    final result = await ImageUploadUtil.pickAndCompressImage(
+                                      context,
+                                      cameraOnly: true,
+                                      preferredCameraDevice: CameraDevice.front,
+                                    );
+                                    if (result != null) {
+                                      setState(() => base64SelfieImage = result.base64String);
+                                    }
+                                  } finally {
+                                    setState(() => isPicking = false);
                                   }
-                                } finally {
-                                  setState(() => isPicking = false);
-                                }
-                              },
-                            ),
-                          ],
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

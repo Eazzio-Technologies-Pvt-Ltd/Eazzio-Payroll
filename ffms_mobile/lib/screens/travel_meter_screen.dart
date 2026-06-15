@@ -355,7 +355,7 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.memory(
-                              base64Decode(_proofBase64!),
+                              base64Decode(_proofBase64!.contains(',') ? _proofBase64!.split(',').last : _proofBase64!),
                               height: 48,
                               width: 48,
                               fit: BoxFit.cover,
