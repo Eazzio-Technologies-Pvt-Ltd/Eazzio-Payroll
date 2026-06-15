@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { addNotification } from "@/store/slices/notificationSlice";
-import { leaveApi } from "@/lib/api-client";
+import { leaveApi, feedbackApi } from "@/lib/api-client";
 import {
   FileText,
   MessageSquarePlus,
@@ -94,38 +94,7 @@ export default function FormsPage() {
   });
 
   // Feedback state
-  const [feedbackList, setFeedbackList] = useState<FeedbackRecord[]>([
-    {
-      id: "fb-1",
-      submittedBy: "Meena Joshi",
-      category: "Work Environment",
-      rating: 4,
-      message: "The office setup and tools are great. Would love faster device replacements for field kits.",
-      submittedOn: "2026-05-22",
-      anonymous: false,
-      source: "web"
-    },
-    {
-      id: "fb-2",
-      submittedBy: "Anonymous",
-      category: "Management",
-      rating: 3,
-      message: "Communication from HQ on route changes can be improved. Need more advance notice.",
-      submittedOn: "2026-05-23",
-      anonymous: true,
-      source: "mobile"
-    },
-    {
-      id: "fb-3",
-      submittedBy: "Amit Kumar",
-      category: "Tools & Processes",
-      rating: 5,
-      message: "The new mobile field operations update is outstanding! Real-time notifications keep operations synced.",
-      submittedOn: "2026-05-25",
-      anonymous: false,
-      source: "mobile"
-    }
-  ]);
+  const [feedbackList, setFeedbackList] = useState<FeedbackRecord[]>([]);
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({
@@ -148,9 +117,21 @@ export default function FormsPage() {
 
   const fetchLeaves = useCallback(async () => {
     try {
-      const res = await leaveApi.getAll();
+      const isAdmin = currentUser?.role === "ADMIN";
+      const isManager = currentUser?.role === "MANAGER";
+      
+      let res;
+      if (isAdmin) {
+        res = await leaveApi.getAll();
+      } else if (isManager) {
+        res = await leaveApi.getTeam();
+      } else {
+        res = await leaveApi.getMy();
+      }
+
       if (res && (res as any).data) {
-        const backendLeaves = (res as any).data.leaves || [];
+        const data = (res as any).data;
+        const backendLeaves = Array.isArray(data) ? data : (data?.leaves ?? []);
         const mappedLeaves = backendLeaves.map((lf: any) => ({
           id: lf.id,
           employeeName: lf.user?.name || "Field Staff",
@@ -167,13 +148,40 @@ export default function FormsPage() {
     } catch (err) {
       console.error("Failed to fetch leaves:", err);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     if (activeTab === "forms") {
       fetchLeaves();
+    } else if (activeTab === "feedback") {
+      fetchFeedback();
     }
   }, [activeTab, fetchLeaves]);
+
+  const fetchFeedback = useCallback(async () => {
+    try {
+      const res = await feedbackApi.getAll();
+      if (res && res.data && res.data.feedbacks) {
+        const mappedFeedbacks = res.data.feedbacks.map((fb: any) => {
+          let cat = fb.category.replace(/_/g, " ");
+          cat = cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+          return {
+            id: fb.id,
+            submittedBy: "Anonymous",
+            category: cat,
+            rating: fb.rating || 0,
+            message: fb.content,
+            submittedOn: fb.createdAt ? fb.createdAt.split("T")[0] : "",
+            anonymous: true,
+            source: "web" as const,
+          };
+        });
+        setFeedbackList(mappedFeedbacks);
+      }
+    } catch (err) {
+      console.error("Failed to fetch feedback:", err);
+    }
+  }, []);
 
   // Submit leave application
   const handleLeaveSubmit = async (e: React.FormEvent) => {
@@ -234,7 +242,7 @@ export default function FormsPage() {
   };
 
   // Submit feedback
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (feedbackForm.rating === 0) {
       alert("Please provide a star rating.");
@@ -245,33 +253,35 @@ export default function FormsPage() {
       return;
     }
 
-    const resolvedName = feedbackForm.anonymous ? "Anonymous" : feedbackForm.employeeName;
+    try {
+      const catMap: Record<string, string> = {
+        "Work Environment": "WORK_ENVIRONMENT",
+        "Management": "MANAGEMENT",
+        "Tools & Processes": "TOOLS_AND_EQUIPMENT",
+        "Team Collaboration": "OTHER",
+        "Training & Development": "OTHER",
+        "Other": "OTHER"
+      };
+      
+      const dbCategory = catMap[feedbackForm.category] || "OTHER";
 
-    const record: FeedbackRecord = {
-      id: `fb-${Date.now()}`,
-      submittedBy: resolvedName,
-      category: feedbackForm.category,
-      rating: feedbackForm.rating,
-      message: feedbackForm.message,
-      submittedOn: new Date().toISOString().split("T")[0],
-      anonymous: feedbackForm.anonymous,
-      source: "web"
-    };
+      await feedbackApi.submit({
+        organizationId: currentUser?.organizationId || "",
+        category: dbCategory,
+        content: feedbackForm.message,
+        rating: feedbackForm.rating
+      });
 
-    setFeedbackList((prev: FeedbackRecord[]) => [record, ...prev]);
-
-    dispatch(addNotification({
-      employeeId: "admin",
-      employeeName: resolvedName,
-      avatar: feedbackForm.anonymous ? "AN" : resolvedName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
-      type: "system",
-      message: `New Feedback Submitted: ${resolvedName} — "${feedbackForm.category}" (${feedbackForm.rating}★). "${feedbackForm.message.slice(0, 80)}..."`,
-      priority: "normal"
-    }));
-
-    setShowFeedbackModal(false);
-    setFeedbackForm({ employeeName: employees[0]?.name || currentName, category: FEEDBACK_CATEGORIES[0], rating: 0, message: "", anonymous: false });
-    showToast("Thank you! Your feedback has been recorded.");
+      setShowFeedbackModal(false);
+      setFeedbackForm({ employeeName: employees[0]?.name || currentName, category: FEEDBACK_CATEGORIES[0], rating: 0, message: "", anonymous: false });
+      showToast("Thank you! Your feedback has been recorded.");
+      
+      if (activeTab === "feedback") {
+        fetchFeedback();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to submit feedback.");
+    }
   };
 
   const tabStyle = (tab: "forms" | "feedback") => ({

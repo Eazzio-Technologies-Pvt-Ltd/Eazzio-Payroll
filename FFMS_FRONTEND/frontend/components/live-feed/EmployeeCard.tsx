@@ -3,7 +3,7 @@
 import React from "react";
 import MiniMap from "./MiniMap";
 import { Employee } from "@/types/live-feed";
-import { MapPin, Battery, Compass, ShieldAlert, Clock, CheckSquare, Activity } from "lucide-react";
+import { MapPin, Battery, CheckSquare, Activity, LogIn, LogOut, Clock } from "lucide-react";
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -40,13 +40,13 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
   const nameInitials = getInitials(employee.name);
   const avatarColor = getColorHash(employee.name);
 
-  // GPS Accuracy color coding
-  const getAccuracyColor = (accuracy?: number) => {
-    if (accuracy === undefined) return "#64748b";
-    if (accuracy < 20) return "#10b981"; // green
-    if (accuracy <= 100) return "#f59e0b"; // yellow
-    return "#ef4444"; // red
-  };
+  // Use real punches from backend only. Fallback to single row using inTime/outTime
+  // if the punches array hasn't been populated yet.
+  const punches: { in: string; out: string }[] = employee.punches
+    ? employee.punches
+    : employee.inTime
+      ? [{ in: employee.inTime, out: employee.outTime || "Not yet" }]
+      : [{ in: "Not Punched", out: "Not yet" }];
 
   return (
     <div style={{
@@ -57,10 +57,11 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
       display: "flex",
       flexDirection: "row",
       boxShadow: "0 4px 20px rgba(48, 117, 228, 0.04)",
-      height: isPastFeed ? "480px" : "320px",
+      height: "auto",
+      minHeight: isPastFeed ? "480px" : "auto",
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     }}
-    className="employee-live-card"
+      className="employee-live-card"
     >
       {/* Left Panel */}
       <div style={{
@@ -77,10 +78,10 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", minWidth: "0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: "0" }}>
             {employee.avatar ? (
-              <img 
-                src={employee.avatar} 
-                alt={employee.name} 
-                style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid #e2e8f0", flexShrink: 0 }} 
+              <img
+                src={employee.avatar}
+                alt={employee.name}
+                style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid #e2e8f0", flexShrink: 0 }}
               />
             ) : (
               <div style={{
@@ -119,7 +120,7 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
                 {employee.territory || "Unassigned"}
               </span>
             </div>
-            
+
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span style={{
                 background: isOnline ? "rgba(16, 185, 129, 0.1)" : "rgba(148, 163, 184, 0.1)",
@@ -135,7 +136,7 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
                 <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: isOnline ? "#10b981" : "#64748b", display: "inline-block" }} />
                 {isOnline ? "Active" : "Inactive"}
               </span>
-              
+
               {isOnline && (
                 <span style={{
                   background: employee.isMoving ? "rgba(59, 130, 246, 0.1)" : "rgba(100, 116, 139, 0.1)",
@@ -160,6 +161,32 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
           </div>
         </div>
 
+        {/* Multiple Punches Strip Feature */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "16px 0", flex: 1 }}>
+          <div style={{ display: "flex", paddingLeft: "28px", marginBottom: "2px" }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#64748b", fontWeight: 700 }}>
+              <LogIn size={12} color="#10b981" /> Punch in
+            </div>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#64748b", fontWeight: 700 }}>
+              <LogOut size={12} color="#ef4444" /> Punch out
+            </div>
+          </div>
+
+          {punches.map((p: any, idx: number) => (
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ width: "22px", height: "22px", background: "#f1f5f9", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "#64748b", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                {idx + 1}
+              </div>
+              <div style={{ flex: 1, background: "#ecfdf5", border: "1px solid #d1fae5", color: "#059669", borderRadius: "12px", padding: "4px 0", textAlign: "center", fontSize: "11px", fontWeight: 700 }}>
+                {p.in}
+              </div>
+              <div style={{ flex: 1, background: p.out === "Not yet" ? "#f8fafc" : "#fef2f2", border: p.out === "Not yet" ? "1px solid #e2e8f0" : "1px solid #ffe4e6", color: p.out === "Not yet" ? "#94a3b8" : "#e11d48", borderRadius: "12px", padding: "4px 0", textAlign: "center", fontSize: "11px", fontWeight: 700 }}>
+                {p.out}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Telemetry Footer */}
         <div style={{
           display: "flex",
@@ -171,21 +198,34 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
           gap: "10px"
         }}>
           {/* Battery */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#475569" }} title="Battery Level">
-            <Battery size={14} color={employee.batteryLevel !== undefined && employee.batteryLevel < 20 ? "#ef4444" : "#10b981"} />
-            <span style={{ fontWeight: 600 }}>{employee.batteryLevel !== undefined ? `${employee.batteryLevel}%` : "N/A"}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Battery</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: (employee.batteryLevel != null && employee.batteryLevel < 20) ? "#ef4444" : "#475569", fontWeight: 700 }}>
+              <Battery size={14} color={(employee.batteryLevel != null && employee.batteryLevel < 20) ? "#ef4444" : "#10b981"} />
+              {employee.batteryLevel != null ? `${employee.batteryLevel}%` : "N/A"}
+            </div>
           </div>
 
-          {/* Speed */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#475569" }} title="Speed">
-            <Compass size={14} color="#3b82f6" />
-            <span style={{ fontWeight: 600 }}>{typeof employee.speed === 'number' ? `${employee.speed.toFixed(1)} km/h` : "--"}</span>
+          <div style={{ width: "1px", height: "24px", background: "#e2e8f0" }} />
+
+          {/* Distance */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Distance</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "#0f172a", fontWeight: 700 }}>
+              <Activity size={12} color="#3b82f6" /> 
+              {employee.distance !== undefined ? employee.distance : "0.0 km"}
+            </div>
           </div>
 
-          {/* Accuracy */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#475569" }} title="GPS Accuracy">
-            <ShieldAlert size={14} color={getAccuracyColor(employee.accuracy)} />
-            <span style={{ fontWeight: 600 }}>{employee.accuracy !== undefined ? `${Math.round(employee.accuracy)}m` : "±15m"}</span>
+          <div style={{ width: "1px", height: "24px", background: "#e2e8f0" }} />
+
+          {/* Hours */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Hours</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "#0f172a", fontWeight: 700 }}>
+              <Clock size={14} color="#64748b" /> 
+              {employee.workingHours !== undefined ? employee.workingHours : "0h 0m"}
+            </div>
           </div>
         </div>
       </div>
@@ -203,37 +243,21 @@ export default function EmployeeCard({ employee, isPastFeed }: EmployeeCardProps
           <MiniMap employee={employee} isPastFeed={isPastFeed} />
         </div>
 
-        {/* Punch & Tasks Strip */}
+        {/* Tasks Strip */}
         <div style={{
-          padding: "10px 14px",
+          padding: "12px 14px",
           background: "#ffffff",
           borderTop: "1px solid #e2e8f0",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "center",
           alignItems: "center",
           fontSize: "12px",
           color: "#475569",
-          flexWrap: "wrap",
-          gap: "8px"
         }}>
-          {/* Check-In */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <Clock size={12} color="#10b981" />
-            <span style={{ fontSize: "11px" }}>In: <strong>{employee.inTime || "Not Punched"}</strong></span>
-          </div>
-
-          {/* Check-Out */}
-          {employee.outTime && (
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <Clock size={12} color="#f59e0b" />
-              <span style={{ fontSize: "11px" }}>Out: <strong>{employee.outTime}</strong></span>
-            </div>
-          )}
-
           {/* Tasks count */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <CheckSquare size={12} color="#3b82f6" />
-            <span style={{ fontSize: "11px" }}>Tasks: <strong>{employee.tasksToday || 0}</strong></span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <CheckSquare size={14} color="#3b82f6" />
+            <span style={{ fontSize: "12px", fontWeight: 500 }}>Tasks Assigned: <strong style={{ color: "#0f172a" }}>{employee.tasksToday || 0}</strong></span>
           </div>
         </div>
       </div>

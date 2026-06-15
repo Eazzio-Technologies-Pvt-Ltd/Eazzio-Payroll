@@ -125,10 +125,30 @@ export default function LiveFeedWidget({
       const mapped = activeUsers.map((user): Employee => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const liveLoc = liveLocations.find((loc: any) => loc.userId === user.id);
+        
+        // Get all attendance records for the user today, sorted by checkInTime ascending
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const todayAtt = attendance.find((att: any) => att.userId === user.id);
+        const userAttendances = attendance
+          .filter((att: any) => att.userId === user.id)
+          .sort((a: any, b: any) => new Date(a.checkInTime).getTime() - new Date(b.checkInTime).getTime());
+        
+        const todayAtt = userAttendances[userAttendances.length - 1]; // Latest one for legacy inTime/outTime
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userTasks = tasks.filter((task: any) => task.assignments?.some((a: any) => a.userId === user.id));
+
+        // Map punches array from real backend data
+        const mappedPunches = userAttendances.map((att: any) => ({
+          in: att.checkInTime ? new Date(att.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not Punched",
+          out: att.checkOutTime ? new Date(att.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not yet"
+        }));
+
+        // Calculate Total Working Hours
+        const totalMinutes = userAttendances.reduce((acc: number, att: any) => acc + (att.workingMinutes || 0), 0);
+        const workingHoursStr = `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+        
+        // Distance
+        const distanceStr = liveLoc?.totalDistanceToday !== undefined ? `${liveLoc.totalDistanceToday.toFixed(1)} km` : "0.0 km";
 
         const isOnline = liveLoc ? liveLoc.isOnline : false;
 
@@ -155,13 +175,44 @@ export default function LiveFeedWidget({
           email: user.email,
           inTime: todayAtt?.checkInTime ? new Date(todayAtt.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
           outTime: todayAtt?.checkOutTime ? new Date(todayAtt.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
+          punches: mappedPunches.length > 0 ? mappedPunches : undefined,
           tasksToday: userTasks.length,
           speed: liveLoc?.speed !== undefined ? liveLoc.speed : 0,
-          accuracy: liveLoc?.accuracy !== undefined ? liveLoc.accuracy : 15
+          accuracy: liveLoc?.accuracy !== undefined ? liveLoc.accuracy : 15,
+          distance: distanceStr,
+          workingHours: workingHoursStr
         };
       });
 
-      setEmployeesList(mapped);
+      // Merge API data with any socket-tracked punches that weren't saved to DB yet.
+      // Combines both lists and deduplicates by punch-in time so no punches are lost.
+      setEmployeesList(prev => {
+        const prevMap = new Map(prev.map(e => [e.id, e]));
+        return mapped.map(emp => {
+          const existing = prevMap.get(emp.id);
+          const apiPunches = emp.punches || [];
+          const socketPunches = existing?.punches || [];
+
+          // Merge: start with socket punches, then add any API punches whose in-time isn't already tracked
+          const merged = [...socketPunches];
+          for (const ap of apiPunches) {
+            if (!merged.some(sp => sp.in === ap.in)) {
+              merged.push(ap);
+            } else {
+              // Update the out-time in merged if API has a checkout that socket doesn't yet
+              const idx = merged.findIndex(sp => sp.in === ap.in);
+              if (idx !== -1 && ap.out !== "Not yet" && merged[idx].out === "Not yet") {
+                merged[idx] = { ...merged[idx], out: ap.out };
+              }
+            }
+          }
+
+          return {
+            ...emp,
+            punches: merged.length > 0 ? merged : emp.punches
+          };
+        });
+      });
       setHasLoadedInit(true);
 
       // Select default employee for past feed
@@ -243,11 +294,17 @@ export default function LiveFeedWidget({
           if (!data || !data.userId) return;
           setEmployeesList(prev => prev.map(emp => {
             if (emp.id !== data.userId) return emp;
+            
+            const newPunch = {
+              in: data.checkInTime ? new Date(data.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not Punched",
+              out: "Not yet"
+            };
+            const currentPunches = emp.punches || [];
+            
             return {
               ...emp,
-              inTime: data.checkInTime 
-                ? new Date(data.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
-                : emp.inTime
+              inTime: newPunch.in,
+              punches: [...currentPunches, newPunch]
             };
           }));
         });
@@ -256,11 +313,18 @@ export default function LiveFeedWidget({
           if (!data || !data.userId) return;
           setEmployeesList(prev => prev.map(emp => {
             if (emp.id !== data.userId) return emp;
+            
+            const outTimeStr = data.checkOutTime ? new Date(data.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : emp.outTime;
+            const currentPunches = [...(emp.punches || [])];
+            
+            if (currentPunches.length > 0) {
+              currentPunches[currentPunches.length - 1].out = outTimeStr || "Not yet";
+            }
+            
             return {
               ...emp,
-              outTime: data.checkOutTime 
-                ? new Date(data.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
-                : emp.outTime
+              outTime: outTimeStr,
+              punches: currentPunches
             };
           }));
         });

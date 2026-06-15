@@ -27,11 +27,13 @@ export interface Employee {
   email: string;
   inTime?: string;
   outTime?: string;
+  punches?: { in: string; out: string }[];
   tasksToday?: number;
   speed?: number;
   accuracy?: number;
   isMoving?: boolean;
   historyLogs?: HistoryLog[];
+  distance?: string;
+  workingHours?: string;
 }
-
 
