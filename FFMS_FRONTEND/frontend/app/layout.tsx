@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Hanken_Grotesk, JetBrains_Mono, Arimo } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import StoreProvider from "@/components/StoreProvider";
@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], display: "swap", variable: '--font-hanken' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], display: "swap", variable: '--font-jetbrains' });
+const arimo = Arimo({ subsets: ["latin"], display: "swap", variable: '--font-arimo' });
 
 export const metadata: Metadata = {
   title: "Field Force Management | Admin Dashboard",
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.className} ${hankenGrotesk.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.className} ${hankenGrotesk.variable} ${jetbrainsMono.variable} ${arimo.variable}`} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <StoreProvider>
