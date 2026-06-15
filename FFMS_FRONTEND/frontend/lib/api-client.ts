@@ -473,6 +473,23 @@ export const mapApi = {
 };
 
 
+// ─── Feedback ──────────────────────────────────────────
+export interface ApiFeedback {
+  id: string;
+  category: string;
+  content: string;
+  rating: number | null;
+  createdAt: string;
+}
+
+export const feedbackApi = {
+  submit: (data: { organizationId: string; category: string; content: string; rating?: number }) =>
+    request("POST", "/feedback/submit", data),
+  getAll: (query?: Record<string, string | number | undefined>) =>
+    request<{ feedbacks: ApiFeedback[]; total: number; page: number; limit: number }>("GET", "/feedback/all", undefined, query),
+};
+
+
 export { ApiError };
 export default request;
 
