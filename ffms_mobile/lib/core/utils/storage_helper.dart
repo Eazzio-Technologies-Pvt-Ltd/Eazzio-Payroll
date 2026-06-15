@@ -20,6 +20,20 @@ class StorageHelper {
   static const String _userNameKey = 'user_name';
   static const String _userEmailKey = 'user_email';
   static const String _userEmployeeIdKey = 'user_employee_id';
+  static const String _pendingActionKey = 'pending_action';
+
+  static Future<void> savePendingAction(String? action) async {
+    if (_prefs == null) await initialize();
+    if (action != null) {
+      await _prefs!.setString(_pendingActionKey, action);
+    } else {
+      await _prefs!.remove(_pendingActionKey);
+    }
+  }
+
+  static String? getPendingAction() {
+    return _prefs?.getString(_pendingActionKey);
+  }
 
   static Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();

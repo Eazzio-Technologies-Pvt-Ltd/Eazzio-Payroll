@@ -95,7 +95,15 @@ class ImageUploadUtil {
 
     if (image == null) return null;
 
-    // 4. Client-side Format & Size Validation
+    if (!context.mounted) return null;
+    return processPickedImage(context, image);
+  }
+
+  /// Helper to validate size, format and encode picked XFile to base64 with data URI header.
+  static Future<ImageUploadResult?> processPickedImage(
+    BuildContext context,
+    XFile image,
+  ) async {
     final pathLower = image.path.toLowerCase();
     final isValidFormat = pathLower.endsWith('.jpg') ||
                           pathLower.endsWith('.jpeg') ||
@@ -129,8 +137,6 @@ class ImageUploadUtil {
       return null;
     }
 
-    // 5. Convert to Base64 and prefix with data URI header
-    // Use correct MIME type based on file extension to prevent Cloudinary upload rejection
     final String rawBase64 = base64Encode(bytes);
     final String mimeType = pathLower.endsWith('.png') ? 'image/png' : 'image/jpeg';
     final String base64WithPrefix = 'data:$mimeType;base64,$rawBase64';

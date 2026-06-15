@@ -82,17 +82,127 @@ class _HomeScreenState extends State<HomeScreen> {
     final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
     final travelProvider = Provider.of<TravelProvider>(context, listen: false);
 
-    await Future.wait([
-      taskProvider.fetchMyTasks(),
-      attendanceProvider.fetchTodayState(),
-      notificationProvider.fetchNotifications(),
-      travelProvider.fetchTodayTravel(),
-      travelProvider.fetchMonthlySummary(),
-      travelProvider.fetchTravelHistory(limit: 30),
-    ]);
+    // 1. Eagerly recover lost camera data before other API calls to restore punch-in UI state instantly
+    try {
+      await _checkAndRecoverLostSelfie();
+    } catch (e) {
+      debugPrint('Error running lost selfie recovery: $e');
+    }
 
-    // Sync any pending offline punch-in/out records from previous sessions
-    attendanceProvider.syncPendingPunches();
+    // 2. Load dashboard feeds in parallel, protected against individual network/timeout failures
+    try {
+      await Future.wait([
+        taskProvider.fetchMyTasks().catchError((e) {
+          debugPrint('Error fetching tasks: $e');
+          return null;
+        }),
+        attendanceProvider.fetchTodayState().catchError((e) {
+          debugPrint('Error fetching today attendance state: $e');
+          return null;
+        }),
+        notificationProvider.fetchNotifications().catchError((e) {
+          debugPrint('Error fetching notifications: $e');
+          return null;
+        }),
+        travelProvider.fetchTodayTravel().catchError((e) {
+          debugPrint('Error fetching today travel: $e');
+          return null;
+        }),
+        travelProvider.fetchMonthlySummary().catchError((e) {
+          debugPrint('Error fetching monthly summary: $e');
+          return null;
+        }),
+        travelProvider.fetchTravelHistory(limit: 30).catchError((e) {
+          debugPrint('Error fetching travel history: $e');
+          return null;
+        }),
+      ]);
+    } catch (e) {
+      debugPrint('Unexpected error in initial dashboard parallel load: $e');
+    }
+
+    // 3. Sync any pending offline punch-in/out records from previous sessions
+    try {
+      await attendanceProvider.syncPendingPunches();
+    } catch (e) {
+      debugPrint('Error syncing pending punches: $e');
+    }
+  }
+
+  Future<void> _checkAndRecoverLostSelfie() async {
+    final pending = StorageHelper.getPendingAction();
+    if (pending != 'PUNCH_IN') return;
+
+    // Clear the pending action immediately so we don't end up in an infinite recovery loop if there is a crash/error
+    await StorageHelper.savePendingAction(null);
+
+    try {
+      final picker = ImagePicker();
+      final LostDataResponse response = await picker.retrieveLostData();
+      if (response.isEmpty || response.file == null) {
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resuming Check-In. Processing captured selfie...'),
+            backgroundColor: AppColors.primary,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Process the recovered file
+      final processed = await ImageUploadUtil.processPickedImage(context, response.file!);
+      if (processed == null) return;
+
+      final base64Selfie = processed.base64String;
+
+      // Get location
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Getting your location...'), duration: Duration(seconds: 2)),
+        );
+      }
+
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 15),
+        );
+      } catch (e) {
+        position = await Geolocator.getLastKnownPosition();
+        if (position == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('GPS signal too weak to complete resumed Check-In. Please try checking in again.'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // Execute punch in
+      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+      final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resumed Check-In Successful! Syncing to server...'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error recovering lost selfie data: $e');
+    }
   }
 
   Future<void> _handleAttendanceAction() async {
@@ -137,11 +247,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
+        await StorageHelper.savePendingAction('PUNCH_IN');
         final result = await ImageUploadUtil.pickAndCompressImage(
           context,
           cameraOnly: true,
           preferredCameraDevice: CameraDevice.front,
         );
+        await StorageHelper.savePendingAction(null);
         if (result == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -154,6 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
         base64Selfie = result.base64String;
       }
     } catch (e) {
+      await StorageHelper.savePendingAction(null);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Selfie capture failed: $e'), backgroundColor: AppColors.error),
