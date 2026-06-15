@@ -8,6 +8,9 @@ import '../providers/travel_provider.dart';
 import '../widgets/status_badge.dart';
 import '../core/theme/app_theme.dart';
 import 'add_expense_screen.dart';
+import 'expense_detail_screen.dart';
+import '../core/utils/responsive.dart';
+import '../widgets/staggered_list_item.dart';
 
 // Expenses listing dashboard screen v2 — modern summaries + categorized cards
 class ExpensesScreen extends StatefulWidget {
@@ -17,14 +20,41 @@ class ExpensesScreen extends StatefulWidget {
   State<ExpensesScreen> createState() => _ExpensesScreenState();
 }
 
-class _ExpensesScreenState extends State<ExpensesScreen> {
+class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
   @override
   void initState() {
     super.initState();
+    // Entrance animation — fade + slide from bottom
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ExpenseProvider>(context, listen: false).fetchMyExpenses();
       Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _submitDraft(String id) async {
@@ -101,6 +131,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
     List<Widget> listItems = [];
 
+    int itemIndex = 0;
     if (expenseProvider.expenses.isEmpty) {
       listItems.add(
         Padding(
@@ -153,79 +184,124 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           final dateStr = DateFormat('dd MMM yyyy').format(expense.date);
           final amountStr = '₹${expense.amount.toStringAsFixed(0)}';
           
-          final managerName = expense.approvedById != null 
-              ? 'Manager ID: ${expense.approvedById}' 
-              : 'Manager';
-
+          final currentIndex = itemIndex++;
           listItems.add(
-            Container(
-              decoration: AppTheme.cardDecoration,
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          expense.title,
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      StatusBadge(status: expense.status),
-                    ],
+            StaggeredListItem(
+              index: currentIndex,
+              child: GestureDetector(
+              onTap: () {
+                // Navigates to ExpenseDetailScreen on tap with slide transition
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, animation, __) => ExpenseDetailScreen(expense: expense),
+                    transitionsBuilder: (_, animation, __, child) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(1.0, 0),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        )),
+                        child: child,
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 300),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Description text — Flexible prevents overflow in Row
-                      Flexible(
-                        child: Text(
-                          '$dateStr | ${expense.description ?? expense.category}',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        amountStr,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Submitted to: $managerName',
-                        style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
-                      ),
-                      if (expense.status == 'DRAFT')
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            minimumSize: Size.zero,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                );
+              },
+              child: Container(
+                decoration: AppTheme.cardDecoration,
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            expense.title,
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          onPressed: () => _submitDraft(expense.id),
-                          child: Text('Submit Claim', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
                         ),
-                    ],
-                  ),
-                ],
+                        StatusBadge(status: expense.status),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '$dateStr | ${expense.description ?? expense.category}',
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          amountStr,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Submitted To - display name instead of ID
+                        Flexible(
+                          child: expense.managerName != null && expense.managerName!.isNotEmpty
+                              ? Text(
+                                  'Submitted to: ${expense.managerName}',
+                                  style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              : (expense.approvedById != null && expense.approvedById!.isNotEmpty
+                                  ? FutureBuilder<String>(
+                                      future: Provider.of<ExpenseProvider>(context, listen: false)
+                                          .getManagerName(expense.approvedById!),
+                                      builder: (context, snapshot) {
+                                        return Text(
+                                          'Submitted to: ${snapshot.data ?? 'Loading...'}',
+                                          style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                                          overflow: TextOverflow.ellipsis,
+                                        );
+                                      },
+                                    )
+                                  : Text(
+                                      'Submitted to: Manager',
+                                      style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                        ),
+                        if (expense.status == 'DRAFT')
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: () => _submitDraft(expense.id),
+                            child: Text('Submit Claim', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
           );
         }
       });
@@ -303,20 +379,26 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        backgroundColor: AppColors.surface,
-        strokeWidth: 2.5,
-        onRefresh: () async {
-          await expenseProvider.fetchMyExpenses();
-          await Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);
-        },
-        child: expenseProvider.isLoading ? const SkeletonList()
-            : ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: listItems,
-              ),
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: AppColors.surface,
+            strokeWidth: 2.5,
+            onRefresh: () async {
+              await expenseProvider.fetchMyExpenses();
+              await Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);
+            },
+            child: expenseProvider.isLoading ? const SkeletonList()
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    children: listItems,
+                  ),
+          ),
+        ),
       ),
     );
   }

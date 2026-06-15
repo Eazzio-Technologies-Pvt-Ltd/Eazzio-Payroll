@@ -20,7 +20,7 @@ class ApplyLeaveScreen extends StatefulWidget {
   State<ApplyLeaveScreen> createState() => _ApplyLeaveScreenState();
 }
 
-class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
+class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   
@@ -32,9 +32,29 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
 
   final List<String> _leaveTypes = ['CASUAL', 'SICK', 'EARNED', 'UNPAID', 'OTHER'];
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<LeaveProvider>(context, listen: false).fetchBalances();
     });
@@ -99,6 +119,7 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
 
   @override
   void dispose() {
+    _animController.dispose();
     _reasonController.dispose();
     super.dispose();
   }
@@ -131,10 +152,14 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        // Responsive padding — no hardcoded values
-        padding: EdgeInsets.all(Responsive(context).cardPadding),
-        child: Form(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            // Responsive padding — no hardcoded values
+            padding: EdgeInsets.all(Responsive(context).cardPadding),
+            child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,6 +382,8 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> {
           ),
         ),
       ),
+    ),
+    ),
     );
   }
 

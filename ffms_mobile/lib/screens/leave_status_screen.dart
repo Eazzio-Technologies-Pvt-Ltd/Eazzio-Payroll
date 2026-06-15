@@ -8,6 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../widgets/status_badge.dart';
 import 'leave_detail_screen.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/staggered_list_item.dart';
 
 // Leave history list screen v2 — modern card items + clean text layouts
 class LeaveStatusScreen extends StatefulWidget {
@@ -17,13 +18,39 @@ class LeaveStatusScreen extends StatefulWidget {
   State<LeaveStatusScreen> createState() => _LeaveStatusScreenState();
 }
 
-class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
+class _LeaveStatusScreenState extends State<LeaveStatusScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<LeaveProvider>(context, listen: false).fetchMyLeaves();
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,7 +71,11 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: RefreshIndicator(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: RefreshIndicator(
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         strokeWidth: 2.5,
@@ -72,110 +103,113 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                       final startStr = DateFormat('dd MMM yyyy').format(leave.startDate);
                       final endStr = DateFormat('dd MMM yyyy').format(leave.endDate);
 
-                      return Container(
-                        decoration: AppTheme.cardDecoration,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LeaveDetailScreen(leave: leave),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        leave.leaveType,
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      StatusBadge(status: leave.status),
-                                    ],
+                      return StaggeredListItem(
+                        index: index,
+                        child: Container(
+                          decoration: AppTheme.cardDecoration,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LeaveDetailScreen(leave: leave),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          leave.leaveType,
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        StatusBadge(status: leave.status),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Duration',
+                                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '$startStr - $endStr',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (leave.reason.isNotEmpty) ...[
+                                      Text(
+                                        'Reason',
+                                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        leave.reason,
+                                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                                      ),
+                                    ],
+                                    if (leave.approvalNote != null && leave.approvalNote!.isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primarySoft,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                                        ),
+                                        child: Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              'Duration',
-                                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '$startStr - $endStr',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.textPrimary,
+                                            const Icon(Icons.comment, size: 14, color: AppColors.primary),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Admin Remark',
+                                                    style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    leave.approvalNote!,
+                                                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary, height: 1.4),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  if (leave.reason.isNotEmpty) ...[
-                                    Text(
-                                      'Reason',
-                                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      leave.reason,
-                                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
-                                    ),
+                                      )
+                                    ]
                                   ],
-                                  if (leave.approvalNote != null && leave.approvalNote!.isNotEmpty) ...[
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primarySoft,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Icon(Icons.comment, size: 14, color: AppColors.primary),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Admin Remark',
-                                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  leave.approvalNote!,
-                                                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textPrimary, height: 1.4),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ]
-                                ],
+                                ),
                               ),
                             ),
                           ),
@@ -184,6 +218,8 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> {
                     },
                   ),
       ),
+    ),
+    ),
     );
   }
 }

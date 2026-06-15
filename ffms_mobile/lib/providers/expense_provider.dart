@@ -127,4 +127,35 @@ class ExpenseProvider extends ChangeNotifier {
     }
     return false;
   }
+
+  // Fetch single expense by ID
+  Future<ExpenseModel?> getExpenseById(String id) async {
+    try {
+      final response = await ApiService.client.get('/expenses/$id');
+      if (response.data['success'] == true) {
+        return ExpenseModel.fromJson(response.data['data']);
+      }
+    } catch (e) {
+      debugPrint('Error fetching expense by id: $e');
+    }
+    return null;
+  }
+
+  // Cache and lookup manager name to avoid redundant API queries
+  final Map<String, String> _managerNameCache = {};
+
+  Future<String> getManagerName(String managerId) async {
+    if (managerId.isEmpty) return 'Manager';
+    if (_managerNameCache.containsKey(managerId)) {
+      return _managerNameCache[managerId]!;
+    }
+    try {
+      final response = await ApiService.client.get('/users/$managerId');
+      final name = response.data['data']?['name'] ?? response.data['data']?['fullName'] ?? 'Manager';
+      _managerNameCache[managerId] = name;
+      return name;
+    } catch (e) {
+      return 'Manager'; // fallback - never show raw ID
+    }
+  }
 }

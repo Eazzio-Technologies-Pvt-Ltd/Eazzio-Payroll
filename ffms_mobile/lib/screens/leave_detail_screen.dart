@@ -18,8 +18,38 @@ class LeaveDetailScreen extends StatefulWidget {
   State<LeaveDetailScreen> createState() => _LeaveDetailScreenState();
 }
 
-class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
+class _LeaveDetailScreenState extends State<LeaveDetailScreen> with SingleTickerProviderStateMixin {
   bool _isCancelling = false;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   IconData _getLeaveTypeIcon(String type) {
     switch (type.toUpperCase()) {
@@ -146,8 +176,12 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            child: Padding(
           padding: EdgeInsets.all(r.screenPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,6 +458,8 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
           ),
         ),
       ),
+    ),
+    ),
     );
   }
 

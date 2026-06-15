@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../core/theme/app_theme.dart';
+import '../widgets/skeleton_loader.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -291,7 +292,7 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildMapSkeleton()
           : Stack(
               children: [
                 FlutterMap(
@@ -555,4 +556,150 @@ class _MapScreenState extends State<MapScreen> {
             ),
     );
   }
+
+  // Map skeleton shown during SDK init and location fetch
+  // Mirrors actual map layout to prevent layout shift
+  Widget _buildMapSkeleton() {
+    return Column(
+      children: [
+        // Top filter bar skeleton
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Search/filter box skeleton
+              Expanded(
+                child: SkeletonBox(
+                  height: 44,
+                  borderRadius: 12,
+                ),
+              ),
+              SizedBox(width: 12),
+              // Filter button skeleton
+              SkeletonBox(
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+              ),
+            ],
+          ),
+        ),
+
+        // Map area skeleton — full width, large height
+        Expanded(
+          child: Stack(
+            children: [
+              // Main map placeholder
+              const SkeletonBox(
+                width: double.infinity,
+                height: double.infinity,
+                borderRadius: 0,
+              ),
+
+              // Fake map grid lines overlay
+              // Horizontal and vertical lines to simulate map tiles
+              CustomPaint(
+                painter: _MapGridPainter(),
+                size: Size.infinite,
+              ),
+
+              // Center location pin skeleton
+              const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SkeletonBox(
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20, // circle
+                    ),
+                    SizedBox(height: 4),
+                    SkeletonBox(
+                      width: 80,
+                      height: 8,
+                      borderRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Bottom employee info card skeleton
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    children: [
+                      // Avatar skeleton
+                      SkeletonBox(
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                      ),
+                      SizedBox(width: 12),
+                      // Name and location text skeleton
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SkeletonBox(height: 14, width: 120, borderRadius: 4),
+                            SizedBox(height: 8),
+                            SkeletonBox(height: 10, width: 180, borderRadius: 4),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      // Status dot skeleton
+                      SkeletonBox(
+                        width: 10,
+                        height: 10,
+                        borderRadius: 5,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..strokeWidth = 1.0;
+
+    const double step = 60.0; // grid step size in dp
+
+    // Draw vertical lines
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    // Draw horizontal lines
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -11,6 +11,7 @@ import '../widgets/task_skeleton.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/staggered_list_item.dart';
 
 // Task list screen v2 — clean search input + custom tabs + bottom sheet styling
 class TasksScreen extends StatefulWidget {
@@ -20,8 +21,11 @@ class TasksScreen extends StatefulWidget {
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
-class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStateMixin {
+class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -37,6 +41,23 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
+
     _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(_handleTabChange);
 
@@ -67,6 +88,7 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    _animController.dispose();
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     _searchController.dispose();
@@ -127,8 +149,12 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           ),
         ),
       ),
-      body: Column(
-        children: [
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: Column(
+            children: [
           // Search box
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -185,24 +211,27 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
                           separatorBuilder: (context, index) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final task = filteredTasks[index];
-                            return TaskCard(
-                              task: task,
-                              onTap: () {
-                                if (task.id.startsWith('local_')) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('This personal task is saved offline. It will sync when you are online.'),
+                            return StaggeredListItem(
+                              index: index,
+                              child: TaskCard(
+                                task: task,
+                                onTap: () {
+                                  if (task.id.startsWith('local_')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('This personal task is saved offline. It will sync when you are online.'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TaskDetailScreen(taskId: task.id),
                                     ),
                                   );
-                                  return;
-                                }
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TaskDetailScreen(taskId: task.id),
-                                  ),
-                                );
-                              },
+                                },
+                              ),
                             );
                           },
                         ),
@@ -210,6 +239,8 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           ),
         ],
       ),
+    ),
+    ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showPersonalTaskSheet,
         backgroundColor: AppColors.primary,

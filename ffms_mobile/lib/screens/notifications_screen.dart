@@ -10,7 +10,9 @@ import '../models/notification_model.dart';
 import '../models/leave_model.dart';
 import 'task_detail_screen.dart';
 import 'leave_detail_screen.dart';
-import 'expenses_screen.dart';
+import '../widgets/staggered_list_item.dart';
+import '../providers/expense_provider.dart';
+import 'expense_detail_screen.dart';
 
 // UI/UX v2 — modern premium design — Antigravity 2026
 class NotificationsScreen extends StatefulWidget {
@@ -20,13 +22,40 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends State<NotificationsScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
   @override
   void initState() {
     super.initState();
+    // Entrance animation — fade + slide from bottom
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
     Future<void> _handleNotificationTap(NotificationModel item) async {
@@ -37,29 +66,47 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       notifProvider.markAsReadSilent(item.id);
     }
     
-    if (item.type == 'TASK' && item.referenceId.isNotEmpty) {
+    // Routes notification tap to correct detail screen based on notification type field
+    final type = item.type?.toUpperCase() ?? '';
+    final refId = item.referenceId;
+    
+    if (type == 'TASK' && refId.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => TaskDetailScreen(taskId: item.referenceId),
+        PageRouteBuilder(
+          pageBuilder: (_, animation, __) => TaskDetailScreen(taskId: refId),
+          transitionsBuilder: (_, animation, __, child) => SlideTransition(
+            position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
+            child: child,
+          ),
+          transitionDuration: const Duration(milliseconds: 300),
         ),
       );
-    } else if (item.type == 'LEAVE' && item.referenceId.isNotEmpty) {
+    } else if (type == 'LEAVE' && refId.isNotEmpty) {
       final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
       LeaveModel? existingLeave;
       for (final l in leaveProvider.leaves) {
-        if (l.id == item.referenceId) {
+        if (l.id == refId) {
           existingLeave = l;
           break;
         }
       }
       
       if (existingLeave != null) {
-        // Instant redirect if already loaded locally
+        // Instant redirect if already loaded locally using slide transition
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => LeaveDetailScreen(leave: existingLeave!),
+          PageRouteBuilder(
+            pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: existingLeave!),
+            transitionsBuilder: (_, animation, __, child) => SlideTransition(
+              position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
+            transitionDuration: const Duration(milliseconds: 300),
           ),
         );
       } else {
@@ -79,7 +126,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             
             LeaveModel? fetchedLeave;
             for (final l in leaveProvider.leaves) {
-              if (l.id == item.referenceId) {
+              if (l.id == refId) {
                 fetchedLeave = l;
                 break;
               }
@@ -88,8 +135,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (fetchedLeave != null) {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => LeaveDetailScreen(leave: fetchedLeave!),
+                PageRouteBuilder(
+                  pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: fetchedLeave!),
+                  transitionsBuilder: (_, animation, __, child) => SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+                      CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                    ),
+                    child: child,
+                  ),
+                  transitionDuration: const Duration(milliseconds: 300),
                 ),
               );
             } else {
@@ -108,12 +162,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
         }
       }
-    } else if (item.type == 'EXPENSE') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const ExpensesScreen(),
+    } else if (type == 'EXPENSE' && refId.isNotEmpty) {
+      // Show loading spinner while fetching expense details
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
+      );
+      
+      try {
+        final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+        final expense = await expenseProvider.getExpenseById(refId);
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          if (expense != null) {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (_, animation, __) => ExpenseDetailScreen(expense: expense),
+                transitionsBuilder: (_, animation, __, child) => SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                  ),
+                  child: child,
+                ),
+                transitionDuration: const Duration(milliseconds: 300),
+              ),
+            );
+          } else {
+            throw Exception('Expense not found');
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog if open
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open expense details: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } else {
+      // Fallback
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No details available')),
       );
     }
   }
@@ -136,7 +232,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: RefreshIndicator(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: RefreshIndicator(
         color: AppColors.primary,
         backgroundColor: AppColors.surface,
         strokeWidth: 2.5,
@@ -161,10 +261,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     itemBuilder: (context, index) {
                       final item = notifProvider.notifications[index];
                       final timeStr = DateFormat('dd MMM, hh:mm a').format(item.createdAt.toLocal());
-
-                      return Card(
-                        color: item.isRead ? AppColors.surface : AppColors.primaryContainer.withOpacity(0.04),
-                        child: InkWell(
+                      return StaggeredListItem(
+                        index: index,
+                        child: Card(
+                          color: item.isRead ? AppColors.surface : AppColors.primaryContainer.withOpacity(0.04),
+                          child: InkWell(
                           onTap: () => _handleNotificationTap(item),
                           borderRadius: BorderRadius.circular(16),
                           child: Padding(
@@ -232,9 +333,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
+                ),
+          ),
+        ),
       ),
     );
   }

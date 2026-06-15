@@ -2,6 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 // UI/UX v2 — modern premium skeleton loading components — Antigravity 2026
+
+class SkeletonBox extends StatelessWidget {
+  final double? width;
+  final double height;
+  final double borderRadius;
+
+  const SkeletonBox({
+    super.key,
+    this.width,
+    required this.height,
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Shimmer direction: left to right sweep every 1200ms
+    // Matches iOS and Android native skeleton standards
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE8EAF0),     // light grey base
+      highlightColor: const Color(0xFFF8F9FF), // near white highlight
+      period: const Duration(milliseconds: 1200),
+      direction: ShimmerDirection.ltr,
+      child: Container(
+        width: width ?? double.infinity,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
+    );
+  }
+}
+
 class SkeletonLoader extends StatelessWidget {
   final double width;
   final double height;
@@ -21,8 +55,10 @@ class SkeletonLoader extends StatelessWidget {
     return Container(
       margin: margin,
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[100]!,
+        baseColor: const Color(0xFFE8EAF0),
+        highlightColor: const Color(0xFFF8F9FF),
+        period: const Duration(milliseconds: 1200),
+        direction: ShimmerDirection.ltr,
         child: Container(
           width: width,
           height: height,
@@ -58,14 +94,16 @@ class SkeletonList extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: Colors.grey[200]!,
-          highlightColor: Colors.grey[100]!,
+          baseColor: const Color(0xFFE8EAF0),
+          highlightColor: const Color(0xFFF8F9FF),
+          period: const Duration(milliseconds: 1200),
+          direction: ShimmerDirection.ltr,
           child: Card(
             elevation: 0,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey[200]!),
+              side: const BorderSide(color: Color(0xFFE8EAF0)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -126,17 +164,18 @@ class SkeletonDetails extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       physics: const NeverScrollableScrollPhysics(),
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[100]!,
+        baseColor: const Color(0xFFE8EAF0),
+        highlightColor: const Color(0xFFF8F9FF),
+        period: const Duration(milliseconds: 1200),
+        direction: ShimmerDirection.ltr,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top card
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey[200]!),
+                side: const BorderSide(color: Color(0xFFE8EAF0)),
               ),
               child: Container(
                 width: double.infinity,
@@ -145,10 +184,8 @@ class SkeletonDetails extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // Header
             Container(width: 120, height: 16, color: Colors.white),
             const SizedBox(height: 16),
-            // List of items
             for (int i = 0; i < 4; i++) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -158,11 +195,10 @@ class SkeletonDetails extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Divider(height: 1, color: Colors.grey[200]),
+              const Divider(height: 1, color: Color(0xFFE8EAF0)),
               const SizedBox(height: 16),
             ],
             const SizedBox(height: 24),
-            // Button placeholder
             Container(
               width: double.infinity,
               height: 48,

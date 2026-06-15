@@ -23,6 +23,8 @@ import '../core/utils/constants.dart';
 import 'permissions_screen.dart';
 import 'request_advance_screen.dart';
 import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
+import '../widgets/animated_counter.dart';
+import '../widgets/animated_card.dart';
 
 // Home screen v2 — premium card layouts + modern gradients
 class HomeScreen extends StatefulWidget {
@@ -88,6 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
       travelProvider.fetchMonthlySummary(),
       travelProvider.fetchTravelHistory(limit: 30),
     ]);
+
+    // Sync any pending offline punch-in/out records from previous sessions
+    attendanceProvider.syncPendingPunches();
   }
 
   Future<void> _handleAttendanceAction() async {
@@ -111,16 +116,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fetching current GPS coordinates...')),
-      );
-    }
+    final bool wasPunchedIn = attendanceProvider.isPunchedIn;
+    String? base64Selfie;
 
+    // ── Selfie capture (punch-in only) ───────────────────────────────────────
     try {
-      String? base64Selfie;
-      final bool wasPunchedIn = attendanceProvider.isPunchedIn;
-
       if (!wasPunchedIn) {
         final battery = Battery();
         final batteryLevel = await battery.batteryLevel;
@@ -153,38 +153,82 @@ class _HomeScreenState extends State<HomeScreen> {
 
         base64Selfie = result.base64String;
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Selfie capture failed: $e'), backgroundColor: AppColors.error),
+        );
+      }
+      return;
+    }
 
-      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    // ── GPS resolution (15s timeout with fallback) ───────────────────────────
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Getting your location...'), duration: Duration(seconds: 2)),
+      );
+    }
 
-      bool success;
-      if (wasPunchedIn) {
-        success = await attendanceProvider.punchOut(position);
+    Position? position;
+    try {
+      position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+    } catch (e) {
+      position = await Geolocator.getLastKnownPosition();
+      if (position == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('GPS signal is too weak. Please ensure location services are enabled and try again.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // ── Execute punch action ─────────────────────────────────────────────────
+    if (wasPunchedIn) {
+      // Punch-out is synchronous (no selfie, fast operation)
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+
+      final success = await attendanceProvider.punchOut(position);
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
         if (success) {
           await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
           await StorageHelper.clearPunchInTime();
         }
-      } else {
-        success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
-        if (success) {
-          await StorageHelper.savePunchInTime(DateTime.now().toIso8601String());
-          await StorageHelper.clearPunchOutTime();
-        }
-      }
-
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(success
-                ? (wasPunchedIn ? 'Punched Out Successfully!' : 'Punched In Successfully!')
-                : (attendanceProvider.errorMessage ?? 'Operation failed')),
+                ? 'Punched Out Successfully!'
+                : (attendanceProvider.errorMessage ?? 'Punch Out failed')),
             backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       }
-    } catch (e) {
-      if (mounted) {
+    } else {
+      // Punch-in is OPTIMISTIC — UI updates immediately, backend syncs in background
+      final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+
+      if (mounted && success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to get GPS: $e'), backgroundColor: AppColors.error),
+          const SnackBar(
+            content: Text('Punched In Successfully! Syncing to server...'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 3),
+          ),
         );
       }
     }
@@ -439,9 +483,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Card 1: Punch In Time
                   Expanded(
-                    child: Container(
+                    child: AnimatedCard(
                       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      decoration: AppTheme.cardDecoration,
                       child: Column(
                         children: [
                           Text(
@@ -474,9 +517,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Card 2: Punch Out Time
                   Expanded(
-                    child: Container(
+                    child: AnimatedCard(
                       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      decoration: AppTheme.cardDecoration,
                       child: Column(
                         children: [
                           Text(
@@ -509,9 +551,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Card 3: Hours Worked Today
                   Expanded(
-                    child: Container(
+                    child: AnimatedCard(
                       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      decoration: AppTheme.cardDecoration,
                       child: Column(
                         children: [
                           Text(
@@ -543,9 +584,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 8),
 
               // Target 9h progress bar
-              Container(
+              AnimatedCard(
                 padding: const EdgeInsets.all(12.0),
-                decoration: AppTheme.cardDecoration,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -578,9 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
 
               // ─── 2c: Two-Column Distance Travel Block ───────────────────
-              Container(
-                width: double.infinity,
-                decoration: AppTheme.cardDecoration,
+              AnimatedCard(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,7 +682,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Distance:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                  Text('${travelProvider.todayDistanceKm.toStringAsFixed(1)} KM', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                  AnimatedCounter(
+                                    value: travelProvider.todayDistanceKm,
+                                    suffix: ' KM',
+                                    precision: 1,
+                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -652,7 +695,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Allowance:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                  Text('₹${travelProvider.todayAllowance.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success)),
+                                  AnimatedCounter(
+                                    value: travelProvider.todayAllowance,
+                                    prefix: '₹',
+                                    precision: 0,
+                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                                  ),
                                 ],
                               ),
                               if (travelProvider.todayLog!.meterEnd == null) ...[
@@ -799,7 +847,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Total:', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                      Text('₹${totalAllowance.toStringAsFixed(0)}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success)),
+                                      AnimatedCounter(
+                                        value: totalAllowance,
+                                        prefix: '₹',
+                                        precision: 0,
+                                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -835,9 +888,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
 
               // ─── 2d: Dynamic Salary Block ──────────────────────────────────
-              Container(
-                width: double.infinity,
-                decoration: AppTheme.cardDecoration,
+              AnimatedCard(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -985,10 +1036,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Accrued Salary (This Month):',
                                 style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                               ),
-                              Text(
-                                '₹${groupedLogs.fold<double>(0.0, (sum, gLog) {
+                              AnimatedCounter(
+                                value: groupedLogs.fold<double>(0.0, (sum, gLog) {
                                   return sum + (gLog['dailySalary'] as double);
-                                }).toStringAsFixed(2)}',
+                                }),
+                                prefix: '₹',
+                                precision: 2,
                                 style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success),
                               ),
                             ],

@@ -74,7 +74,14 @@ class EazzioPayrollApp extends StatelessWidget {
     return MaterialApp(
       title: 'Eazzio Payroll',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.lightTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _SlidePageTransition(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
@@ -84,6 +91,34 @@ class EazzioPayrollApp extends StatelessWidget {
         '/leave-status': (context) => const LeaveStatusScreen(),
         '/leave-details': (context) => const LeaveDetailsScreen(),
       },
+    );
+  }
+}
+
+class _SlidePageTransition extends PageTransitionsBuilder {
+  const _SlidePageTransition();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // Global page transition - slide + fade from right
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(1.0, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      )),
+      child: FadeTransition(
+        opacity: animation,
+        child: child,
+      ),
     );
   }
 }

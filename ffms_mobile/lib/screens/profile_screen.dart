@@ -19,10 +19,30 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final travelProv = Provider.of<TravelProvider>(context, listen: false);
@@ -30,6 +50,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         travelProv.fetchTravelHistory(limit: 30);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _handleLogout(BuildContext context) async {
@@ -233,8 +259,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            child: Column(
           children: [
             // Overlapping Header with design system gradient
             Stack(
@@ -482,6 +512,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 }

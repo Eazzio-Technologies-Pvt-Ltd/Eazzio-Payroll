@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/theme/app_theme.dart';
+import 'animated_tap_button.dart';
 
-// Modern gradient primary button with shadow
-// Replaces flat button — same onPressed behavior kept intact
+// Modern gradient primary button with shadow and premium tap micro-animation
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -30,56 +30,60 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool hasCustomBg = backgroundColor != null;
     final fg = textColor ?? Colors.white;
+    final bool isButtonEnabled = onPressed != null && !isLoading;
 
-    return Container(
+    final childWidget = Container(
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
         gradient: hasCustomBg ? null : AppTheme.headerGradient,
         color: hasCustomBg ? backgroundColor : null,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: hasCustomBg ? null : AppTheme.buttonShadow,
+        border: side != null ? Border.fromBorderSide(side!) : null,
+        boxShadow: (hasCustomBg || isButtonEnabled) ? null : AppTheme.buttonShadow,
       ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          disabledBackgroundColor: Colors.transparent,
-          disabledForegroundColor: fg.withOpacity(0.6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            side: side ?? BorderSide.none,
-          ),
-        ),
-        onPressed: isLoading ? null : onPressed,
-        child: isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(fg),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18, color: fg),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    text,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: fg,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
+      alignment: Alignment.center,
+      child: isLoading
+          ? SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.0,
+                valueColor: AlwaysStoppedAnimation<Color>(fg),
               ),
-      ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: fg),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  text,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+    );
+
+    if (isButtonEnabled) {
+      return AnimatedTapButton(
+        onTap: onPressed!,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: hasCustomBg ? null : AppTheme.buttonShadow,
+        child: childWidget,
+      );
+    }
+
+    return Opacity(
+      opacity: 0.6,
+      child: childWidget,
     );
   }
 }

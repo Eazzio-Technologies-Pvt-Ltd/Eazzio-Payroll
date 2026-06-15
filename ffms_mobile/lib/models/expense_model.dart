@@ -11,6 +11,8 @@ class ExpenseModel {
   final String? approvedById;
   final String? approvalNote;
   final DateTime createdAt;
+  // Manager name - parsed from API's approvedBy or manager fields
+  final String? managerName;
 
   ExpenseModel({
     required this.id,
@@ -25,9 +27,18 @@ class ExpenseModel {
     this.approvedById,
     this.approvalNote,
     required this.createdAt,
+    this.managerName,
   });
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
+    final approvedByObj = json['approvedBy'] as Map<String, dynamic>?;
+    final parsedManagerName = approvedByObj?['name'] as String?
+        ?? approvedByObj?['fullName'] as String?
+        ?? json['manager_name'] as String?
+        ?? json['submitted_to_name'] as String?
+        ?? json['approvedByName'] as String?
+        ?? json['managerName'] as String?;
+
     return ExpenseModel(
       id: json['id'] as String,
       userId: json['userId'] as String,
@@ -38,9 +49,10 @@ class ExpenseModel {
       description: json['description'] as String?,
       receiptUrl: json['receiptUrl'] as String?,
       status: json['status'] as String,
-      approvedById: json['approvedById'] as String?,
+      approvedById: json['approvedById'] as String? ?? approvedByObj?['id'] as String?,
       approvalNote: json['approvalNote'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      managerName: parsedManagerName,
     );
   }
 }

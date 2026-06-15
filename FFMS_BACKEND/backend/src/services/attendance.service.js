@@ -66,7 +66,7 @@ const uploadSelfie = async (base64Str) => {
     return res.secure_url;
   } catch (err) {
     logger.error('Failed to upload check-in selfie to Cloudinary:', err);
-    throw new BadRequestError('Failed to process/upload selfie image');
+    throw new BadRequestError(`Failed to upload check-in selfie: ${err.message || err}`);
   }
 };
 

@@ -130,12 +130,10 @@ class ImageUploadUtil {
     }
 
     // 5. Convert to Base64 and prefix with data URI header
-    // The `data:image/jpeg;base64,` prefix is required by the backend Cloudinary uploader.
-    // Backend also normalises this prefix if missing, but we enforce it here for consistency.
-    // Images sent as Base64 inside JSON — backend uploads to Cloudinary
-    // Never call Cloudinary directly from mobile
+    // Use correct MIME type based on file extension to prevent Cloudinary upload rejection
     final String rawBase64 = base64Encode(bytes);
-    final String base64WithPrefix = 'data:image/jpeg;base64,$rawBase64';
+    final String mimeType = pathLower.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    final String base64WithPrefix = 'data:$mimeType;base64,$rawBase64';
 
     return ImageUploadResult(
       base64String: base64WithPrefix,

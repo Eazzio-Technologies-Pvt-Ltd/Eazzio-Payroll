@@ -16,10 +16,30 @@ class LeaveDetailsScreen extends StatefulWidget {
   State<LeaveDetailsScreen> createState() => _LeaveDetailsScreenState();
 }
 
-class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
+class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+    _animController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
@@ -162,8 +182,12 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
-      body: SafeArea(
-        child: Column(
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SafeArea(
+            child: Column(
           children: [
             // Summary Cards Row
             Padding(
@@ -308,6 +332,8 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 }

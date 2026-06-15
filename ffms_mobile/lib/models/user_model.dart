@@ -10,20 +10,33 @@ class Organization {
       name: json['name'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+  };
 }
 
 class Territory {
   final String id;
   final String name;
+  final Map<String, dynamic>? polygon;
 
-  Territory({required this.id, required this.name});
+  Territory({required this.id, required this.name, this.polygon});
 
   factory Territory.fromJson(Map<String, dynamic> json) {
     return Territory(
       id: json['id'] as String,
       name: json['name'] as String,
+      polygon: json['polygon'] as Map<String, dynamic>?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'polygon': polygon,
+  };
 }
 
 class UserModel {
@@ -80,4 +93,20 @@ class UserModel {
       travelAllowanceRate: (json['travelAllowanceRate'] as num?)?.toDouble() ?? 4.0,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'role': role,
+    'status': status,
+    'employeeId': employeeId,
+    'organization': organization?.toJson(),
+    'territory': territory?.toJson(),
+    'deviceToken': deviceToken,
+    'profileImage': profileImage,
+    'profileImageLockedAt': profileImageLockedAt?.toIso8601String(),
+    'baseSalary': baseSalary,
+    'travelAllowanceRate': travelAllowanceRate,
+  };
 }
