@@ -25,6 +25,7 @@ import 'request_advance_screen.dart';
 import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_card.dart';
+import '../widgets/swipe_to_punch.dart';
 
 // Home screen v2 — premium card layouts + modern gradients
 class HomeScreen extends StatefulWidget {
@@ -205,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _handleAttendanceAction() async {
+  Future<bool> _handleAttendanceAction() async {
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
 
     final permission = await GeolocatorPlatform.instance.checkPermission();
@@ -223,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
-      return;
+      return false;
     }
 
     final bool wasPunchedIn = attendanceProvider.isPunchedIn;
@@ -243,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           }
-          return;
+          return false;
         }
 
         // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
@@ -260,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SnackBar(content: Text('Selfie photo is required to Punch In.')),
             );
           }
-          return;
+          return false;
         }
 
         base64Selfie = result.base64String;
@@ -272,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SnackBar(content: Text('Selfie capture failed: $e'), backgroundColor: AppColors.error),
         );
       }
-      return;
+      return false;
     }
 
     // ── GPS resolution (15s timeout with fallback) ───────────────────────────
@@ -299,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-        return;
+        return false;
       }
     }
 
@@ -331,6 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
+      return success;
     } else {
       // Punch-in is OPTIMISTIC — UI updates immediately, backend syncs in background
       final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
@@ -344,6 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
+      return success;
     }
   }
 
@@ -521,72 +524,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 final isPunchedIn = attendanceProvider.isPunchedIn;
                 final sessionCount = sessions.length;
                 String buttonText;
-                IconData buttonIcon;
 
                 if (!isPunchedIn && sessionCount == 0) {
-                  buttonText = 'Punch In (Session 1)';
-                  buttonIcon = Icons.how_to_reg;
+                  buttonText = 'Swipe to Punch In (Session 1)';
                 } else if (isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Punch Out (Session 1)';
-                  buttonIcon = Icons.logout;
+                  buttonText = 'Swipe to Punch Out (Session 1)';
                 } else if (!isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Punch In (Session 2)';
-                  buttonIcon = Icons.how_to_reg;
+                  buttonText = 'Swipe to Punch In (Session 2)';
                 } else {
-                  buttonText = 'Punch Out (Session 2)';
-                  buttonIcon = Icons.logout;
+                  buttonText = 'Swipe to Punch Out (Session 2)';
                 }
 
-                // Gradient punch buttons with custom shadows
-                return Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: isPunchedIn ? AppTheme.punchOutGradient : AppTheme.punchInGradient,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isPunchedIn ? AppColors.error : AppColors.success).withOpacity(0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      disabledBackgroundColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      ),
-                    ),
-                    onPressed: attendanceProvider.isLoading ? null : _handleAttendanceAction,
-                    child: attendanceProvider.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(buttonIcon, size: 20, color: Colors.white),
-                              const SizedBox(width: 8),
-                              Text(
-                                buttonText,
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
+                return SwipeToPunch(
+                  text: buttonText,
+                  isPunchOut: isPunchedIn,
+                  onConfirm: _handleAttendanceAction,
+                  isLoading: attendanceProvider.isLoading,
                 );
               })(),
               const SizedBox(height: 20),

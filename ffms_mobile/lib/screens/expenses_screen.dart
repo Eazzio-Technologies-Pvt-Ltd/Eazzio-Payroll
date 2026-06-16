@@ -11,6 +11,7 @@ import 'add_expense_screen.dart';
 import 'expense_detail_screen.dart';
 import '../core/utils/responsive.dart';
 import '../widgets/staggered_list_item.dart';
+import '../providers/auth_provider.dart';
 
 // Expenses listing dashboard screen v2 — modern summaries + categorized cards
 class ExpensesScreen extends StatefulWidget {
@@ -105,6 +106,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     final expenseProvider = Provider.of<ExpenseProvider>(context);
     final travelProvider = Provider.of<TravelProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final grouped = <String, List<dynamic>>{};
     double totalSubmitted = 0.0;
@@ -279,11 +281,23 @@ class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProvid
                                         );
                                       },
                                     )
-                                  : Text(
-                                      'Submitted to: Manager',
-                                      style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
-                                      overflow: TextOverflow.ellipsis,
-                                    )),
+                                  : (authProvider.currentUser?.managerId != null && authProvider.currentUser!.managerId!.isNotEmpty
+                                      ? FutureBuilder<String>(
+                                          future: Provider.of<ExpenseProvider>(context, listen: false)
+                                              .getManagerName(authProvider.currentUser!.managerId!),
+                                          builder: (context, snapshot) {
+                                            return Text(
+                                              'Submitted to: ${snapshot.data ?? 'Loading...'}',
+                                              style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                                              overflow: TextOverflow.ellipsis,
+                                            );
+                                          },
+                                        )
+                                      : Text(
+                                          'Submitted to: Manager',
+                                          style: GoogleFonts.inter(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textTertiary),
+                                          overflow: TextOverflow.ellipsis,
+                                        ))),
                         ),
                         if (expense.status == 'DRAFT')
                           TextButton(

@@ -164,6 +164,9 @@ class _LeaveDetailsScreenState extends State<LeaveDetailsScreen> with SingleTick
     int totalRemaining = 0;
 
     for (final balance in leaveProvider.balances) {
+      if (balance.leaveType.toUpperCase() == 'UNPAID') {
+        continue;
+      }
       totalEntitlement += balance.totalEntitled;
       totalUsed += balance.totalUsed;
       totalRemaining += balance.available;

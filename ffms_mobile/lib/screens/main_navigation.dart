@@ -16,6 +16,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  bool _initializedArgs = false;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -24,6 +25,18 @@ class _MainNavigationState extends State<MainNavigation> {
     const AttendanceScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initializedArgs) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is int) {
+        _currentIndex = args;
+      }
+      _initializedArgs = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

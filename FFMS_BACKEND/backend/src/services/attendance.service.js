@@ -232,30 +232,26 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
   const isEarlyLogout = currentMinutes < endMinutes;
 
   // 4. Determine Status based on cumulative working hours business rules
-  const isSessionComplete = openSession.sessionNumber === 2 || currentMinutes >= endMinutes;
+  const pastSessions = await prisma.attendance.findMany({
+    where: {
+      userId,
+      date: todayDate,
+      id: { not: openSession.id }
+    }
+  });
+
+  const pastWorkingMinutes = pastSessions.reduce((sum, s) => sum + (s.workingMinutes || 0), 0);
+  const cumulativeWorkingMinutes = pastWorkingMinutes + workingMinutes;
 
   let calculatedStatus = openSession.status;
-  if (isSessionComplete) {
-    const pastSessions = await prisma.attendance.findMany({
-      where: {
-        userId,
-        date: todayDate,
-        id: { not: openSession.id }
-      }
-    });
-
-    const pastWorkingMinutes = pastSessions.reduce((sum, s) => sum + (s.workingMinutes || 0), 0);
-    const cumulativeWorkingMinutes = pastWorkingMinutes + workingMinutes;
-
-    if (cumulativeWorkingMinutes < 240) {
-      calculatedStatus = 'ABSENT';
-    } else if (cumulativeWorkingMinutes < 420) {
-      calculatedStatus = 'HALF_DAY';
-    } else {
-      // If working > 7 hours, maintain 'LATE' if any session check-in was late
-      const eitherLate = openSession.isLate || pastSessions.some(s => s.isLate);
-      calculatedStatus = eitherLate ? 'LATE' : 'PRESENT';
-    }
+  if (cumulativeWorkingMinutes < 240) {
+    calculatedStatus = 'ABSENT';
+  } else if (cumulativeWorkingMinutes < 420) {
+    calculatedStatus = 'HALF_DAY';
+  } else {
+    // If working > 7 hours, maintain 'LATE' if any session check-in was late
+    const eitherLate = openSession.isLate || pastSessions.some(s => s.isLate);
+    calculatedStatus = eitherLate ? 'LATE' : 'PRESENT';
   }
 
   // 5. Update record. (The status belongs on the day's summary, which is recorded on the latest session record)

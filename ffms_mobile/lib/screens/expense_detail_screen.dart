@@ -6,6 +6,7 @@ import '../models/expense_model.dart';
 import '../core/utils/responsive.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/expense_provider.dart';
+import '../providers/auth_provider.dart';
 
 // Expense Detail Screen - Antigravity 2026
 // Shows full details of a single expense with status, receipt, and manager details
@@ -243,14 +244,32 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
                                 );
                               },
                             )
-                          : Text(
-                              'Manager',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            )),
+                          : (Provider.of<AuthProvider>(context, listen: false).currentUser?.managerId != null &&
+                                  Provider.of<AuthProvider>(context, listen: false).currentUser!.managerId!.isNotEmpty
+                              ? FutureBuilder<String>(
+                                  future: Provider.of<ExpenseProvider>(context, listen: false)
+                                      .getManagerName(Provider.of<AuthProvider>(context, listen: false).currentUser!.managerId!),
+                                  builder: (context, snapshot) {
+                                    return Text(
+                                      snapshot.data ?? 'Loading...',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    );
+                                  },
+                                )
+                              : Text(
+                                  'Manager',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ))),
                 ),
               ],
             ),

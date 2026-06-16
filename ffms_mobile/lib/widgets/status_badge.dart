@@ -30,6 +30,8 @@ class StatusBadge extends StatelessWidget {
       case 'CASUAL':
       case 'SICK':
       case 'PLANNED':
+      case 'LATE':
+      case 'HALF_DAY':
         color = const Color(0xFF8E3C00);
         bgColor = const Color(0xFFFFDBCA).withOpacity(0.4);
         break;

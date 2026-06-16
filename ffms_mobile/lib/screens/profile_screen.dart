@@ -67,9 +67,91 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Future<void> _uploadPhoto(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authUser = authProvider.currentUser;
+
+    // Show custom bottom sheet to pick or remove image
+    final option = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'Profile Photo',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+                title: Text('Take Photo', style: GoogleFonts.inter(color: AppColors.textPrimary)),
+                onTap: () => Navigator.pop(sheetContext, 'camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                title: Text('Choose from Gallery', style: GoogleFonts.inter(color: AppColors.textPrimary)),
+                onTap: () => Navigator.pop(sheetContext, 'gallery'),
+              ),
+              if (authUser?.profileImage != null)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: AppColors.error),
+                  title: Text('Remove Photo', style: GoogleFonts.inter(color: AppColors.error)),
+                  onTap: () => Navigator.pop(sheetContext, 'remove'),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!context.mounted) return;
+    if (option == null) return;
+
+    // Enforce backend constraint: once profile image is set, it cannot be changed or removed.
+    if (authUser?.profileImageLockedAt != null || authUser?.profileImage != null) {
+      final String actionText = option == 'remove' ? 'removed' : 'changed';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Profile photo is locked for security verification and cannot be $actionText.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (option == 'remove') {
+      return;
+    }
+
     final result = await ImageUploadUtil.pickAndCompressImage(
       context,
-      cameraOnly: true,
+      cameraOnly: option == 'camera',
       preferredCameraDevice: CameraDevice.front,
     );
 
@@ -84,7 +166,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
     try {
       final base64Image = result.base64String;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.uploadProfileImage(base64Image);
 
       if (context.mounted) {
@@ -284,39 +365,62 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   child: Center(
                     child: Stack(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.2),
-                                blurRadius: 16,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 4),
+                        GestureDetector(
+                          onTap: () => _uploadPhoto(context),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 4),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.2),
+                                      blurRadius: 16,
+                                      spreadRadius: 2,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: UserAvatar(
+                                  radius: 44,
+                                  photoUrl: authUser?.profileImage,
+                                  name: authUser?.name ?? 'Employee',
+                                ),
+                              ),
+                              // Centered camera icon overlay on the avatar itself
+                              Positioned.fill(
+                                child: Container(
+                                  margin: const EdgeInsets.all(4), // offset the 4px border
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.black.withValues(alpha: 0.3), // semi-transparent black overlay
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          child: UserAvatar(
-                            radius: 44,
-                            photoUrl: authUser?.profileImage,
-                            name: authUser?.name ?? 'Employee',
-                          ),
                         ),
-                        if (authUser?.profileImage == null || authUser?.profileImageLockedAt == null)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () => _uploadPhoto(context),
                             child: CircleAvatar(
-                              radius: 14,
+                              radius: 16,
                               backgroundColor: AppColors.primary,
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
-                                onPressed: () => _uploadPhoto(context),
-                              ),
+                              child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ),

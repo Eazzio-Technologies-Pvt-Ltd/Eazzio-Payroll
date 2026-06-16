@@ -46,6 +46,7 @@ class UserModel {
   final String role;
   final String status;
   final String? employeeId;
+  final String? managerId;
   final Organization? organization;
   final Territory? territory;
   final String? deviceToken;
@@ -61,6 +62,7 @@ class UserModel {
     required this.role,
     required this.status,
     this.employeeId,
+    this.managerId,
     this.organization,
     this.territory,
     this.deviceToken,
@@ -78,6 +80,7 @@ class UserModel {
       role: (json['role'] ?? '') as String,
       status: (json['status'] ?? 'ACTIVE') as String,
       employeeId: json['employeeId'] as String?,
+      managerId: json['managerId'] as String?,
       organization: json['organization'] != null
           ? Organization.fromJson(json['organization'] as Map<String, dynamic>)
           : null,
@@ -101,6 +104,7 @@ class UserModel {
     'role': role,
     'status': status,
     'employeeId': employeeId,
+    'managerId': managerId,
     'organization': organization?.toJson(),
     'territory': territory?.toJson(),
     'deviceToken': deviceToken,

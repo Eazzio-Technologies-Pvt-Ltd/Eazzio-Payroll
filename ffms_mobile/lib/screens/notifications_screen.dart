@@ -58,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     super.dispose();
   }
 
-    Future<void> _handleNotificationTap(NotificationModel item) async {
+  Future<void> _handleNotificationTap(NotificationModel item) async {
     final notifProvider = Provider.of<NotificationProvider>(context, listen: false);
     
     // Mark as read silently under the hood instantly
@@ -66,40 +66,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       notifProvider.markAsReadSilent(item.id);
     }
     
-    // Routes notification tap to correct detail screen based on notification type field
-    final type = item.type?.toUpperCase() ?? '';
+    // Normalize type based on title and message for SYSTEM type polymorphic notifications
+    String type = item.type.toUpperCase();
+    final titleUpper = item.title.toUpperCase();
     final refId = item.referenceId;
     
-    if (type == 'TASK' && refId.isNotEmpty) {
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, animation, __) => TaskDetailScreen(taskId: refId),
-          transitionsBuilder: (_, animation, __, child) => SlideTransition(
-            position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-            ),
-            child: child,
-          ),
-          transitionDuration: const Duration(milliseconds: 300),
-        ),
-      );
-    } else if (type == 'LEAVE' && refId.isNotEmpty) {
-      final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
-      LeaveModel? existingLeave;
-      for (final l in leaveProvider.leaves) {
-        if (l.id == refId) {
-          existingLeave = l;
-          break;
-        }
+    if (type == 'SYSTEM' && refId.isNotEmpty) {
+      if (titleUpper.contains('LEAVE')) {
+        type = 'LEAVE';
+      } else if (titleUpper.contains('EXPENSE')) {
+        type = 'EXPENSE';
       }
-      
-      if (existingLeave != null) {
-        // Instant redirect if already loaded locally using slide transition
+    }
+    
+    if (type == 'TASK') {
+      if (refId.isNotEmpty) {
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: existingLeave!),
+            pageBuilder: (_, animation, __) => TaskDetailScreen(taskId: refId),
             transitionsBuilder: (_, animation, __, child) => SlideTransition(
               position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
                 CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
@@ -110,7 +95,93 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           ),
         );
       } else {
-        // Show loading spinner only while fetching from network
+        // Fallback: Navigate to Tasks tab in MainNavigation
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false, arguments: 1);
+      }
+    } else if (type == 'LEAVE') {
+      if (refId.isNotEmpty) {
+        final leaveProvider = Provider.of<LeaveProvider>(context, listen: false);
+        LeaveModel? existingLeave;
+        for (final l in leaveProvider.leaves) {
+          if (l.id == refId) {
+            existingLeave = l;
+            break;
+          }
+        }
+        
+        if (existingLeave != null) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: existingLeave!),
+              transitionsBuilder: (_, animation, __, child) => SlideTransition(
+                position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                ),
+                child: child,
+              ),
+              transitionDuration: const Duration(milliseconds: 300),
+            ),
+          );
+        } else {
+          // Show loading spinner
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          );
+          
+          try {
+            await leaveProvider.fetchMyLeaves();
+            if (mounted) {
+              Navigator.pop(context); // Close loading indicator
+              
+              LeaveModel? fetchedLeave;
+              for (final l in leaveProvider.leaves) {
+                if (l.id == refId) {
+                  fetchedLeave = l;
+                  break;
+                }
+              }
+              
+              if (fetchedLeave != null) {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: fetchedLeave!),
+                    transitionsBuilder: (_, animation, __, child) => SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
+                        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                      ),
+                      child: child,
+                    ),
+                    transitionDuration: const Duration(milliseconds: 300),
+                  ),
+                );
+              } else {
+                throw Exception('Leave not found');
+              }
+            }
+          } catch (e) {
+            if (mounted) {
+              Navigator.pop(context); // Close loading dialog if open
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Could not open leave details: ${e.toString()}'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          }
+        }
+      } else {
+        // Fallback: Navigate to Leave status list screen
+        Navigator.pushNamed(context, '/leave-status');
+      }
+    } else if (type == 'EXPENSE') {
+      if (refId.isNotEmpty) {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -120,23 +191,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         );
         
         try {
-          await leaveProvider.fetchMyLeaves();
+          final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+          final expense = await expenseProvider.getExpenseById(refId);
           if (mounted) {
-            Navigator.pop(context); // Close loading indicator
-            
-            LeaveModel? fetchedLeave;
-            for (final l in leaveProvider.leaves) {
-              if (l.id == refId) {
-                fetchedLeave = l;
-                break;
-              }
-            }
-            
-            if (fetchedLeave != null) {
+            Navigator.pop(context); // Close loading dialog
+            if (expense != null) {
               Navigator.push(
                 context,
                 PageRouteBuilder(
-                  pageBuilder: (_, animation, __) => LeaveDetailScreen(leave: fetchedLeave!),
+                  pageBuilder: (_, animation, __) => ExpenseDetailScreen(expense: expense),
                   transitionsBuilder: (_, animation, __, child) => SlideTransition(
                     position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
                       CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
@@ -147,7 +210,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 ),
               );
             } else {
-              throw Exception('Leave not found');
+              throw Exception('Expense not found');
             }
           }
         } catch (e) {
@@ -155,57 +218,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
             Navigator.pop(context); // Close loading dialog if open
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Could not open leave details: ${e.toString()}'),
+                content: Text('Could not open expense details: ${e.toString()}'),
                 backgroundColor: AppColors.error,
               ),
             );
           }
         }
       }
-    } else if (type == 'EXPENSE' && refId.isNotEmpty) {
-      // Show loading spinner while fetching expense details
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      );
-      
-      try {
-        final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
-        final expense = await expenseProvider.getExpenseById(refId);
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog
-          if (expense != null) {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (_, animation, __) => ExpenseDetailScreen(expense: expense),
-                transitionsBuilder: (_, animation, __, child) => SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(1.0, 0), end: Offset.zero).animate(
-                    CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-                  ),
-                  child: child,
-                ),
-                transitionDuration: const Duration(milliseconds: 300),
-              ),
-            );
-          } else {
-            throw Exception('Expense not found');
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog if open
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open expense details: ${e.toString()}'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
+    } else if (type == 'ATTENDANCE' || type == 'GEOFENCE' || type == 'LATE_CHECKIN' || type == 'EARLY_LOGOUT' || type == 'LATE_ARRIVAL_STREAK') {
+      // Navigate to Attendance tab in MainNavigation
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false, arguments: 3);
     } else {
       // Fallback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -278,7 +300,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                                       ? Icons.location_on_outlined
                                       : item.type == 'TASK'
                                           ? Icons.assignment_outlined
-                                          : Icons.notifications_active_outlined,
+                                          : (item.type == 'LEAVE' || item.title.toUpperCase().contains('LEAVE'))
+                                              ? Icons.time_to_leave_outlined
+                                              : (item.type == 'EXPENSE' || item.title.toUpperCase().contains('EXPENSE'))
+                                                  ? Icons.receipt_long_outlined
+                                                  : Icons.notifications_active_outlined,
                                   color: item.isRead ? AppColors.outline : AppColors.primary,
                                 ),
                                 const SizedBox(width: 12),

@@ -318,6 +318,7 @@ class AttendanceProvider extends ChangeNotifier {
           final models = todayLogs
               .map((item) => AttendanceModel.fromJson(item as Map<String, dynamic>))
               .toList();
+          models.sort((a, b) => a.sessionNumber.compareTo(b.sessionNumber));
           _todaySessions = models;
           
           // Find if there is an active/open session
@@ -353,9 +354,18 @@ class AttendanceProvider extends ChangeNotifier {
       final response = await ApiService.client.get('/attendance');
       if (response.data['success'] == true) {
         final list = response.data['data'] as List? ?? [];
-        _attendanceHistory = list
+        final fetched = list
             .map((item) => AttendanceModel.fromJson(item as Map<String, dynamic>))
             .toList();
+        
+        // Sort history: first by date descending, then by sessionNumber descending
+        fetched.sort((a, b) {
+          final dateCompare = b.date.compareTo(a.date);
+          if (dateCompare != 0) return dateCompare;
+          return b.sessionNumber.compareTo(a.sessionNumber);
+        });
+        
+        _attendanceHistory = fetched;
       }
     } catch (e) {
       // Catch silently
