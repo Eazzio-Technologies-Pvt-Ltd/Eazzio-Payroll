@@ -184,5 +184,5 @@ This project is proprietary software belonging to **Eazzio technology**. Unautho
 
 ---
 
-<p align="center">Made with ❤️ by the Eazzio technology Team</p>
+<p align="center">⚙️ Developed with precision by the Eazzio Technology Team</p>
 
