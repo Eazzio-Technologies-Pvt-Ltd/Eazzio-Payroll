@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/travel_provider.dart';
 import '../utils/image_upload_util.dart';
 import '../core/theme/app_theme.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/animated_tap_button.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TravelMeterScreen extends StatefulWidget {
   const TravelMeterScreen({super.key});
@@ -155,11 +158,12 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0.5,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Today's Summary Card
             if (today != null) ...[
               Container(
@@ -327,27 +331,41 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
-                            icon: Icon(
-                              _proofBase64 != null ? Icons.check_circle : Icons.camera_alt_outlined,
-                              color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
-                            ),
-                            label: Text(
-                              _proofBase64 != null 
-                                  ? 'Photo Captured ✓' 
-                                  : (today != null && today.meterStart != null ? 'Upload End Meter Photo' : 'Upload Start Meter Photo'),
-                              style: TextStyle(
-                                color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
+                          child: AnimatedTapButton(
+                            onTap: _isPicking ? () {} : _pickMeterPhoto,
+                            child: Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: _proofBase64 != null ? AppColors.secondary.withOpacity(0.08) : Colors.transparent,
+                                border: Border.all(
+                                  color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _proofBase64 != null ? Icons.check_circle : Icons.camera_alt_outlined,
+                                    color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _proofBase64 != null 
+                                        ? 'Photo Captured ✓' 
+                                        : (today != null && today.meterStart != null ? 'Upload End Meter Photo' : 'Upload Start Meter Photo'),
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 48),
-                              side: BorderSide(
-                                color: _proofBase64 != null ? AppColors.secondary : AppColors.primary,
-                              ),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: _isPicking ? null : _pickMeterPhoto,
                           ),
                         ),
                         if (_proofBase64 != null) ...[
@@ -366,31 +384,14 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
                     ),
                   const SizedBox(height: 24),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (tp.isSubmitting || (today != null && today.meterStart != null && today.meterEnd != null)) ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 52),
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: tp.isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : Text(
-                              today != null && today.meterStart != null && today.meterEnd == null
-                                  ? 'Complete Travel Log'
-                                  : (today != null && today.meterStart != null && today.meterEnd != null
-                                      ? 'Travel Log Completed'
-                                      : 'Submit Travel Log'),
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                            ),
-                    ),
+                  CustomButton(
+                    text: today != null && today.meterStart != null && today.meterEnd == null
+                        ? 'Complete Travel Log'
+                        : (today != null && today.meterStart != null && today.meterEnd != null
+                            ? 'Travel Log Completed'
+                            : 'Submit Travel Log'),
+                    onPressed: (today != null && today.meterStart != null && today.meterEnd != null) ? null : _submit,
+                    isLoading: tp.isSubmitting,
                   ),
                 ],
               ),
@@ -473,7 +474,8 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
                   );
                 },
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );

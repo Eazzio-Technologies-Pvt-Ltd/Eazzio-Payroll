@@ -15,6 +15,7 @@ import '../providers/attendance_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/travel_provider.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/animated_tap_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/user_avatar.dart';
 import '../core/theme/app_theme.dart';
@@ -1433,6 +1434,9 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
     final rate = _getTravelRate();
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1500,17 +1504,37 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _pickPhoto(true),
-                    icon: Icon(_startPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
-                    label: Text(_startPhoto != null ? 'Photo Captured' : 'Upload Start-of-Day Photo', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _startPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
-                      foregroundColor: _startPhoto != null ? AppColors.success : AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                AnimatedTapButton(
+                  onTap: () => _pickPhoto(true),
+                  child: Container(
+                    width: double.infinity,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: _startPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _startPhoto != null ? AppColors.success.withOpacity(0.3) : AppColors.primary.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(_startPhoto != null ? Icons.check : Icons.camera_alt, 
+                          color: _startPhoto != null ? AppColors.success : AppColors.primary, 
+                          size: 18
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _startPhoto != null ? 'Photo Captured' : 'Upload Start-of-Day Photo', 
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold,
+                            color: _startPhoto != null ? AppColors.success : AppColors.primary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1586,17 +1610,37 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _pickPhoto(false),
-                      icon: Icon(_endPhoto != null ? Icons.check : Icons.camera_alt, size: 18),
-                      label: Text(_endPhoto != null ? 'Photo Captured' : 'Upload End-of-Day Photo', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _endPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
-                        foregroundColor: _endPhoto != null ? AppColors.success : AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  AnimatedTapButton(
+                    onTap: () => _pickPhoto(false),
+                    child: Container(
+                      width: double.infinity,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _endPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _endPhoto != null ? AppColors.success.withOpacity(0.3) : AppColors.primary.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(_endPhoto != null ? Icons.check : Icons.camera_alt, 
+                            color: _endPhoto != null ? AppColors.success : AppColors.primary, 
+                            size: 18
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _endPhoto != null ? 'Photo Captured' : 'Upload End-of-Day Photo', 
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.bold,
+                              color: _endPhoto != null ? AppColors.success : AppColors.primary,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
