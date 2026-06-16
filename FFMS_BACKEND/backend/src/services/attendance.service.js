@@ -50,6 +50,24 @@ const getShiftConfig = (shift) => {
   };
 };
 
+// Calculate exact shift end date-time based on check-in local date
+const getShiftEndTime = (checkInTime, shift) => {
+  const { startMinutes, endMinutes } = getShiftConfig(shift);
+  
+  // Create a Date object in the user's local timezone corresponding to checkInTime
+  const shiftEnd = new Date(checkInTime);
+  shiftEnd.setHours(0, 0, 0, 0); // start of check-in day
+  
+  // Set to end minutes
+  shiftEnd.setMinutes(endMinutes);
+  
+  // If endMinutes is less than startMinutes, shift ends on the next calendar day
+  if (endMinutes < startMinutes) {
+    shiftEnd.setDate(shiftEnd.getDate() + 1);
+  }
+  return shiftEnd;
+};
+
 /**
  * Perform base64 upload to Cloudinary
  */
@@ -87,6 +105,28 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
   
   // Date truncated to day in IST
   const todayDate = getLocalDate(now);
+
+  // Auto-close any open/abandoned sessions from previous days (older than 18 hours)
+  const openPastSessions = await prisma.attendance.findMany({
+    where: {
+      userId,
+      checkOutTime: null,
+      checkInTime: { lt: new Date(now.getTime() - 18 * 60 * 60 * 1000) }
+    }
+  });
+
+  for (const session of openPastSessions) {
+    await prisma.attendance.update({
+      where: { id: session.id },
+      data: {
+        checkOutTime: session.checkInTime,
+        workingMinutes: 0,
+        status: 'ABSENT',
+        isEarlyLogout: true
+      }
+    });
+    logger.info(`[Auto-Checkout] Closed abandoned session ${session.id} for user ${userId} from date ${session.date.toISOString().substring(0, 10)}`);
+  }
 
   // 1. Count today's sessions for the user and validate session state
   const todaySessions = await prisma.attendance.findMany({
@@ -203,12 +243,14 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
   const now = new Date();
   const todayDate = getLocalDate(now);
 
-  // 1. Find today's active/open session
+  // 1. Find the active/open session (can be from today or yesterday night shift)
   const openSession = await prisma.attendance.findFirst({
     where: {
       userId,
-      date: todayDate,
       checkOutTime: null
+    },
+    orderBy: {
+      checkInTime: 'desc'
     },
     include: {
       user: {
@@ -221,21 +263,19 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
     throw new BadRequestError('No active session to check out from');
   }
 
-  // 2. Compute working minutes for this session
+  // 2. Compute working minutes for this session (guarded to never be negative)
   const checkInTime = new Date(openSession.checkInTime);
-  const workingMinutes = Math.floor((now - checkInTime) / 60000);
+  const workingMinutes = Math.max(0, Math.floor((now - checkInTime) / 60000));
 
-  // 3. Determine if early logout
-  const { endMinutes } = getShiftConfig(openSession.user?.shift);
-  const { hours, minutes } = getLocalHoursAndMinutes(now);
-  const currentMinutes = hours * 60 + minutes;
-  const isEarlyLogout = currentMinutes < endMinutes;
+  // 3. Determine if early logout using computed shift end date-time
+  const shiftEndTime = getShiftEndTime(openSession.checkInTime, openSession.user?.shift);
+  const isEarlyLogout = now < shiftEndTime;
 
   // 4. Determine Status based on cumulative working hours business rules
   const pastSessions = await prisma.attendance.findMany({
     where: {
       userId,
-      date: todayDate,
+      date: openSession.date,
       id: { not: openSession.id }
     }
   });

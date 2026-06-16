@@ -21,6 +21,28 @@ const worker = new Worker('payroll-cron', async (job) => {
   if (job.name === 'calculate-deductions') {
     logger.info('[PayrollCron] Starting late arrival deduction check...');
     
+    // Auto-close any open/abandoned sessions (older than 18 hours) across all users
+    const now = new Date();
+    const abandonedSessions = await prisma.attendance.findMany({
+      where: {
+        checkOutTime: null,
+        checkInTime: { lt: new Date(now.getTime() - 18 * 60 * 60 * 1000) }
+      }
+    });
+
+    for (const session of abandonedSessions) {
+      await prisma.attendance.update({
+        where: { id: session.id },
+        data: {
+          checkOutTime: session.checkInTime,
+          workingMinutes: 0,
+          status: 'ABSENT',
+          isEarlyLogout: true
+        }
+      });
+      logger.info(`[PayrollCron Auto-Checkout] Closed abandoned session ${session.id} for user ${session.userId} from date ${session.date.toISOString().substring(0, 10)}`);
+    }
+
     // Logic: 3 consecutive lates = 2.5 days salary deduction
     // 1. Get all active field staff
     const users = await prisma.user.findMany({
