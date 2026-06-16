@@ -18,6 +18,7 @@ import 'screens/main_navigation.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/leave_status_screen.dart';
 import 'screens/leave_details_screen.dart';
+import 'screens/profile_screen.dart';
 import 'core/utils/notification_helper.dart';
 
 void main() async {
@@ -90,6 +91,7 @@ class EazzioPayrollApp extends StatelessWidget {
         '/notifications': (context) => const NotificationsScreen(),
         '/leave-status': (context) => const LeaveStatusScreen(),
         '/leave-details': (context) => const LeaveDetailsScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
