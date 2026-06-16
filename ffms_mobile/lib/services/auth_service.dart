@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'api_service.dart';
 import '../core/utils/storage_helper.dart';
@@ -26,6 +27,7 @@ class AuthService {
         // Save tokens & info
         await StorageHelper.saveAccessToken(accessToken);
         await StorageHelper.saveRefreshToken(refreshToken);
+        await StorageHelper.saveUserProfileJson(jsonEncode(userJson));
         await StorageHelper.saveUserInfo(
           id: user.id,
           role: user.role,
@@ -53,6 +55,7 @@ class AuthService {
       if (response.data['success'] == true) {
         final userJson = response.data['data']['user'] as Map<String, dynamic>;
         final user = UserModel.fromJson(userJson);
+        await StorageHelper.saveUserProfileJson(jsonEncode(userJson));
         await StorageHelper.saveUserInfo(
           id: user.id,
           role: user.role,

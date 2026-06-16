@@ -191,7 +191,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         textColor = AppColors.textSecondary;
         statusType = 'WEEKLY_OFF';
       } else {
-        tileBg = AppColors.border.withOpacity(0.4);
+        tileBg = AppColors.border.withValues(alpha: 0.4);
         textColor = AppColors.textTertiary;
         statusType = 'UNMARKED';
       }
@@ -212,7 +212,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           border: isSelected
               ? Border.all(color: AppColors.primary, width: 2.0)
               : isToday
-                  ? Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.0)
+                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.0)
                   : Border.all(color: AppColors.border, width: 0.5),
         ),
         child: Stack(
@@ -305,7 +305,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, -4),
               ),
@@ -408,9 +408,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.primarySoft.withOpacity(0.4),
+            color: AppColors.primarySoft.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -57,15 +57,27 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
     _resetAnimation = Tween<double>(
       begin: _dragPosition,
       end: 0.0,
-    ).animate(CurvedAnimation(parent: _resetController, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(
+      parent: _resetController,
+      curve: Curves.easeOutBack,
+    ));
     _resetController.forward(from: 0.0);
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.isPunchOut ? const Color(0xFFDC2626) : const Color(0xFF059669);
-    final bgColor = widget.isPunchOut ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5);
-    final borderColor = widget.isPunchOut ? const Color(0xFFFCA5A5) : const Color(0xFF6EE7B7);
+    final themeColor = widget.isPunchOut ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
+    final gradient = widget.isPunchOut
+        ? const LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -82,12 +94,11 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            color: bgColor,
+            gradient: gradient,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: borderColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: themeColor.withOpacity(0.06),
+                color: themeColor.withValues(alpha: 0.18),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -99,24 +110,38 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
               Positioned.fill(
                 child: Center(
                   child: widget.isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Opacity(
                           opacity: textOpacity,
-                          child: Text(
-                            widget.text,
-                            style: GoogleFonts.inter(
-                              color: themeColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              letterSpacing: 0.5,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '>  >  >  ',
+                                style: GoogleFonts.inter(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              Text(
+                                widget.text,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                 ),
@@ -162,23 +187,16 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
                   child: Container(
                     width: thumbSize,
                     height: thumbSize,
-                    decoration: BoxDecoration(
-                      color: themeColor,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: themeColor.withOpacity(0.35),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Icon(
                       widget.isLoading
                           ? Icons.sync
-                          : (widget.isPunchOut ? Icons.logout : Icons.double_arrow),
-                      color: Colors.white,
-                      size: 20,
+                          : Icons.keyboard_double_arrow_right_rounded,
+                      color: themeColor,
+                      size: 22,
                     ),
                   ),
                 ),

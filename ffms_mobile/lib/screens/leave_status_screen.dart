@@ -181,7 +181,7 @@ class _LeaveStatusScreenState extends State<LeaveStatusScreen> with SingleTicker
                                         decoration: BoxDecoration(
                                           color: AppColors.primarySoft,
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                                         ),
                                         child: Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,

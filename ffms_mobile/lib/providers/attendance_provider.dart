@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../models/attendance_model.dart';
+import '../models/user_model.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/utils/offline_punch_cache.dart';
 
@@ -21,6 +22,7 @@ class AttendanceProvider extends ChangeNotifier {
   AttendanceModel? _todayAttendance;
   List<AttendanceModel> _attendanceHistory = [];
   List<AttendanceModel> _todaySessions = [];
+  List<Shift> _shifts = [];
   bool _isLoading = false;
   String? _errorMessage;
   bool _isSyncing = false;
@@ -28,6 +30,7 @@ class AttendanceProvider extends ChangeNotifier {
   AttendanceModel? get todayAttendance => _todayAttendance;
   List<AttendanceModel> get attendanceHistory => _attendanceHistory;
   List<AttendanceModel> get todaySessions => _todaySessions;
+  List<Shift> get shifts => _shifts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isSyncing => _isSyncing;
@@ -35,6 +38,19 @@ class AttendanceProvider extends ChangeNotifier {
   // Renamed from Check In/Out to Punch In/Out as per v2 spec
   bool get isPunchedIn => _todayAttendance != null && _todayAttendance!.punchOutTime == null;
   bool get isDayComplete => _todaySessions.length >= 2 && _todaySessions.every((m) => m.punchOutTime != null);
+
+  Future<void> fetchShifts() async {
+    try {
+      final response = await ApiService.client.get('/shifts');
+      if (response.data['success'] == true) {
+        final list = response.data['data'] as List? ?? [];
+        _shifts = list.map((item) => Shift.fromJson(item as Map<String, dynamic>)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[AttendanceProvider] Failed to fetch shifts: $e');
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // OPTIMISTIC PUNCH IN

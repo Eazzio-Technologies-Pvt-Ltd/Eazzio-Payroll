@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/user_model.dart';
 
 class StorageHelper {
   static const _secureStorage = FlutterSecureStorage(
@@ -92,6 +90,17 @@ class StorageHelper {
   static String? getUserName() => _prefs?.getString(_userNameKey);
   static String? getUserEmail() => _prefs?.getString(_userEmailKey);
   static String? getEmployeeId() => _prefs?.getString(_userEmployeeIdKey);
+
+  static const String _userProfileJsonKey = 'user_profile_json';
+
+  static Future<void> saveUserProfileJson(String jsonStr) async {
+    if (_prefs == null) await initialize();
+    await _prefs!.setString(_userProfileJsonKey, jsonStr);
+  }
+
+  static String? getUserProfileJson() {
+    return _prefs?.getString(_userProfileJsonKey);
+  }
 
   static const String _permissionsGrantedKey = 'permissions_granted';
   static const String _punchInTimeKey = 'punch_in_time';

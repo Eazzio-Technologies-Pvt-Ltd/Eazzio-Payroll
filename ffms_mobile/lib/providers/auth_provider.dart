@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/socket_service.dart';
@@ -40,8 +41,29 @@ class AuthProvider extends ChangeNotifier {
       final cachedEmail = StorageHelper.getUserEmail();
       final cachedRole = StorageHelper.getUserRole();
       final cachedEmployeeId = StorageHelper.getEmployeeId();
+      final cachedProfileJson = StorageHelper.getUserProfileJson();
 
-      if (cachedId != null && cachedName != null && cachedEmail != null && cachedRole != null) {
+      if (cachedProfileJson != null) {
+        try {
+          _currentUser = UserModel.fromJson(jsonDecode(cachedProfileJson));
+        } catch (_) {}
+      }
+
+      if (_currentUser != null) {
+        _state = AuthState.authenticated;
+        notifyListeners();
+
+        // Connect socket in background
+        SocketService.connect().catchError((_) {});
+
+        // Fetch fresh profile in the background to update cached data without blocking app launch
+        _authService.getProfile().then((freshUser) {
+          if (freshUser != null) {
+            _currentUser = freshUser;
+            notifyListeners();
+          }
+        }).catchError((_) {});
+      } else if (cachedId != null && cachedName != null && cachedEmail != null && cachedRole != null) {
         _currentUser = UserModel(
           id: cachedId,
           name: cachedName,

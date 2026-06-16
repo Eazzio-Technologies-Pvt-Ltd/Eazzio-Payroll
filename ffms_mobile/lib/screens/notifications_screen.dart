@@ -286,7 +286,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                       return StaggeredListItem(
                         index: index,
                         child: Card(
-                          color: item.isRead ? AppColors.surface : AppColors.primaryContainer.withOpacity(0.04),
+                          color: item.isRead ? AppColors.surface : AppColors.primaryContainer.withValues(alpha: 0.04),
                           child: InkWell(
                           onTap: () => _handleNotificationTap(item),
                           borderRadius: BorderRadius.circular(16),

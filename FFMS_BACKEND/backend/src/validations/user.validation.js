@@ -12,7 +12,8 @@ const createUserSchema = z.object({
   managerId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional()),
   territoryId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional()),
   department: z.string().optional(),
-  profileImage: z.string().optional()
+  profileImage: z.string().optional(),
+  shiftId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional())
 });
 
 const updateUserSchema = z.object({
@@ -26,7 +27,8 @@ const updateUserSchema = z.object({
   managerId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional()),
   territoryId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional()),
   department: z.string().optional(),
-  profileImage: z.string().optional()
+  profileImage: z.string().optional(),
+  shiftId: z.preprocess((val) => (val === '' || val === 'null' || val === null) ? null : val, z.string().nullable().optional())
 });
 
 const assignTerritorySchema = z.object({

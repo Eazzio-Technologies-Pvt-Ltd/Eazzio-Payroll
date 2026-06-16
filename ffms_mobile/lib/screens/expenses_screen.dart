@@ -349,7 +349,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProvid
       Container(
         decoration: AppTheme.cardDecoration.copyWith(
           color: AppColors.primarySoft,
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
         margin: const EdgeInsets.only(top: 12, bottom: 24),
         padding: const EdgeInsets.all(16.0),

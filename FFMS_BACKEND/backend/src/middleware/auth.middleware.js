@@ -36,7 +36,7 @@ const authenticate = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      include: { organization: true, territory: true }
+      include: { organization: true, territory: true, shift: true }
     });
 
     if (!user) {
@@ -63,7 +63,8 @@ const authenticate = async (req, res, next) => {
       profileImage: user.profileImage,
       profileImageLockedAt: user.profileImageLockedAt,
       organization: user.organization,
-      territory: user.territory
+      territory: user.territory,
+      shift: user.shift
     };
 
     next();

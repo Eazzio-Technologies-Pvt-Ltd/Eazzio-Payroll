@@ -39,6 +39,48 @@ class Territory {
   };
 }
 
+class Shift {
+  final String id;
+  final String name;
+  final String startTime; // Format "HH:MM"
+  final String endTime;   // Format "HH:MM"
+  final int gracePeriod;
+  final double halfDayThreshold;
+  final int breakDuration;
+
+  Shift({
+    required this.id,
+    required this.name,
+    required this.startTime,
+    required this.endTime,
+    this.gracePeriod = 15,
+    this.halfDayThreshold = 4.5,
+    this.breakDuration = 30,
+  });
+
+  factory Shift.fromJson(Map<String, dynamic> json) {
+    return Shift(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      startTime: json['startTime'] as String,
+      endTime: json['endTime'] as String,
+      gracePeriod: json['gracePeriod'] as int? ?? 15,
+      halfDayThreshold: (json['halfDayThreshold'] as num?)?.toDouble() ?? 4.5,
+      breakDuration: json['breakDuration'] as int? ?? 30,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'startTime': startTime,
+    'endTime': endTime,
+    'gracePeriod': gracePeriod,
+    'halfDayThreshold': halfDayThreshold,
+    'breakDuration': breakDuration,
+  };
+}
+
 class UserModel {
   final String id;
   final String name;
@@ -49,6 +91,7 @@ class UserModel {
   final String? managerId;
   final Organization? organization;
   final Territory? territory;
+  final Shift? shift;
   final String? deviceToken;
   final String? profileImage;
   final DateTime? profileImageLockedAt;
@@ -65,6 +108,7 @@ class UserModel {
     this.managerId,
     this.organization,
     this.territory,
+    this.shift,
     this.deviceToken,
     this.profileImage,
     this.profileImageLockedAt,
@@ -87,6 +131,9 @@ class UserModel {
       territory: json['territory'] != null
           ? Territory.fromJson(json['territory'] as Map<String, dynamic>)
           : null,
+      shift: json['shift'] != null
+          ? Shift.fromJson(json['shift'] as Map<String, dynamic>)
+          : null,
       deviceToken: json['deviceToken'] as String?,
       profileImage: json['profileImage'] as String?,
       profileImageLockedAt: json['profileImageLockedAt'] != null
@@ -107,6 +154,7 @@ class UserModel {
     'managerId': managerId,
     'organization': organization?.toJson(),
     'territory': territory?.toJson(),
+    'shift': shift?.toJson(),
     'deviceToken': deviceToken,
     'profileImage': profileImage,
     'profileImageLockedAt': profileImageLockedAt?.toIso8601String(),

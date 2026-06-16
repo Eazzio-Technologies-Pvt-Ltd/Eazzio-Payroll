@@ -30,7 +30,7 @@ const generateOtp = () => {
 const login = async (email, password) => {
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { organization: true, territory: true }
+    include: { organization: true, territory: true, shift: true }
   });
 
   if (!user) {
@@ -112,7 +112,7 @@ const register = async (data) => {
         }
       }
     },
-    include: { organization: true, territory: true }
+    include: { organization: true, territory: true, shift: true }
   });
 
   const { passwordHash: _, ...userWithoutPassword } = user;
@@ -349,7 +349,8 @@ const updateProfileImage = async (userId, base64Image) => {
     },
     include: {
       organization: true,
-      territory: true
+      territory: true,
+      shift: true
     }
   });
 

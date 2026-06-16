@@ -27,6 +27,7 @@ import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded si
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_card.dart';
 import '../widgets/swipe_to_punch.dart';
+import '../models/attendance_model.dart';
 
 // Home screen v2 — premium card layouts + modern gradients
 class HomeScreen extends StatefulWidget {
@@ -38,9 +39,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isInit = true;
+  bool _isLoading = false;
   Timer? _countUpTimer;
   String _travelFilter = '7'; // Default to 7 Days
   DateTimeRange? _customDateRange;
+  DateTime _singleDate = DateTime.now();
+  String _analyticsFilter = 'single';
+  DateTime? _selectedTimelineDate;
 
   // ─────────────────────────── Time-based Greeting ─────────────────────────────
   String _getGreeting() {
@@ -51,12 +56,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Night';
   }
 
+  String formatTotalWorkingHours(double totalHours) {
+    final hours = totalHours.toInt();
+    final minutes = ((totalHours - hours) * 60).round();
+    return '${hours.toString().padLeft(2, '0')}h ${minutes.toString().padLeft(2, '0')}m';
+  }
+
   @override
   void initState() {
     super.initState();
-    // A lightweight 1-minute ticker keeps the "Hours Worked" calculation fresh without
-    // flooding setState every second.
-    _countUpTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+    // A 1-second ticker to support the live stopwatch style working hours timer
+    _countUpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {});
       }
@@ -79,6 +89,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
     final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
@@ -100,6 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
         }),
         attendanceProvider.fetchTodayState().catchError((e) {
           debugPrint('Error fetching today attendance state: $e');
+          return null;
+        }),
+        attendanceProvider.fetchHistory().catchError((e) {
+          debugPrint('Error fetching attendance history: $e');
+          return null;
+        }),
+        attendanceProvider.fetchShifts().catchError((e) {
+          debugPrint('Error fetching shifts: $e');
           return null;
         }),
         notificationProvider.fetchNotifications().catchError((e) {
@@ -128,6 +152,12 @@ class _HomeScreenState extends State<HomeScreen> {
       await attendanceProvider.syncPendingPunches();
     } catch (e) {
       debugPrint('Error syncing pending punches: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -493,6 +523,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // ─── Punch Action Button ─────────────────────────────────
               (() {
+                if (_isLoading) {
+                  return const ShimmerSkeleton(height: 56);
+                }
                 final isDayComplete = attendanceProvider.isDayComplete;
                 if (isDayComplete) {
                   return Center(
@@ -546,142 +579,855 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
 
               // ─── 2b: Three-Card Punch Layout ──────────────────────────────
-              Row(
-                children: [
-                  // Card 1: Punch In Time
-                  Expanded(
-                    child: AnimatedCard(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Punch In Time',
-                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            firstPunchIn != null
-                                ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
-                                : '--:--:--',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.success,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            firstPunchIn != null ? 'Started' : 'Not Active',
-                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Card 2: Punch Out Time
-                  Expanded(
-                    child: AnimatedCard(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Punch Out Time',
-                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            lastPunchOut != null
-                                ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
-                                : '--:--:--',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            lastPunchOut != null ? 'Completed' : 'Pending',
-                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Card 3: Hours Worked Today
-                  Expanded(
-                    child: AnimatedCard(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Hours Worked',
-                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${totalHours.toStringAsFixed(1)} hrs',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Target: 9h',
-                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Target 9h progress bar
-              AnimatedCard(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              _isLoading
+                  ? Row(
                       children: [
-                        Text(
-                          'Shift Progress',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        Expanded(child: ShimmerSkeleton(height: 85)),
+                        const SizedBox(width: 8),
+                        Expanded(child: ShimmerSkeleton(height: 85)),
+                        const SizedBox(width: 8),
+                        Expanded(child: ShimmerSkeleton(height: 85)),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        // Card 1: Punch In Time
+                        Expanded(
+                          child: AnimatedCard(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Punch In Time',
+                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  firstPunchIn != null
+                                      ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
+                                      : '--:--:--',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.success,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  firstPunchIn != null ? 'Started' : 'Not Active',
+                                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        Text(
-                          '${(totalHours * 60).round() ~/ 60}h ${(totalHours * 60).round() % 60}m / 9h 00m',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        const SizedBox(width: 8),
+
+                        // Card 2: Punch Out Time
+                        Expanded(
+                          child: AnimatedCard(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Punch Out Time',
+                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  lastPunchOut != null
+                                      ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
+                                      : '--:--:--',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.error,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  lastPunchOut != null ? 'Completed' : 'Pending',
+                                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Card 3: Hours Worked Today
+                        Expanded(
+                          child: AnimatedCard(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Hours Worked',
+                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${totalHours.toStringAsFixed(1)} hrs',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                (() {
+                                  var shift = authUser?.shift;
+                                  if (shift == null && attendanceProvider.shifts.isNotEmpty) {
+                                    shift = attendanceProvider.shifts.first;
+                                  }
+                                  double targetHours = 9.0;
+                                  if (shift != null) {
+                                    try {
+                                      final startParts = shift.startTime.split(':');
+                                      final endParts = shift.endTime.split(':');
+                                      final startMin = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+                                      final endMin = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+                                      int diffMin = endMin - startMin;
+                                      if (diffMin < 0) {
+                                        diffMin += 24 * 60; // Crossover midnight
+                                      }
+                                      targetHours = diffMin / 60.0;
+                                    } catch (_) {}
+                                  }
+                                  final targetStr = targetHours.toStringAsFixed(1).replaceAll('.0', '');
+                                  return Text(
+                                    'Target: ${targetStr}h',
+                                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                  );
+                                })(),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (totalHours / 9.0).clamp(0.0, 1.0),
-                        backgroundColor: AppColors.border,
-                        color: AppColors.primary,
-                        minHeight: 8,
+              const SizedBox(height: 8),
+
+              // ─── Blue WORKING HOURS Card ────────────────────
+              (() {
+                if (_isLoading) {
+                  return const ShimmerSkeleton(height: 180);
+                }
+                final sessions = attendanceProvider.todaySessions;
+                
+                // Calculate today's live working hours if punched in
+                Duration todayWorkDuration = Duration.zero;
+                for (final session in sessions) {
+                  final start = session.punchInTime;
+                  final end = session.punchOutTime ?? DateTime.now();
+                  if (start != null) {
+                    todayWorkDuration += end.difference(start.toLocal());
+                  }
+                }
+                
+                // Calculate today's break duration
+                Duration todayBreakDuration = Duration.zero;
+                for (int i = 0; i < sessions.length - 1; i++) {
+                  final outTime = sessions[i].punchOutTime;
+                  final inTime = sessions[i+1].punchInTime;
+                  if (outTime != null && inTime != null) {
+                    todayBreakDuration += inTime.toLocal().difference(outTime.toLocal());
+                  }
+                }
+
+                // Format live ticker or filtered hours
+                String hoursText = '';
+                String breakText = '';
+                String captionText = '';
+
+                final now = DateTime.now();
+                final isToday = _singleDate.year == now.year &&
+                    _singleDate.month == now.month &&
+                    _singleDate.day == now.day;
+
+                var activeShift = authUser?.shift;
+                if (activeShift == null && attendanceProvider.shifts.isNotEmpty) {
+                  activeShift = attendanceProvider.shifts.first;
+                }
+                final limitMin = activeShift?.breakDuration ?? 30;
+
+                if (isToday) {
+                  final hours = todayWorkDuration.inHours.toString().padLeft(2, '0');
+                  final minutes = (todayWorkDuration.inMinutes % 60).toString().padLeft(2, '0');
+                  final seconds = (todayWorkDuration.inSeconds % 60).toString().padLeft(2, '0');
+                  hoursText = '$hours:$minutes:$seconds';
+                  
+                  final breakH = todayBreakDuration.inHours.toString().padLeft(2, '0');
+                  final breakM = (todayBreakDuration.inMinutes % 60).toString().padLeft(2, '0');
+                  breakText = '${breakH}h-${breakM}m / ${limitMin}m';
+                  captionText = 'Hours worked today';
+                } else {
+                  final history = attendanceProvider.attendanceHistory;
+                  final targetStart = DateTime(_singleDate.year, _singleDate.month, _singleDate.day);
+                  final targetEnd = targetStart.add(const Duration(days: 1));
+                  
+                  final filteredLogs = history.where((log) => 
+                    log.date.isAfter(targetStart.subtract(const Duration(seconds: 1))) &&
+                    log.date.isBefore(targetEnd)
+                  ).toList();
+                  
+                  final dateStr = DateFormat('dd MM yyyy').format(_singleDate);
+                  captionText = 'Hours worked on $dateStr';
+
+                  final totalHrs = filteredLogs.fold(0.0, (sum, log) => sum + (log.totalWorkingHours ?? 0.0));
+                  final hoursInt = totalHrs.toInt();
+                  final minutesInt = ((totalHrs - hoursInt) * 60).round();
+                  hoursText = '${hoursInt.toString().padLeft(2, '0')}:${minutesInt.toString().padLeft(2, '0')}:00';
+                  
+                  final groupedLogs = <String, List<AttendanceModel>>{};
+                  for (final log in filteredLogs) {
+                    final dateKey = '${log.date.year}-${log.date.month}-${log.date.day}';
+                    groupedLogs.putIfAbsent(dateKey, () => []).add(log);
+                  }
+
+                  Duration totalRangeBreakDuration = Duration.zero;
+                  for (final key in groupedLogs.keys) {
+                    final daySessions = groupedLogs[key]!;
+                    daySessions.sort((a, b) {
+                      if (a.punchInTime != null && b.punchInTime != null) {
+                        return a.punchInTime!.compareTo(b.punchInTime!);
+                      }
+                      return a.sessionNumber.compareTo(b.sessionNumber);
+                    });
+
+                    for (int i = 0; i < daySessions.length - 1; i++) {
+                      final outTime = daySessions[i].punchOutTime;
+                      final inTime = daySessions[i + 1].punchInTime;
+                      if (outTime != null && inTime != null) {
+                        totalRangeBreakDuration += inTime.toLocal().difference(outTime.toLocal());
+                      }
+                    }
+                  }
+
+                  final breakH = totalRangeBreakDuration.inHours.toString().padLeft(2, '0');
+                  final breakM = (totalRangeBreakDuration.inMinutes % 60).toString().padLeft(2, '0');
+                  breakText = '${breakH}h-${breakM}m / ${limitMin}m';
+                }
+
+                return Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20.0),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'WORKING HOURS',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: _singleDate,
+                                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                                    lastDate: DateTime.now(),
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF2563EB),
+                                            onPrimary: Colors.white,
+                                            onSurface: Colors.black,
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      _singleDate = picked;
+                                      _selectedTimelineDate = DateTime(picked.year, picked.month, picked.day);
+                                    });
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.calendar_month_rounded,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        DateFormat('dd MM yyyy').format(_singleDate),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                hoursText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.check, size: 14, color: Colors.white70),
+                              const SizedBox(width: 4),
+                              Text(
+                                captionText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 32, color: Colors.white24),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.free_breakfast_rounded, size: 16, color: Colors.white),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Total Break Time',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                breakText,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.schedule_rounded, size: 16, color: Colors.white),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Shift Timing',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              (() {
+                                var shift = authUser?.shift;
+                                if (shift == null && attendanceProvider.shifts.isNotEmpty) {
+                                  shift = attendanceProvider.shifts.first;
+                                }
+                                String shiftText = '09:00 am - 06:00 pm';
+                                if (shift != null) {
+                                  String formatTime(String time24) {
+                                    try {
+                                      final parts = time24.split(':');
+                                      final hour = int.parse(parts[0]);
+                                      final minute = int.parse(parts[1]);
+                                      final ampm = hour >= 12 ? 'pm' : 'am';
+                                      final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+                                      final minStr = minute.toString().padLeft(2, '0');
+                                      return '$hour12:$minStr $ampm';
+                                    } catch (_) {
+                                      return time24;
+                                    }
+                                  }
+                                  shiftText = '${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}';
+                                }
+                                return Text(
+                                  shiftText,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              })(),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: ConcentricCirclesPainter(),
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
+                );
+              })(),
+              const SizedBox(height: 16),
+
+              // ─── Your activity timeline Section ────────────────────
+              (() {
+                if (_isLoading) {
+                  return const ShimmerSkeleton(height: 120);
+                }
+                final now = DateTime.now();
+                final todayStart = DateTime(now.year, now.month, now.day);
+                
+                final datesToShow = <DateTime>[];
+                if (_analyticsFilter == '7') {
+                  for (int i = 0; i < 7; i++) {
+                    datesToShow.add(todayStart.subtract(Duration(days: i)));
+                  }
+                } else if (_analyticsFilter == '6m') {
+                  final activeDates = attendanceProvider.attendanceHistory
+                      .map((log) => DateTime(log.date.year, log.date.month, log.date.day))
+                      .toSet()
+                      .toList();
+                  activeDates.sort((a, b) => b.compareTo(a));
+                  datesToShow.addAll(activeDates.take(15));
+                } else if (_analyticsFilter == 'custom' && _customDateRange != null) {
+                  final diff = _customDateRange!.end.difference(_customDateRange!.start).inDays;
+                  final limit = diff.clamp(0, 31);
+                  for (int i = 0; i <= limit; i++) {
+                    datesToShow.add(DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day).add(Duration(days: i)));
+                  }
+                  datesToShow.sort((a, b) => b.compareTo(a));
+                }
+
+                if (_selectedTimelineDate == null) {
+                  if (_analyticsFilter == 'today') {
+                    _selectedTimelineDate = todayStart;
+                  } else if (_analyticsFilter == 'yesterday') {
+                    _selectedTimelineDate = todayStart.subtract(const Duration(days: 1));
+                  } else if (_analyticsFilter == 'single') {
+                    _selectedTimelineDate = _singleDate;
+                  } else if (datesToShow.isNotEmpty) {
+                    _selectedTimelineDate = datesToShow.first;
+                  } else {
+                    _selectedTimelineDate = todayStart;
+                  }
+                }
+
+                final targetDate = _selectedTimelineDate ?? todayStart;
+                final isTargetToday = targetDate.year == todayStart.year &&
+                    targetDate.month == todayStart.month &&
+                    targetDate.day == todayStart.day;
+
+                List<AttendanceModel> daySessions = [];
+                if (isTargetToday) {
+                  daySessions = attendanceProvider.todaySessions;
+                } else {
+                  daySessions = attendanceProvider.attendanceHistory.where((log) {
+                    return log.date.year == targetDate.year &&
+                           log.date.month == targetDate.month &&
+                           log.date.day == targetDate.day;
+                  }).toList();
+                  daySessions.sort((a, b) {
+                    if (a.punchInTime != null && b.punchInTime != null) {
+                      return a.punchInTime!.compareTo(b.punchInTime!);
+                    }
+                    return a.sessionNumber.compareTo(b.sessionNumber);
+                  });
+                }
+
+                final events = <_TimelineEvent>[];
+                for (int i = 0; i < daySessions.length; i++) {
+                  final session = daySessions[i];
+                  if (session.punchInTime != null) {
+                    events.add(_TimelineEvent(
+                      type: 'in',
+                      time: session.punchInTime!,
+                      label: 'Punch In',
+                    ));
+                  }
+                  if (session.punchOutTime != null) {
+                    events.add(_TimelineEvent(
+                      type: 'out',
+                      time: session.punchOutTime!,
+                      label: 'Punch Out',
+                    ));
+                  }
+                  if (i < daySessions.length - 1) {
+                    final nextSession = daySessions[i + 1];
+                    if (session.punchOutTime != null && nextSession.punchInTime != null) {
+                      final breakDur = nextSession.punchInTime!.difference(session.punchOutTime!);
+                      if (breakDur.inMinutes > 0) {
+                        events.add(_TimelineEvent(
+                          type: 'break',
+                          time: session.punchOutTime!,
+                          label: '${breakDur.inMinutes} Min Break',
+                          breakDuration: breakDur,
+                        ));
+                      }
+                    }
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.trending_up_rounded,
+                            color: Color(0xFF2563EB),
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Your activity",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (datesToShow.isNotEmpty)
+                      Container(
+                        height: 64,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: datesToShow.length,
+                          itemBuilder: (context, idx) {
+                            final date = datesToShow[idx];
+                            final isSelected = targetDate.year == date.year &&
+                                targetDate.month == date.month &&
+                                targetDate.day == date.day;
+                                
+                            final dayName = DateFormat('E').format(date);
+                            final dayNum = DateFormat('dd').format(date);
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedTimelineDate = date;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 50,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.primary : AppColors.bgCard,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primary : AppColors.border,
+                                    width: 1,
+                                  ),
+                                  boxShadow: isSelected ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(alpha: 0.2),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
+                                    )
+                                  ] : null,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      dayName,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: isSelected ? Colors.white70 : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      dayNum,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.05),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: AnimatedCard(
+                          key: ValueKey<String>('timeline_${targetDate.year}_${targetDate.month}_${targetDate.day}_${events.length}'),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          child: events.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 24),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 32,
+                                          color: AppColors.textTertiary,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'No activity logged for this day',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : Column(
+                                  children: List.generate(events.length, (idx) {
+                                    final event = events[idx];
+                                    
+                                    if (event.type == 'break') {
+                                      return Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 24,
+                                            height: 40,
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Positioned(
+                                                  top: 0,
+                                                  bottom: 0,
+                                                  left: 11,
+                                                  child: Container(
+                                                    width: 2,
+                                                    color: AppColors.border,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 1,
+                                                    color: AppColors.border,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFFFBEB),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(color: const Color(0xFFFDE68A)),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.free_breakfast_rounded,
+                                                        size: 12,
+                                                        color: Color(0xFFD97706),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        event.label,
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: const Color(0xFFD97706),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 1,
+                                                    color: AppColors.border,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    } else {
+                                      final isPunchIn = event.type == 'in';
+                                      final circleColor = isPunchIn ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
+                                      final iconColor = isPunchIn ? AppColors.success : AppColors.error;
+                                      final iconData = isPunchIn ? Icons.login_rounded : Icons.logout_rounded;
+                                      
+                                      return Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 24,
+                                            height: 48,
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                if (events.length > 1)
+                                                  Positioned(
+                                                    top: idx == 0 ? 24 : 0,
+                                                    bottom: idx == events.length - 1 ? 24 : 0,
+                                                    left: 11,
+                                                    child: Container(
+                                                      width: 2,
+                                                      color: AppColors.border,
+                                                    ),
+                                                  ),
+                                                Container(
+                                                  width: 24,
+                                                  height: 24,
+                                                  decoration: BoxDecoration(
+                                                    color: circleColor,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    iconData,
+                                                    color: iconColor,
+                                                    size: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  event.label,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                Text(
+                                                  DateFormat('hh:mm a').format(event.time.toLocal()).toLowerCase(),
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    color: AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                  }),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              })(),
               const SizedBox(height: 16),
 
               // ─── 2c: Two-Column Distance Travel Block ───────────────────
@@ -1124,7 +1870,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.accent.withOpacity(0.20),
+                                  color: AppColors.accent.withValues(alpha: 0.20),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1404,6 +2150,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Submission Error: $e'),
@@ -1513,7 +2260,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                       color: _startPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _startPhoto != null ? AppColors.success.withOpacity(0.3) : AppColors.primary.withOpacity(0.3),
+                        color: _startPhoto != null ? AppColors.success.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -1564,7 +2311,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   decoration: BoxDecoration(
                     color: AppColors.successSoft,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -1619,7 +2366,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                         color: _endPhoto != null ? AppColors.successSoft : AppColors.primarySoft,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _endPhoto != null ? AppColors.success.withOpacity(0.3) : AppColors.primary.withOpacity(0.3),
+                          color: _endPhoto != null ? AppColors.success.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -1670,7 +2417,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                     decoration: BoxDecoration(
                       color: AppColors.successSoft,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -1704,7 +2451,7 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
                   decoration: BoxDecoration(
                     color: AppColors.primarySoft,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [
@@ -1757,6 +2504,100 @@ class _TravelEntrySheetState extends State<TravelEntrySheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ConcentricCirclesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    // Draw multiple concentric circles originating from top-right corner
+    final center = Offset(size.width * 1.1, size.height * -0.1);
+    canvas.drawCircle(center, size.width * 0.3, paint);
+    canvas.drawCircle(center, size.width * 0.5, paint);
+    canvas.drawCircle(center, size.width * 0.7, paint);
+    canvas.drawCircle(center, size.width * 0.9, paint);
+    canvas.drawCircle(center, size.width * 1.1, paint);
+    canvas.drawCircle(center, size.width * 1.3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _TimelineEvent {
+  final String type; // 'in', 'out', 'break'
+  final DateTime time;
+  final String label;
+  final Duration? breakDuration;
+  _TimelineEvent({
+    required this.type,
+    required this.time,
+    required this.label,
+    this.breakDuration,
+  });
+}
+
+class ShimmerSkeleton extends StatefulWidget {
+  final double height;
+  final double width;
+  final double borderRadius;
+
+  const ShimmerSkeleton({
+    super.key,
+    required this.height,
+    this.width = double.infinity,
+    this.borderRadius = 12,
+  });
+
+  @override
+  State<ShimmerSkeleton> createState() => _ShimmerSkeletonState();
+}
+
+class _ShimmerSkeletonState extends State<ShimmerSkeleton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _opacityAnimation = Tween<double>(begin: 0.35, end: 0.65).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacityAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacityAnimation.value,
+          child: Container(
+            height: widget.height,
+            width: widget.width,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+            ),
+          ),
+        );
+      },
     );
   }
 }

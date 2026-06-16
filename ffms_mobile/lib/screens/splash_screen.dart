@@ -144,6 +144,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       if (mounted) {
         _glowController.forward();
       }
+      
     });
 
     _particleController.forward();
@@ -379,16 +380,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     position: _nameSlide,
                     child: Column(
                       children: [
-                        Text(
-                          'eAzzio PAYROLL',
-                          style: GoogleFonts.outfit(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
+                                              const SizedBox(height: 8),
                         Text(
                           'Smart Workforce Tracking',
                           style: GoogleFonts.inter(
