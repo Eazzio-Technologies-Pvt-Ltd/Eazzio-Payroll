@@ -490,9 +490,15 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> with SingleTicker
           label,
           style: GoogleFonts.inter(fontSize: r.fontSM, color: AppColors.textSecondary),
         ),
-        Text(
-          val,
-          style: GoogleFonts.inter(fontSize: r.fontSM, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            val,
+            style: GoogleFonts.inter(fontSize: r.fontSM, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            textAlign: TextAlign.end,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

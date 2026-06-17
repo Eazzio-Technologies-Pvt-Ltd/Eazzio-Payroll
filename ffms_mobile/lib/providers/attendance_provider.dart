@@ -9,15 +9,22 @@ import '../models/user_model.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/utils/offline_punch_cache.dart';
 
-/// AttendanceProvider — Optimistic Punch-In Architecture
+class PunchResult {
+  final bool success;
+  final String message;
+  final int? sessionNumber;
+
+  PunchResult({required this.success, this.message = '', this.sessionNumber});
+}
+
+/// AttendanceProvider — Server-Confirm-First Punch-In Architecture
 ///
 /// Flow:
-///   1. Save selfie + GPS + timestamp locally (OfflinePunchCache).
-///   2. **Immediately** update UI state → user sees "Punched In".
-///   3. Fire backend sync in background with 3 retries.
-///   4. On success → update with real server data.
-///   5. On failure → data stays cached; sync retried on next app launch.
-///   6. If backend rejects (e.g. geofence violation) → rollback UI + notify user.
+///   1. Swipe → show loading animation on button
+///   2. Wait for server response — NO UI change yet
+///   3. Server error → show error, reset button
+///   4. Server success → save locally → update UI → show toast
+///   5. Fetch fresh data after 2s in background
 class AttendanceProvider extends ChangeNotifier {
   AttendanceModel? _todayAttendance;
   List<AttendanceModel> _attendanceHistory = [];
@@ -25,19 +32,54 @@ class AttendanceProvider extends ChangeNotifier {
   List<Shift> _shifts = [];
   bool _isLoading = false;
   String? _errorMessage;
-  bool _isSyncing = false;
+  final bool _isSyncing = false;
 
   AttendanceModel? get todayAttendance => _todayAttendance;
   List<AttendanceModel> get attendanceHistory => _attendanceHistory;
-  List<AttendanceModel> get todaySessions => _todaySessions;
   List<Shift> get shifts => _shifts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isSyncing => _isSyncing;
 
-  // Renamed from Check In/Out to Punch In/Out as per v2 spec
-  bool get isPunchedIn => _todayAttendance != null && _todayAttendance!.punchOutTime == null;
-  bool get isDayComplete => _todaySessions.length >= 2 && _todaySessions.every((m) => m.punchOutTime != null);
+  // Primary: check local confirmed state, fallback to API sessions
+  bool get isCurrentlyPunchedIn {
+    if (StorageHelper.getPunchInState()) {
+      return true;
+    }
+    if (_todaySessions.isNotEmpty) {
+      final lastSession = _todaySessions.last;
+      return lastSession.punchInTime != null && lastSession.punchOutTime == null;
+    }
+    return false;
+
+    // Add comment:
+    // // isCurrentlyPunchedIn checks API data first, confirmed local state second
+    // // Local state only written AFTER server confirmation
+    // // This means: local state = server-confirmed, safe to use as fallback
+  }
+
+  bool get isPunchedIn => isCurrentlyPunchedIn;
+  bool get isDayComplete => todaySessions.length >= 2 && todaySessions.every((m) => m.punchOutTime != null);
+
+  List<AttendanceModel> get todaySessions {
+    final list = List<AttendanceModel>.from(_todaySessions);
+    // If we have a confirmed local punch-in, but the fetched sessions
+    // don't show any active session, we synthesize/append one.
+    final hasActiveSession = list.any((s) => s.punchOutTime == null);
+    if (StorageHelper.getPunchInState() && !hasActiveSession) {
+      final punchInTime = StorageHelper.getPunchInTime() ?? DateTime.now();
+      final nextSession = (list.isEmpty) ? 1 : list.length + 1;
+      list.add(AttendanceModel(
+        id: 'local_confirmed_${punchInTime.millisecondsSinceEpoch}',
+        userId: StorageHelper.getUserId() ?? '',
+        date: DateTime(punchInTime.year, punchInTime.month, punchInTime.day),
+        sessionNumber: nextSession,
+        punchInTime: punchInTime,
+        status: 'PRESENT',
+      ));
+    }
+    return list;
+  }
 
   Future<void> fetchShifts() async {
     try {
@@ -53,146 +95,94 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // OPTIMISTIC PUNCH IN
+  // SERVER-CONFIRM-FIRST PUNCH IN
   // ─────────────────────────────────────────────────────────────────────────────
-  /// Performs an optimistic punch-in:
-  ///   1. Saves data to local cache immediately.
-  ///   2. Creates a local AttendanceModel and updates the UI instantly.
-  ///   3. Fires the backend API call in the background with retries.
-  ///   4. If backend rejects, rolls back the UI and shows an error.
-  Future<bool> punchIn(Position position, {String? selfieBase64}) async {
+  /// Performs a server-confirm-first punch-in:
+  ///   1. Button enters loading state (parent UI handles this via _isPunchingIn).
+  ///   2. Call punch-in API and WAIT for response.
+  ///   3. On server error → return success: false, button resets, no state change.
+  ///   4. On server success → save confirmed local state → update UI → return success: true.
+  Future<PunchResult> punchIn(Position position, {String? selfieBase64}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final now = DateTime.now();
-    final String createdAt = now.toIso8601String();
+    try {
+      final response = await ApiService.client.post(
+        '/attendance/check-in',
+        data: {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'selfieBase64': selfieBase64,
+        },
+        options: Options(
+          sendTimeout: const Duration(seconds: 90),
+          receiveTimeout: const Duration(seconds: 90),
+        ),
+      );
 
-    // ── Step 1: Save to local cache FIRST ──────────────────────────────────
-    await OfflinePunchCache.savePendingPunchIn(
-      latitude: position.latitude,
-      longitude: position.longitude,
-      timestamp: createdAt,
-      selfieBase64: selfieBase64,
-    );
+      if (response.data['success'] == true) {
+        final data = response.data['data'];
+        final attendance = AttendanceModel.fromJson(data);
 
-    // ── Step 2: Optimistically update UI ───────────────────────────────────
-    final nextSession = (_todaySessions.isEmpty) ? 1 : _todaySessions.length + 1;
-    final optimisticModel = AttendanceModel(
-      id: 'pending_$createdAt',  // Temporary ID until server responds
-      userId: StorageHelper.getUserId() ?? '',
-      date: DateTime(now.year, now.month, now.day),
-      sessionNumber: nextSession,
-      punchInTime: now,
-      punchInLat: position.latitude,
-      punchInLng: position.longitude,
-      status: 'PRESENT',
-    );
+        // Update local memory state
+        _todayAttendance = attendance;
+        final index = _todaySessions.indexWhere((s) => s.id == attendance.id);
+        if (index != -1) {
+          _todaySessions[index] = attendance;
+        } else {
+          _todaySessions.add(attendance);
+        }
 
-    _todayAttendance = optimisticModel;
-    _todaySessions.add(optimisticModel);
-    _isLoading = false;
-    notifyListeners();
+        // Save confirmed state to SharedPreferences
+        await StorageHelper.setPunchInState(true);
+        await StorageHelper.setPunchInTime(attendance.punchInTime ?? DateTime.now());
 
-    // Save punch-in time locally for the timer display
-    await StorageHelper.savePunchInTime(createdAt);
-    await StorageHelper.clearPunchOutTime();
+        // Start background location tracking immediately
+        await StorageHelper.setTrackingActive(true);
+        final sessionNum = attendance.sessionNumber;
+        await LocationService().startTracking(shiftStatus: 'Session $sessionNum Active');
 
-    // Start background location tracking immediately
-    await StorageHelper.setTrackingActive(true);
-    await LocationService().startTracking(shiftStatus: 'Session $nextSession Active');
+        _isLoading = false;
+        notifyListeners();
 
-    // ── Step 3: Background sync to backend ─────────────────────────────────
-    _syncPunchInToBackend(position, selfieBase64, createdAt);
+        // Punch-in flow (server-confirm-first):
+        // 1. Swipe → show loading animation on button
+        // 2. Wait for server response — NO UI change yet
+        // 3. Server error → show error, reset button
+        // 4. Server success → save locally → update UI → show toast
+        // 5. Fetch fresh data after 2s in background
 
-    return true; // Always returns true for optimistic UI
-  }
-
-  /// Background sync with 3 retries and exponential backoff.
-  /// If successful, replaces optimistic data with server data.
-  /// If server rejects (400 error like geofence), rolls back UI.
-  Future<void> _syncPunchInToBackend(Position position, String? selfieBase64, String createdAt) async {
-    _isSyncing = true;
-    notifyListeners();
-
-    const int maxRetries = 3;
-    const List<int> backoffSeconds = [5, 15, 30]; // Exponential backoff
-
-    for (int attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        debugPrint('[AttendanceSync] Attempt ${attempt + 1}/$maxRetries for punch-in...');
-
-        final response = await ApiService.client.post(
-          '/attendance/check-in',
-          data: {
-            'latitude': position.latitude,
-            'longitude': position.longitude,
-            'selfieBase64': ?selfieBase64,
-          },
-          options: Options(
-            sendTimeout: const Duration(seconds: 90),
-            receiveTimeout: const Duration(seconds: 90),
-          ),
+        return PunchResult(
+          success: true,
+          sessionNumber: attendance.sessionNumber,
         );
-
-        if (response.data['success'] == true) {
-          // ── SUCCESS: Replace optimistic data with real server data ────────
-          _todayAttendance = AttendanceModel.fromJson(response.data['data']);
-          await OfflinePunchCache.removePending(createdAt);
-          await fetchTodayState();
-          await fetchHistory();
-          _isSyncing = false;
-          _errorMessage = null;
-          notifyListeners();
-          debugPrint('[AttendanceSync] Punch-in synced successfully!');
-          return;
-        }
-      } on DioException catch (e) {
-        // ── Server explicitly rejected (400) → ROLLBACK ────────────────────
-        if (e.response != null && e.response!.statusCode != null && e.response!.statusCode! < 500) {
-          final serverMsg = e.response?.data?['error']?['message'] ?? 'Punch In rejected by server';
-          debugPrint('[AttendanceSync] Server rejected punch-in: $serverMsg');
-
-          // Rollback optimistic UI
-          _todaySessions.removeWhere((m) => m.id == 'pending_$createdAt');
-          if (_todaySessions.isNotEmpty) {
-            _todayAttendance = _todaySessions.last;
-          } else {
-            _todayAttendance = null;
-          }
-          await OfflinePunchCache.removePending(createdAt);
-          await StorageHelper.clearPunchInTime();
-          await StorageHelper.setTrackingActive(false);
-          await LocationService().stopTracking();
-
-          _errorMessage = serverMsg;
-          _isSyncing = false;
-          notifyListeners();
-          return;
-        }
-
-        // ── Network/Server error (5xx, timeout) → Retry ────────────────────
-        debugPrint('[AttendanceSync] Attempt ${attempt + 1} failed: ${e.message}');
-        await OfflinePunchCache.incrementRetry(createdAt);
-
-        if (attempt < maxRetries - 1) {
-          await Future.delayed(Duration(seconds: backoffSeconds[attempt]));
-        }
-      } catch (e) {
-        debugPrint('[AttendanceSync] Attempt ${attempt + 1} unexpected error: $e');
-        await OfflinePunchCache.incrementRetry(createdAt);
-
-        if (attempt < maxRetries - 1) {
-          await Future.delayed(Duration(seconds: backoffSeconds[attempt]));
-        }
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return PunchResult(
+          success: false,
+          message: response.data['message'] ?? 'Punch In failed',
+        );
       }
+    } on DioException catch (e) {
+      _isLoading = false;
+      final serverMsg = e.response?.data?['error']?['message'] ?? e.message ?? 'Punch In failed';
+      _errorMessage = serverMsg;
+      notifyListeners();
+      return PunchResult(
+        success: false,
+        message: serverMsg,
+      );
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return PunchResult(
+        success: false,
+        message: e.toString(),
+      );
     }
-
-    // ── All retries exhausted — keep optimistic UI, data is cached ──────────
-    _isSyncing = false;
-    _errorMessage = 'Punch-in saved locally. Will sync when network is available.';
-    notifyListeners();
-    debugPrint('[AttendanceSync] All retries exhausted. Data cached locally for next sync.');
   }
 
   /// Sync any pending punch records that were left from a previous session.
@@ -289,6 +279,10 @@ class AttendanceProvider extends ChangeNotifier {
 
       if (response.data['success'] == true) {
         _todayAttendance = AttendanceModel.fromJson(response.data['data']);
+        
+        // Clear confirmed punch-in state locally upon successful punch-out
+        await StorageHelper.clearPunchInState();
+        
         await fetchTodayState();
         await fetchHistory();
         
@@ -354,6 +348,15 @@ class AttendanceProvider extends ChangeNotifier {
             await LocationService().startTracking(shiftStatus: 'Session $sessionNum Active');
           }
         } else {
+          // CRITICAL FIX:
+          // Fetch returned empty — check if we have a confirmed local punch-in.
+          // If yes — backend hasn't indexed the new record yet — keep existing state.
+          final isPunchedIn = StorageHelper.getPunchInState();
+          if (isPunchedIn) {
+            debugPrint('[Attendance] Fetch returned empty but confirmed '
+                'punch-in is active — keeping local state, ignoring stale fetch');
+            return; // EXIT — do not overwrite confirmed local state
+          }
           _todaySessions = [];
           _todayAttendance = null;
         }

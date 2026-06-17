@@ -328,16 +328,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
                 ),
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   if (selectedLogs.isNotEmpty)
                     StatusBadge(status: selectedLogs.last.status)
                   else if (_selectedDate.isAfter(DateTime.now()) && !DateUtils.isSameDay(_selectedDate, DateTime.now()))
@@ -413,16 +417,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Cumulative Daily Duration',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
+              Expanded(
+                child: Text(
+                  'Cumulative Daily Duration',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDark,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${cumulativeHours.toStringAsFixed(1)} hrs',
                 style: GoogleFonts.inter(
@@ -559,16 +567,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Total Working Duration',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryDark,
+          Expanded(
+            child: Text(
+              'Total Working Duration',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryDark,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             '${hours.toStringAsFixed(1)} hrs',
             style: GoogleFonts.inter(

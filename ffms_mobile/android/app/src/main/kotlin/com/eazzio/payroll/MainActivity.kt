@@ -1,4 +1,4 @@
-package com.eazzio.eazziopayroll
+package com.eazzio.payroll
 
 import android.content.ComponentName
 import android.content.Context
@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.eazzio.eazziopayroll/device_settings"
+    private val CHANNEL = "com.eazzio.payroll/device_settings"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

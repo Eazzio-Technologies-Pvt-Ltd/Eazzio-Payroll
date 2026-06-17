@@ -207,26 +207,33 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Due Date',
-                                style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _dueDate != null
-                                    ? DateFormat('dd MMM yyyy, hh:mm a').format(_dueDate!)
-                                    : 'Select due date & time',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: _dueDate != null ? AppColors.onSurface : AppColors.outline,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Due Date',
+                                  style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  _dueDate != null
+                                      ? DateFormat('dd MMM yyyy, hh:mm a').format(_dueDate!)
+                                      : 'Select due date & time',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _dueDate != null ? AppColors.onSurface : AppColors.outline,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           const Icon(Icons.calendar_today_outlined, color: AppColors.primary, size: 20),
                         ],
                       ),

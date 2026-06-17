@@ -254,7 +254,7 @@ class LocationService {
   static void initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'eazziopayroll_location',
+        channelId: 'payroll_location',
         channelName: 'Eazzio Payroll Location Tracking',
         channelDescription: 'Keeps GPS active while you are on duty.',
         channelImportance: NotificationChannelImportance.LOW,

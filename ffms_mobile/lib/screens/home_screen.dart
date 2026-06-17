@@ -46,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime _singleDate = DateTime.now();
   final String _analyticsFilter = 'single';
   DateTime? _selectedTimelineDate;
+  bool _isPunchingIn = false;
 
   // ─────────────────────────── Time-based Greeting ─────────────────────────────
   String _getGreeting() {
@@ -223,12 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
       // Execute punch in
       if (!mounted) return;
       final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+      final result = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
 
-      if (mounted && success) {
+      if (mounted && result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Resumed Check-In Successful! Syncing to server...'),
+            content: Text('Resumed Check-In Successful!'),
             backgroundColor: AppColors.success,
             duration: Duration(seconds: 3),
           ),
@@ -356,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.pop(context); // Close loading dialog
       if (success) {
         await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
-        await StorageHelper.clearPunchInTime();
+        await StorageHelper.clearPunchInState();
       }
       if (!mounted) return success;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -369,19 +370,45 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return success;
     } else {
-      // Punch-in is OPTIMISTIC — UI updates immediately, backend syncs in background
-      final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+      // Punch-in is Server-Confirm-First
+      if (!mounted) return false;
 
-      if (mounted && success) {
+      setState(() {
+        _isPunchingIn = true;
+      });
+
+      final result = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
+
+      if (!mounted) return result.success;
+
+      setState(() {
+        _isPunchingIn = false;
+      });
+
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Punched In Successfully! Syncing to server...'),
+            content: Text('Punched In Successfully!'),
             backgroundColor: AppColors.success,
             duration: Duration(seconds: 3),
           ),
         );
+        // Wait 2 seconds and fetch fresh today state in background
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            attendanceProvider.fetchTodayState();
+            attendanceProvider.fetchHistory();
+          }
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
-      return success;
+      return result.success;
     }
   }
 
@@ -401,10 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final sessions = attendanceProvider.todaySessions;
     DateTime? firstPunchIn = sessions.isNotEmpty ? sessions.first.punchInTime : null;
     if (firstPunchIn == null && attendanceProvider.isPunchedIn) {
-      final storedIn = StorageHelper.getPunchInTime();
-      if (storedIn != null) {
-        firstPunchIn = DateTime.tryParse(storedIn);
-      }
+      firstPunchIn = StorageHelper.getPunchInTime();
     }
 
     DateTime? lastPunchOut = sessions.isNotEmpty && sessions.last.punchOutTime != null 
@@ -577,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   text: buttonText,
                   isPunchOut: isPunchedIn,
                   onConfirm: _handleAttendanceAction,
-                  isLoading: attendanceProvider.isLoading,
+                  isLoading: _isPunchingIn || attendanceProvider.isLoading,
                 );
               })(),
               const SizedBox(height: 20),
@@ -601,27 +625,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
                             child: Column(
                               children: [
-                                Text(
-                                  'Punch In Time',
-                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                  textAlign: TextAlign.center,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Punch In Time',
+                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  firstPunchIn != null
-                                      ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
-                                      : '--:--:--',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.success,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    firstPunchIn != null
+                                        ? DateFormat('HH:mm:ss').format(firstPunchIn.toLocal())
+                                        : '--:--:--',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.success,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  firstPunchIn != null ? 'Started' : 'Not Active',
-                                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    firstPunchIn != null ? 'Started' : 'Not Active',
+                                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                  ),
                                 ),
                               ],
                             ),
@@ -635,27 +668,36 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
                             child: Column(
                               children: [
-                                Text(
-                                  'Punch Out Time',
-                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                  textAlign: TextAlign.center,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Punch Out Time',
+                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  lastPunchOut != null
-                                      ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
-                                      : '--:--:--',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.error,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    lastPunchOut != null
+                                        ? DateFormat('HH:mm:ss').format(lastPunchOut.toLocal())
+                                        : '--:--:--',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.error,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  lastPunchOut != null ? 'Completed' : 'Pending',
-                                  style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    lastPunchOut != null ? 'Completed' : 'Pending',
+                                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                  ),
                                 ),
                               ],
                             ),
@@ -669,47 +711,56 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
                             child: Column(
                               children: [
-                                Text(
-                                  'Hours Worked',
-                                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                  textAlign: TextAlign.center,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Hours Worked',
+                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  '${totalHours.toStringAsFixed(1)} hrs',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${totalHours.toStringAsFixed(1)} hrs',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 4),
-                                (() {
-                                  var shift = authUser?.shift;
-                                  if (shift == null && attendanceProvider.shifts.isNotEmpty) {
-                                    shift = attendanceProvider.shifts.first;
-                                  }
-                                  double targetHours = 9.0;
-                                  if (shift != null) {
-                                    try {
-                                      final startParts = shift.startTime.split(':');
-                                      final endParts = shift.endTime.split(':');
-                                      final startMin = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
-                                      final endMin = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
-                                      int diffMin = endMin - startMin;
-                                      if (diffMin < 0) {
-                                        diffMin += 24 * 60; // Crossover midnight
-                                      }
-                                      targetHours = diffMin / 60.0;
-                                    } catch (_) {}
-                                  }
-                                  final targetStr = targetHours.toStringAsFixed(1).replaceAll('.0', '');
-                                  return Text(
-                                    'Target: ${targetStr}h',
-                                    style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
-                                  );
-                                })(),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: (() {
+                                    var shift = authUser?.shift;
+                                    if (shift == null && attendanceProvider.shifts.isNotEmpty) {
+                                      shift = attendanceProvider.shifts.first;
+                                    }
+                                    double targetHours = 9.0;
+                                    if (shift != null) {
+                                      try {
+                                        final startParts = shift.startTime.split(':');
+                                        final endParts = shift.endTime.split(':');
+                                        final startMin = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+                                        final endMin = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+                                        int diffMin = endMin - startMin;
+                                        if (diffMin < 0) {
+                                          diffMin += 24 * 60; // Crossover midnight
+                                        }
+                                        targetHours = diffMin / 60.0;
+                                      } catch (_) {}
+                                    }
+                                    final targetStr = targetHours.toStringAsFixed(1).replaceAll('.0', '');
+                                    return Text(
+                                      'Target: ${targetStr}h',
+                                      style: GoogleFonts.inter(fontSize: 10, color: AppColors.textTertiary),
+                                    );
+                                  })(),
+                                ),
                               ],
                             ),
                           ),
@@ -845,15 +896,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'WORKING HOURS',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  letterSpacing: 1.0,
+                              Expanded(
+                                child: Text(
+                                  'WORKING HOURS',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    letterSpacing: 1.0,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               InkWell(
                                 onTap: () async {
                                   final picked = await showDatePicker(
@@ -956,15 +1011,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: const Icon(Icons.free_breakfast_rounded, size: 16, color: Colors.white),
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Total Break Time',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  'Total Break Time',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 8),
                               Text(
                                 breakText,
                                 style: GoogleFonts.inter(
@@ -987,15 +1045,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: const Icon(Icons.schedule_rounded, size: 16, color: Colors.white),
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                'Shift Timing',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  'Shift Timing',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 8),
                               (() {
                                 var shift = authUser?.shift;
                                 if (shift == null && attendanceProvider.shifts.isNotEmpty) {
@@ -1640,19 +1701,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                       itemBuilder: (context, index) {
                                         final log = filteredLogs[index];
                                         return Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              DateFormat('dd MMM').format(log.date.toLocal()),
-                                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                            Expanded(
+                                              flex: 3,
+                                              child: Text(
+                                                DateFormat('dd MMM').format(log.date.toLocal()),
+                                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                              ),
                                             ),
-                                            Text(
-                                              '${log.totalDistanceKm.toStringAsFixed(0)} KM',
-                                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                '${log.totalDistanceKm.toStringAsFixed(0)} KM',
+                                                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                                textAlign: TextAlign.center,
+                                              ),
                                             ),
-                                            Text(
-                                              '₹${log.allowanceAmount.toStringAsFixed(0)}',
-                                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                '₹${log.allowanceAmount.toStringAsFixed(0)}',
+                                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                                                textAlign: TextAlign.end,
+                                              ),
                                             ),
                                           ],
                                         );
@@ -1823,22 +1894,32 @@ class _HomeScreenState extends State<HomeScreen> {
                               final totalHours = gLog['totalHours'] as double;
 
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    DateFormat('dd MMM yyyy').format(date),
-                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      DateFormat('dd MMM yyyy').format(date),
+                                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                    ),
                                   ),
-                                  Text(
-                                    '${totalHours.toStringAsFixed(1)} hrs',
-                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      '${totalHours.toStringAsFixed(1)} hrs',
+                                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                  Text(
-                                    '₹${dailySalary.toStringAsFixed(2)}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: isPayable ? AppColors.success : AppColors.error,
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      '₹${dailySalary.toStringAsFixed(2)}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isPayable ? AppColors.success : AppColors.error,
+                                      ),
+                                      textAlign: TextAlign.end,
                                     ),
                                   ),
                                 ],
@@ -1849,10 +1930,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Accrued Salary (This Month):',
-                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              Expanded(
+                                child: Text(
+                                  'Accrued Salary (This Month):',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               AnimatedCounter(
                                 value: groupedLogs.fold<double>(0.0, (sum, gLog) {
                                   return sum + (gLog['dailySalary'] as double);

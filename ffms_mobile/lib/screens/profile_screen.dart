@@ -283,29 +283,76 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildSalaryStat(String label, String value, {Color? valueColor, String? sublabel}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 280;
+        
+        final labelWidget = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13)),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             if (sublabel != null) ...[
               const SizedBox(height: 2),
-              Text(sublabel, style: GoogleFonts.inter(color: AppColors.textTertiary, fontSize: 10)),
+              Text(
+                sublabel,
+                style: GoogleFonts.inter(
+                  color: AppColors.textTertiary,
+                  fontSize: 10,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ],
-        ),
-        Text(
+        );
+
+        final valueWidget = Text(
           value,
           style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: valueColor ?? AppColors.textPrimary,
           ),
-        ),
-      ],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              labelWidget,
+              const SizedBox(height: 6),
+              valueWidget,
+            ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: labelWidget,
+            ),
+            const SizedBox(width: 16),
+            Flexible(
+              child: valueWidget,
+            ),
+          ],
+        );
+      },
     );
   }
 

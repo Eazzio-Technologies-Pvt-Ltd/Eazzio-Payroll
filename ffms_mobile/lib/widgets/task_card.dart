@@ -157,12 +157,16 @@ class TaskCard extends StatelessWidget {
                         children: [
                           const Icon(Icons.person_pin_outlined, size: 14, color: AppColors.outline),
                           const SizedBox(width: 6),
-                          Text(
-                            'Assigned By: ${task.createdBy!.name} (${task.createdBy!.displayRole})',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.outline,
-                              fontWeight: FontWeight.w500,
+                          Expanded(
+                            child: Text(
+                              'Assigned By: ${task.createdBy!.name} (${task.createdBy!.displayRole})',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.outline,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
