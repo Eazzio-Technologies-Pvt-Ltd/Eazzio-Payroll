@@ -361,6 +361,9 @@ const listAttendance = async ({
     targetUserId = requestingUser.id;
   }
 
+  const effectiveStartDate = startDate || endDate;
+  const effectiveEndDate = endDate || startDate;
+
   const where = {
     user: {
       organizationId,
@@ -369,10 +372,10 @@ const listAttendance = async ({
     ...(targetUserId && { userId: targetUserId }),
     ...(status && { status }),
     // Filter by date range
-    ...((startDate || endDate) && {
+    ...((effectiveStartDate || effectiveEndDate) && {
       date: {
-        ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-        ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) })
+        ...(effectiveStartDate && { gte: new Date(`${effectiveStartDate}T00:00:00.000Z`) }),
+        ...(effectiveEndDate && { lte: new Date(`${effectiveEndDate}T23:59:59.999Z`) })
       }
     }),
     // Filter by specific month and year
