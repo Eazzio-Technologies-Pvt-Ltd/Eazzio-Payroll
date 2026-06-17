@@ -21,6 +21,14 @@ export default function AttendancePage() {
 
   useEffect(() => {
     setMounted(true);
+
+    const hasStart = !!filters.startDate;
+    const hasEnd = !!filters.endDate;
+    if (hasStart !== hasEnd) {
+      // Do not fetch until both dates are selected or cleared together
+      return;
+    }
+
     const { search, ...apiFilters } = filters;
     dispatch(fetchAttendance(apiFilters));
   }, [dispatch, filters.startDate, filters.endDate, filters.status]);
