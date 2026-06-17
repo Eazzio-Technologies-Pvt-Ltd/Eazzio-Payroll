@@ -199,13 +199,13 @@ export default function Sidebar() {
             transition: "all 0.25s ease",
           }}>
             <img 
-              src="/logo.png" 
-              alt="TR@NSForce" 
+              src={isExpanded ? "/logo.png" : "/favicon.ico"} 
+              alt="Eazzio Logo" 
               style={{
                 height: "100%",
-                width: isExpanded ? "auto" : "200px",
+                width: isExpanded ? "auto" : "32px",
                 objectFit: "contain",
-                objectPosition: "left center",
+                objectPosition: isExpanded ? "left center" : "center",
                 maxWidth: "200px"
               }} 
             />
@@ -481,12 +481,12 @@ export default function Sidebar() {
 
         {/* 5b. Leave Management — approve/reject leaves from all employees */}
         {(isAdmin || isManager) && (
-          <Link href={`${basePath}/leaves`} style={{ textDecoration: "none" }} title="Leave Management">
-            <div style={getLinkStyle(pathname === `${basePath}/leaves`)} className="sidebar-link">
-              {renderIcon(FileText, pathname === `${basePath}/leaves`)}
+          <Link href="/leaves" style={{ textDecoration: "none" }} title="Leave Management">
+            <div style={getLinkStyle(pathname === "/leaves")} className="sidebar-link">
+              {renderIcon(FileText, pathname === "/leaves")}
               <span style={{
                 fontSize: "13.5px",
-                fontWeight: pathname === `${basePath}/leaves` ? 700 : 500,
+                fontWeight: pathname === "/leaves" ? 700 : 500,
                 opacity: isExpanded ? 1 : 0,
                 width: isExpanded ? "auto" : 0,
                 overflow: "hidden",

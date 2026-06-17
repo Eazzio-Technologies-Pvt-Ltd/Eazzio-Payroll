@@ -163,18 +163,32 @@ export default function AdminDashboardPage() {
             <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Pending Approvals</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flex: 1 }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            {/* Leaves — click karne pe /leaves page */}
+            <div
+              onClick={() => router.push("/leaves")}
+              style={{ display: "flex", flexDirection: "column", cursor: "pointer", padding: "4px 8px", borderRadius: 8, transition: "background 0.15s" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#fff7ed")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              title="View Leave Requests"
+            >
               <span style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", lineHeight: 1 }}>
                 {Math.ceil(stats.pendingApprovals / 2)}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#f97316", marginTop: 4 }}>Leaves</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#f97316", marginTop: 4 }}>Leaves ↗</span>
             </div>
             <div style={{ height: 24, width: 1, background: "#e2e8f0" }} />
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            {/* Expenses — click karne pe /admin/expenses */}
+            <div
+              onClick={() => router.push("/admin/expenses")}
+              style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", cursor: "pointer", padding: "4px 8px", borderRadius: 8, transition: "background 0.15s" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "#fff7ed")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              title="View Expense Requests"
+            >
               <span style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", lineHeight: 1 }}>
                 {Math.floor(stats.pendingApprovals / 2)}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#f97316", marginTop: 4 }}>Expenses</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#f97316", marginTop: 4 }}>Expenses ↗</span>
             </div>
           </div>
         </div>

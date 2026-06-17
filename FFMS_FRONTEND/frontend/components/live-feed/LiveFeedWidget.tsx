@@ -161,7 +161,7 @@ export default function LiveFeedWidget({
           lastActive: liveLoc?.recordedAt 
             ? new Date(liveLoc.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) 
             : (user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A"),
-          batteryLevel: liveLoc?.battery !== undefined ? liveLoc.battery : 100,
+          batteryLevel: (liveLoc?.battery !== undefined && liveLoc?.battery !== null) ? liveLoc.battery : null,
           isMoving: liveLoc?.isMoving !== undefined ? liveLoc.isMoving : false,
           location: {
             lat: liveLoc?.latitude || todayAtt?.checkInLatitude || (undefined as unknown as number),
