@@ -45,15 +45,25 @@ export default function RoleGuard({ children }: { children: React.ReactNode }) {
     // If the user is ADMIN and they are in the (dashboard) layout (which this guard covers),
     // they should be redirected to the /admin/* equivalent route.
     // Since Cloudflare static export doesn't run middleware, this client-side redirect is necessary.
+    // Exception: routes that exist only in (dashboard) group (shared between roles)
+    const sharedRoutes = ["/leaves"];
     if (role === "ADMIN") {
       const pathname = window.location.pathname;
-      if (!pathname.startsWith("/admin")) {
+      const isShared = sharedRoutes.some(r => pathname.startsWith(r));
+      if (!isShared && !pathname.startsWith("/admin")) {
         router.replace(`/admin${pathname === "/" ? "/dashboard" : pathname}`);
       }
     }
   }, [isLoggedIn, token, user, router]);
 
-  const isUser = isLoggedIn && token && (user?.role || "").toUpperCase() !== "ADMIN";
+  const role = (user?.role || "").toUpperCase();
+  const sharedRoutes = ["/leaves"];
+  const isOnSharedRoute = typeof window !== "undefined" && sharedRoutes.some(r => window.location.pathname.startsWith(r));
+
+  // Render children if:
+  // 1. Non-admin logged-in user (normal case)
+  // 2. Admin on a shared route like /leaves
+  const isUser = isLoggedIn && token && (role !== "ADMIN" || isOnSharedRoute);
 
   if (!mounted || !isUser) {
     return null;
