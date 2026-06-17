@@ -130,6 +130,10 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
         ? employee.name.trim().split(/\s+/).map(n => n[0]).join("").slice(0, 2).toUpperCase()
         : "EE";
       
+      const avatarHtml = employee.avatar 
+        ? `<div style="width:100%;height:100%;border-radius:50%;background-image:url('${employee.avatar}');background-size:cover;background-position:center;"></div>` 
+        : initials;
+
       const html = `
         <div style="
           width:32px;
@@ -145,8 +149,9 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
           color:white;
           box-shadow:0 2px 8px rgba(0,0,0,0.15);
           font-family:Inter,sans-serif;
+          overflow:hidden;
         ">
-          ${initials}
+          ${avatarHtml}
         </div>
       `;
 

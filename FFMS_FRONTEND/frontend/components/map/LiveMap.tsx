@@ -81,6 +81,13 @@ export default function LiveMap({
         const isSelected = emp.id === selectedId;
         const size = isSelected ? 44 : 36;
         
+        let { lat, lng } = emp;
+        
+        const isUrl = emp.avatar && emp.avatar.startsWith('http');
+        const avatarStyle = isUrl 
+          ? `background-image:url('${emp.avatar}');background-size:cover;background-position:center;color:transparent;` 
+          : ``;
+          
         const html = `
           <div style="
             width:${size}px;
@@ -97,8 +104,9 @@ export default function LiveMap({
             box-shadow:0 4px 12px rgba(34,211,165,0.4);
             font-family:Inter,sans-serif;
             transform: translate(-50%, -50%);
+            ${avatarStyle}
           ">
-            ${emp.avatar}
+            ${!isUrl ? emp.avatar : ''}
           </div>
         `;
 
@@ -118,7 +126,7 @@ export default function LiveMap({
 
         const marker = new mappls.Marker({
           map: map,
-          position: { lat: emp.lat, lng: emp.lng },
+          position: { lat: lat, lng: lng },
           html: html,
           popupHtml: popupHtml,
           offset: [0, size / 2] // Center it properly

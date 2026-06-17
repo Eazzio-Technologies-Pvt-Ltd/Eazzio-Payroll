@@ -18,7 +18,7 @@ const PlaybackMap = dynamic(() => import("@/components/map/PlaybackMap"), {
 export default function PlaybackPage() {
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>("2026-05-31");
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [route, setRoute] = useState<any[]>([]);
   const [activePointIndex, setActivePointIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);

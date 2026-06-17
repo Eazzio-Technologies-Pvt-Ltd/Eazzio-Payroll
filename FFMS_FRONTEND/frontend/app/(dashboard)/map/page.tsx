@@ -94,11 +94,17 @@ export default function MapPage() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div style={{
-                width: "38px", height: "38px", borderRadius: "0", flexShrink: 0,
-                background: emp.status === "active" ? "linear-gradient(135deg,#22d3a5,#4f8ef7)" : "var(--bg-hover)",
+                width: "38px", height: "38px", borderRadius: "50%", flexShrink: 0,
+                background: emp.avatar && typeof emp.avatar === 'string' && emp.avatar.startsWith('http') 
+                  ? `url('${emp.avatar}') center/cover` 
+                  : (emp.status === "active" ? "linear-gradient(135deg,#22d3a5,#4f8ef7)" : "var(--bg-hover)"),
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 700, fontSize: "13px", color: "white"
-              }}>{emp.avatar}</div>
+                fontWeight: 700, fontSize: "13px", color: emp.status === "active" ? "white" : "var(--text-muted)"
+              }}>
+                {(!emp.avatar || !emp.avatar.startsWith('http')) && emp.name 
+                  ? emp.name.trim().split(/\s+/).map((n:string) => n[0]).join("").slice(0, 2).toUpperCase() 
+                  : ""}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{emp.name}</div>
                 <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{emp.role}</div>
