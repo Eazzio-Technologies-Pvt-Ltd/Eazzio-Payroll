@@ -127,7 +127,7 @@ class AttendanceProvider extends ChangeNotifier {
           data: {
             'latitude': position.latitude,
             'longitude': position.longitude,
-            if (selfieBase64 != null) 'selfieBase64': selfieBase64,
+            'selfieBase64': ?selfieBase64,
           },
           options: Options(
             sendTimeout: const Duration(seconds: 90),

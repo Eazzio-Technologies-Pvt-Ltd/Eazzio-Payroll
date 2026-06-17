@@ -92,9 +92,9 @@ class TravelProvider extends ChangeNotifier {
       final response = await ApiService.client.patch(
         '/travel/my/today',
         data: {
-          if (meterStart != null) 'meterStart': meterStart,
-          if (meterEnd != null) 'meterEnd': meterEnd,
-          if (proofImageBase64 != null) 'proofImageBase64': proofImageBase64,
+          'meterStart': ?meterStart,
+          'meterEnd': ?meterEnd,
+          'proofImageBase64': ?proofImageBase64,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
         },
       );

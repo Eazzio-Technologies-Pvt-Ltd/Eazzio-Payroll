@@ -9,7 +9,6 @@ import '../widgets/status_badge.dart';
 import '../core/theme/app_theme.dart';
 import 'add_expense_screen.dart';
 import 'expense_detail_screen.dart';
-import '../core/utils/responsive.dart';
 import '../widgets/staggered_list_item.dart';
 import '../providers/auth_provider.dart';
 
@@ -196,8 +195,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProvid
                 Navigator.push(
                   context,
                   PageRouteBuilder(
-                    pageBuilder: (_, animation, __) => ExpenseDetailScreen(expense: expense),
-                    transitionsBuilder: (_, animation, __, child) {
+                    pageBuilder: (_, animation, _) => ExpenseDetailScreen(expense: expense),
+                    transitionsBuilder: (_, animation, _, child) {
                       return SlideTransition(
                         position: Tween<Offset>(
                           begin: const Offset(1.0, 0),
@@ -402,8 +401,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> with SingleTickerProvid
             backgroundColor: AppColors.surface,
             strokeWidth: 2.5,
             onRefresh: () async {
+              final travelProvider = Provider.of<TravelProvider>(context, listen: false);
               await expenseProvider.fetchMyExpenses();
-              await Provider.of<TravelProvider>(context, listen: false).fetchTravelHistory(limit: 30);
+              await travelProvider.fetchTravelHistory(limit: 30);
             },
             child: expenseProvider.isLoading ? const SkeletonList()
                 : ListView(

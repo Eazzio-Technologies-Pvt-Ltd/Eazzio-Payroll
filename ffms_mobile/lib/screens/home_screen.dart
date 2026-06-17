@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _travelFilter = '7'; // Default to 7 Days
   DateTimeRange? _customDateRange;
   DateTime _singleDate = DateTime.now();
-  String _analyticsFilter = 'single';
+  final String _analyticsFilter = 'single';
   DateTime? _selectedTimelineDate;
 
   // ─────────────────────────── Time-based Greeting ─────────────────────────────
@@ -186,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Process the recovered file
+      if (!mounted) return;
       final processed = await ImageUploadUtil.processPickedImage(context, response.file!);
       if (processed == null) return;
 
@@ -220,6 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Execute punch in
+      if (!mounted) return;
       final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
       final success = await attendanceProvider.punchIn(position, selfieBase64: base64Selfie);
 
@@ -280,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
         await StorageHelper.savePendingAction('PUNCH_IN');
+        if (!mounted) return false;
         final result = await ImageUploadUtil.pickAndCompressImage(
           context,
           cameraOnly: true,
@@ -338,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // ── Execute punch action ─────────────────────────────────────────────────
     if (wasPunchedIn) {
       // Punch-out is synchronous (no selfie, fast operation)
+      if (!mounted) return false;
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -348,21 +352,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final success = await attendanceProvider.punchOut(position);
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        if (success) {
-          await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
-          await StorageHelper.clearPunchInTime();
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success
-                ? 'Punched Out Successfully!'
-                : (attendanceProvider.errorMessage ?? 'Punch Out failed')),
-            backgroundColor: success ? AppColors.success : AppColors.error,
-          ),
-        );
+      if (!mounted) return success;
+      Navigator.pop(context); // Close loading dialog
+      if (success) {
+        await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
+        await StorageHelper.clearPunchInTime();
       }
+      if (!mounted) return success;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Punched Out Successfully!'
+              : (attendanceProvider.errorMessage ?? 'Punch Out failed')),
+          backgroundColor: success ? AppColors.success : AppColors.error,
+        ),
+      );
       return success;
     } else {
       // Punch-in is OPTIMISTIC — UI updates immediately, backend syncs in background
@@ -1632,7 +1636,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: ListView.separated(
                                       shrinkWrap: true,
                                       itemCount: filteredLogs.length,
-                                      separatorBuilder: (_, __) => const Divider(height: 8),
+                                      separatorBuilder: (_, index) => const Divider(height: 8),
                                       itemBuilder: (context, index) {
                                         final log = filteredLogs[index];
                                         return Row(
@@ -1810,7 +1814,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: groupedLogs.take(5).length,
-                            separatorBuilder: (_, __) => const Divider(height: 8),
+                            separatorBuilder: (_, index) => const Divider(height: 8),
                             itemBuilder: (context, index) {
                               final gLog = groupedLogs[index];
                               final isPayable = gLog['isPayable'] as bool;

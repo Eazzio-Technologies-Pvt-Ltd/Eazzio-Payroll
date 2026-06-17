@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationHelper {
@@ -20,7 +21,7 @@ class NotificationHelper {
       );
     } catch (e) {
       // Catch initialization errors to avoid blocking application boot
-      print("NotificationHelper initialization error: $e");
+      debugPrint("NotificationHelper initialization error: $e");
     }
   }
 

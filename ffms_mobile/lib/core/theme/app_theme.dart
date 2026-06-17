@@ -94,7 +94,7 @@ class AppTheme {
   // --- SHADOWS ---
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: const Color(0xFF0F172A).withOpacity(0.06),
+      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
       blurRadius: 16,
       offset: const Offset(0, 4),
       spreadRadius: 0,
@@ -102,7 +102,7 @@ class AppTheme {
   ];
   static List<BoxShadow> buttonShadow = [
     BoxShadow(
-      color: const Color(0xFF2563EB).withOpacity(0.30),
+      color: const Color(0xFF2563EB).withValues(alpha: 0.30),
       blurRadius: 12,
       offset: const Offset(0, 4),
       spreadRadius: 0,
@@ -135,15 +135,15 @@ class AppTheme {
   static BoxDecoration glassDecoration = BoxDecoration(
     gradient: LinearGradient(
       colors: [
-        Colors.white.withOpacity(0.95),
-        Colors.white.withOpacity(0.80),
+        Colors.white.withValues(alpha: 0.95),
+        Colors.white.withValues(alpha: 0.80),
       ],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
     borderRadius: BorderRadius.circular(radiusXL),
     border: Border.all(
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.white.withValues(alpha: 0.9),
       width: 1.5,
     ),
     boxShadow: cardShadow,
@@ -168,12 +168,8 @@ class AppTheme {
         onError: AppColors.onError,
         errorContainer: AppColors.errorContainer,
         onErrorContainer: AppColors.onErrorContainer,
-        background: AppColors.background,
-        onBackground: AppColors.onBackground,
         surface: AppColors.surface,
         onSurface: AppColors.onSurface,
-        surfaceVariant: AppColors.surface,
-        onSurfaceVariant: AppColors.onSurfaceVariant,
         outline: AppColors.outline,
         outlineVariant: AppColors.outlineVariant,
       ),
@@ -285,7 +281,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 1,
-        shadowColor: Colors.black.withOpacity(0.02),
+        shadowColor: Colors.black.withValues(alpha: 0.02),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLarge),
           side: const BorderSide(color: AppColors.outlineVariant, width: 1),

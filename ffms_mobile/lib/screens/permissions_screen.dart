@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
-import '../widgets/custom_button.dart';
 import '../core/utils/storage_helper.dart';
 
 class PermissionStep {
@@ -266,12 +265,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     } else {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.checkAuthStatus();
-      if (mounted) {
-        if (authProvider.isAuthenticated) {
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          Navigator.pushReplacementNamed(context, '/login');
-        }
+      if (!mounted) return;
+      if (authProvider.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
       }
     }
   }
@@ -302,13 +300,13 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isActiveStep 
-              ? AppColors.primary.withOpacity(0.4) 
+              ? AppColors.primary.withValues(alpha: 0.4) 
               : AppColors.outlineVariant, 
           width: isActiveStep ? 1.5 : 0.8,
         ),
         boxShadow: isActiveStep ? [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.04),
+            color: AppColors.primary.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -322,8 +320,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
             height: 48,
             decoration: BoxDecoration(
               color: isGranted
-                  ? AppColors.secondary.withOpacity(0.1)
-                  : AppColors.primary.withOpacity(0.1),
+                  ? AppColors.secondary.withValues(alpha: 0.1)
+                  : AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -438,7 +436,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
               width: 300,
               height: 300,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: BackdropFilter(
@@ -546,8 +544,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                             )
                           : LinearGradient(
                               colors: [
-                                AppColors.primary,
-                                AppColors.primary.withOpacity(0.8),
+                                  AppColors.primary,
+                                  AppColors.primary.withValues(alpha: 0.8),
                               ],
                             ),
                       borderRadius: BorderRadius.circular(16),
