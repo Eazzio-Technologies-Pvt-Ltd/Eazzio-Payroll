@@ -110,6 +110,27 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
       let empSuffix = employeeId.replace(/[^0-9]/g, '');
       return { ...emp, password: "", empPrefix, empSuffix, territoryId: emp.territoryId || null, shiftId: emp.shiftId || null };
     }
+
+    // Auto-calculate the next employee ID suffix based on existing users
+    let nextSuffix = "101";
+    if (allEmployees && allEmployees.length > 0) {
+      let maxNum = 0;
+      allEmployees.forEach(e => {
+        if (e.employeeId) {
+          const numericPart = e.employeeId.replace(/[^0-9]/g, '');
+          if (numericPart) {
+            const num = parseInt(numericPart, 10);
+            if (num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
+      });
+      if (maxNum > 0) {
+        nextSuffix = String(maxNum + 1);
+      }
+    }
+
     let defaultTerrId: string | null = null;
     if (currentUser?.role === "MANAGER" && currentUser.territoryId) {
       defaultTerrId = currentUser.territoryId;
@@ -117,7 +138,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
     if (!defaultTerrId && territories.length > 0) {
       defaultTerrId = territories[0].id;
     }
-    return { name:"",email:"",phone:"",role:"FIELD_STAFF",territory:"",territoryId:defaultTerrId,status:"active", password: "", empPrefix: "EMP", empSuffix: "", managerId: currentUser?.role === "MANAGER" ? currentUser.id : null, shiftId: null };
+    return { name:"",email:"",phone:"",role:"FIELD_STAFF",territory:"",territoryId:defaultTerrId,status:"active", password: "", empPrefix: "EMP", empSuffix: nextSuffix, managerId: currentUser?.role === "MANAGER" ? currentUser.id : null, shiftId: null };
   });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -383,7 +404,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
               const avatarStr = (form.name||"XX").split(" ").map((w:string)=>w[0]).join("").toUpperCase().slice(0,2);
               const payload: any = {
                 id: emp?.id,
-                name: form.name||"", email: form.email||"", phone: form.phone||"",
+                name: (form.name||"").trim(), email: (form.email||"").trim(), phone: (form.phone||"").trim(),
                 role: form.role || "FIELD_STAFF",
                 territoryId: form.territoryId || null,
                 shiftId: form.shiftId || null,
