@@ -201,16 +201,41 @@ const deleteExpense = async (expenseId, userId) => {
 // ─── Get my expenses ──────────────────────────────────────────────
 const getMyExpenses = async (userId, { page = 1, limit = 10, status } = {}) => {
   const where = { userId, ...(status && { status }) }
-  const [expenses, total] = await Promise.all([
-    prisma.expense.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      skip:    (page - 1) * limit,
-      take:    limit,
-    }),
-    prisma.expense.count({ where }),
-  ])
-  return { expenses, total, page, limit }
+  const expenses = await prisma.expense.findMany({
+    where,
+    orderBy: { date: 'desc' },
+  })
+
+  let travelExpenses = []
+  if (!status || status === 'APPROVED') {
+    const travelLogs = await prisma.travelLog.findMany({
+      where: {
+        userId,
+        allowanceAmount: { gt: 0 }
+      },
+      orderBy: { date: 'desc' }
+    })
+    travelExpenses = travelLogs.map(log => ({
+      id: log.id,
+      userId: log.userId,
+      category: 'TRAVEL',
+      amount: log.allowanceAmount || 0,
+      description: log.notes ? `${log.notes} (Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km)` : `Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km`,
+      receiptUrl: log.proofImageUrl,
+      date: log.date,
+      status: 'APPROVED',
+      approvedById: null,
+      approvalNote: 'Odometer auto-computed',
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+    }))
+  }
+
+  const combined = [...expenses, ...travelExpenses].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const total = combined.length
+  const paginated = combined.slice((page - 1) * limit, page * limit)
+
+  return { expenses: paginated, total, page, limit }
 }
 
 // ─── Get team expenses (manager) ──────────────────────────────────
@@ -225,12 +250,29 @@ const getTeamExpenses = async (managerId, { page = 1, limit = 10, status } = {})
     userId: { in: userIds },
     ...(status && { status })
   }
-  const [expenses, total] = await Promise.all([
-    prisma.expense.findMany({
-      where,
+  const expenses = await prisma.expense.findMany({
+    where,
+    orderBy: { date: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          employeeId: true,
+          manager: { select: { name: true } }
+        }
+      }
+    }
+  })
+
+  let travelExpenses = []
+  if (!status || status === 'APPROVED') {
+    const travelLogs = await prisma.travelLog.findMany({
+      where: {
+        userId: { in: userIds },
+        allowanceAmount: { gt: 0 }
+      },
       orderBy: { date: 'desc' },
-      skip:    (page - 1) * limit,
-      take:    limit,
       include: {
         user: {
           select: {
@@ -241,10 +283,29 @@ const getTeamExpenses = async (managerId, { page = 1, limit = 10, status } = {})
           }
         }
       }
-    }),
-    prisma.expense.count({ where }),
-  ])
-  return { expenses, total, page, limit }
+    })
+    travelExpenses = travelLogs.map(log => ({
+      id: log.id,
+      userId: log.userId,
+      category: 'TRAVEL',
+      amount: log.allowanceAmount || 0,
+      description: log.notes ? `${log.notes} (Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km)` : `Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km`,
+      receiptUrl: log.proofImageUrl,
+      date: log.date,
+      status: 'APPROVED',
+      approvedById: null,
+      approvalNote: 'Odometer auto-computed',
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+      user: log.user,
+    }))
+  }
+
+  const combined = [...expenses, ...travelExpenses].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const total = combined.length
+  const paginated = combined.slice((page - 1) * limit, page * limit)
+
+  return { expenses: paginated, total, page, limit }
 }
 
 // ─── Get all expenses (admin) ─────────────────────────────────────
@@ -254,12 +315,32 @@ const getAllExpenses = async (orgId, { page = 1, limit = 10, status, userId } = 
     ...(status && { status }),
     ...(userId && { userId }),
   }
-  const [expenses, total] = await Promise.all([
-    prisma.expense.findMany({
-      where,
+  const expenses = await prisma.expense.findMany({
+    where,
+    orderBy: { date: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          employeeId: true,
+          manager: { select: { name: true } }
+        }
+      },
+      approvedBy: { select: { id: true, name: true } },
+    }
+  })
+
+  let travelExpenses = []
+  if (!status || status === 'APPROVED') {
+    const travelWhere = {
+      user: { organizationId: orgId },
+      ...(userId && { userId }),
+      allowanceAmount: { gt: 0 }
+    }
+    const travelLogs = await prisma.travelLog.findMany({
+      where: travelWhere,
       orderBy: { date: 'desc' },
-      skip:    (page - 1) * limit,
-      take:    limit,
       include: {
         user: {
           select: {
@@ -268,13 +349,32 @@ const getAllExpenses = async (orgId, { page = 1, limit = 10, status, userId } = 
             employeeId: true,
             manager: { select: { name: true } }
           }
-        },
-        approvedBy: { select: { id: true, name: true } },
+        }
       }
-    }),
-    prisma.expense.count({ where }),
-  ])
-  return { expenses, total, page, limit }
+    })
+    travelExpenses = travelLogs.map(log => ({
+      id: log.id,
+      userId: log.userId,
+      category: 'TRAVEL',
+      amount: log.allowanceAmount || 0,
+      description: log.notes ? `${log.notes} (Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km)` : `Odometer: ${log.meterStart || 0} km to ${log.meterEnd || 0} km`,
+      receiptUrl: log.proofImageUrl,
+      date: log.date,
+      status: 'APPROVED',
+      approvedById: null,
+      approvalNote: 'Odometer auto-computed',
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+      user: log.user,
+      approvedBy: null,
+    }))
+  }
+
+  const combined = [...expenses, ...travelExpenses].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const total = combined.length
+  const paginated = combined.slice((page - 1) * limit, page * limit)
+
+  return { expenses: paginated, total, page, limit }
 }
 
 // ─── Get expense summary (admin) ──────────────────────────────────
@@ -302,14 +402,39 @@ const getExpenseSummary = async (orgId) => {
     _sum: { amount: true }
   })
 
+  // Fetch travel/odometer allowance totals
+  const travelWhere = {
+    user: { organizationId: orgId },
+    allowanceAmount: { gt: 0 }
+  }
+  const travelLogsCount = await prisma.travelLog.count({ where: travelWhere })
+  const travelLogsSumAgg = await prisma.travelLog.aggregate({
+    where: travelWhere,
+    _sum: { allowanceAmount: true }
+  })
+  const travelSum = travelLogsSumAgg._sum.allowanceAmount || 0
+
+  const categorySumsMap = {}
+  categoryGroups.forEach(g => {
+    categorySumsMap[g.category] = g._sum.amount || 0
+  })
+
+  // Add travel/odometer logs to TRAVEL category
+  categorySumsMap['TRAVEL'] = (categorySumsMap['TRAVEL'] || 0) + travelSum
+
+  const categorySums = Object.entries(categorySumsMap).map(([name, amount]) => ({
+    name,
+    amount
+  }))
+
   return {
-    totalClaims,
-    approvedClaims,
+    totalClaims: totalClaims + travelLogsCount,
+    approvedClaims: approvedClaims + travelLogsCount,
     pendingClaims,
     rejectedClaims,
-    totalExpenseBurn: approvedSumAgg._sum.amount || 0,
+    totalExpenseBurn: (approvedSumAgg._sum.amount || 0) + travelSum,
     pendingSum: pendingSumAgg._sum.amount || 0,
-    categorySums: categoryGroups.map(g => ({ name: g.category, amount: g._sum.amount || 0 }))
+    categorySums
   }
 }
 

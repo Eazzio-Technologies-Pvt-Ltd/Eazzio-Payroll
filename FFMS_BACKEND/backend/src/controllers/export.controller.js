@@ -18,8 +18,8 @@ const exportAttendance = async (req, res, next) => {
         organizationId: req.user.organizationId
       },
       date: {
-        gte: new Date(`${startDate}T00:00:00.000Z`),
-        lte: new Date(`${endDate}T23:59:59.999Z`)
+        gte: new Date(startDate),
+        lte: new Date(endDate)
       },
       ...(userId && { userId })
     };

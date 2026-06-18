@@ -361,6 +361,23 @@ const listAttendance = async ({
     targetUserId = requestingUser.id;
   }
 
+  const effectiveStartDate = startDate || endDate;
+  const effectiveEndDate = endDate || startDate;
+
+  const dateFilters = {};
+  if (effectiveStartDate) {
+    dateFilters.gte = new Date(effectiveStartDate);
+  }
+  if (effectiveEndDate) {
+    dateFilters.lte = new Date(effectiveEndDate);
+  }
+  if (month || year) {
+    const y = year ? parseInt(year) : new Date().getFullYear();
+    const m = month ? parseInt(month) - 1 : 0;
+    dateFilters.gte = new Date(Date.UTC(y, m, 1));
+    dateFilters.lte = new Date(Date.UTC(y, m + (month ? 1 : 12), 0));
+  }
+
   const where = {
     user: {
       organizationId,
@@ -368,20 +385,7 @@ const listAttendance = async ({
     },
     ...(targetUserId && { userId: targetUserId }),
     ...(status && { status }),
-    // Filter by date range
-    ...((startDate || endDate) && {
-      date: {
-        ...(startDate && { gte: new Date(`${startDate}T00:00:00.000Z`) }),
-        ...(endDate && { lte: new Date(`${endDate}T23:59:59.999Z`) })
-      }
-    }),
-    // Filter by specific month and year
-    ...((month || year) && {
-      date: {
-        gte: new Date(year || new Date().getFullYear(), (month ? parseInt(month) - 1 : 0), 1),
-        lte: new Date(year || new Date().getFullYear(), (month ? parseInt(month) : 12), 0, 23, 59, 59, 999)
-      }
-    })
+    ...(Object.keys(dateFilters).length > 0 && { date: dateFilters })
   };
 
   const total = await prisma.attendance.count({ where });

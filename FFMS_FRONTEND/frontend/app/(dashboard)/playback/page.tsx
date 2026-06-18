@@ -18,7 +18,14 @@ const PlaybackMap = dynamic(() => import("@/components/map/PlaybackMap"), {
 export default function PlaybackPage() {
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    // FIXED: Dynamically default to today's date in local yyyy-MM-dd format instead of hardcoded May 31, 2026.
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [route, setRoute] = useState<any[]>([]);
   const [activePointIndex, setActivePointIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);

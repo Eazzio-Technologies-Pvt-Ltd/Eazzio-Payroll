@@ -93,6 +93,7 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
         return Container(
           width: double.infinity,
           height: 56,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             gradient: gradient,
             borderRadius: BorderRadius.circular(28),
@@ -108,43 +109,69 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
             children: [
               // Loading indicator or Centered text
               Positioned.fill(
-                child: Center(
-                  child: widget.isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Opacity(
-                          opacity: textOpacity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '>  >  >  ',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  letterSpacing: 2,
+                child: widget.isLoading
+                    ? Center(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Positioned(
+                              bottom: 0,
+                              left: 20,
+                              right: 20,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: const LinearProgressIndicator(
+                                  backgroundColor: Colors.transparent,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
                                 ),
                               ),
-                              Text(
-                                widget.text,
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  letterSpacing: 0.5,
-                                ),
+                            ),
+                            Text(
+                              'Connecting to server...',
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                letterSpacing: 0.5,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      )
+                    : Opacity(
+                        opacity: textOpacity,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 54.0, right: 12.0),
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '>  >  >  ',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white.withValues(alpha: 0.4),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.text,
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                ),
+                      ),
               ),
 
               // Draggable thumb

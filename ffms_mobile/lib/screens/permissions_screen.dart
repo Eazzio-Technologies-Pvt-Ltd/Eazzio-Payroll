@@ -224,7 +224,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   }
 
   /// Power / Auto Launch settings
-  static const _channel = MethodChannel('com.eazzio.eazziopayroll/device_settings');
+  static const _channel = MethodChannel('com.eazzio.payroll/device_settings');
 
   Future<void> _grantPower() async {
     if (!kIsWeb && Platform.isAndroid) {

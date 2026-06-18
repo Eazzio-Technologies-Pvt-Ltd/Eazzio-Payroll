@@ -53,6 +53,30 @@ class LocationService {
       return false;
     }
 
+    // Request Always Allow (background) location permission for Android 10+ (API 29+)
+    // FIXED: Added ACCESS_BACKGROUND_LOCATION explicit check and request. Geolocator's requestPermission() only
+    // requests while-in-use permission. Without Always Allow, background tracking fails.
+    if (!kIsWeb && Platform.isAndroid) {
+      int sdkVersion = 0;
+      try {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        sdkVersion = androidInfo.version.sdkInt;
+      } catch (e) {
+        debugPrint('[LocationService] Error checking Android SDK version: $e');
+      }
+
+      if (sdkVersion >= 29) {
+        var alwaysStatus = await Permission.locationAlways.status;
+        if (!alwaysStatus.isGranted) {
+          alwaysStatus = await Permission.locationAlways.request();
+        }
+        if (!alwaysStatus.isGranted) {
+          debugPrint('[LocationService] WARNING: ACCESS_BACKGROUND_LOCATION is required for reliable background tracking but was not granted.');
+          return false;
+        }
+      }
+    }
+
     // Request Activity Recognition / Sensors permission for motion tracking
     if (!kIsWeb) {
       if (Platform.isAndroid) {
@@ -67,10 +91,16 @@ class LocationService {
     }
 
     // Request battery optimization exclusion to allow background activity by default
+    // FIXED: Ensured we check, request, and verify battery optimization exemption to prevent the OS from killing pings.
     if (!kIsWeb && Platform.isAndroid) {
-      final isIgnoringBattery = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+      var isIgnoringBattery = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
       if (!isIgnoringBattery) {
         await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+        isIgnoringBattery = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+      }
+      if (!isIgnoringBattery) {
+        debugPrint('[LocationService] WARNING: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is required for reliable background tracking but was not granted.');
+        return false;
       }
     }
 
@@ -224,7 +254,7 @@ class LocationService {
   static void initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'eazziopayroll_location',
+        channelId: 'payroll_location',
         channelName: 'Eazzio Payroll Location Tracking',
         channelDescription: 'Keeps GPS active while you are on duty.',
         channelImportance: NotificationChannelImportance.LOW,

@@ -125,18 +125,40 @@ class StorageHelper {
     return _prefs?.getBool(_trackingActiveKey) ?? false;
   }
 
-  static Future<void> savePunchInTime(String timeStr) async {
+  // Save confirmed punch-in state after server success
+  static Future<void> setPunchInState(bool value) async {
     if (_prefs == null) await initialize();
-    await _prefs!.setString(_punchInTimeKey, timeStr);
+    await _prefs!.setBool('punch_in_active', value);
+    // Add comment:
+    // // Written ONLY after server confirmation — not optimistically
   }
 
-  static String? getPunchInTime() {
-    return _prefs?.getString(_punchInTimeKey);
+  static bool getPunchInState() {
+    return _prefs?.getBool('punch_in_active') ?? false;
   }
 
-  static Future<void> clearPunchInTime() async {
+  static Future<void> setPunchInTime(DateTime time) async {
     if (_prefs == null) await initialize();
+    await _prefs!.setString(
+      _punchInTimeKey,
+      time.toIso8601String(),
+    );
+    // Add comment:
+    // // Time recorded only after server confirms punch-in
+  }
+
+  static DateTime? getPunchInTime() {
+    final str = _prefs?.getString(_punchInTimeKey);
+    if (str == null) return null;
+    return DateTime.tryParse(str);
+  }
+
+  static Future<void> clearPunchInState() async {
+    if (_prefs == null) await initialize();
+    await _prefs!.remove('punch_in_active');
     await _prefs!.remove(_punchInTimeKey);
+    // Add comment:
+    // // Cleared only on successful punch-out — never during fetch
   }
 
   static Future<void> savePunchOutTime(String timeStr) async {

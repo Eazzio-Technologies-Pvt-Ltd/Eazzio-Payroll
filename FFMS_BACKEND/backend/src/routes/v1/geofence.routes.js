@@ -10,7 +10,7 @@ router.use(authenticate)
 router.use(checkOrgAccess)
 
 // ── GPS ping (field staff only) ───────────────────────────────────
-router.post('/ping',             validate(pingSchema),       controller.ping)
+router.post('/ping',             authorize('FIELD_STAFF'), validate(pingSchema),       controller.ping)
 
 // ── Routes ────────────────────────────────────────────────────────
 router.get('/route/today',                                   controller.todayRoute)

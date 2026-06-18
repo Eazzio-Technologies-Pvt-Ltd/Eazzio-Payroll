@@ -21,6 +21,14 @@ export default function AttendancePage() {
 
   useEffect(() => {
     setMounted(true);
+
+    const hasStart = !!filters.startDate;
+    const hasEnd = !!filters.endDate;
+    if (hasStart !== hasEnd) {
+      // Do not fetch until both dates are selected or cleared together
+      return;
+    }
+
     const { search, ...apiFilters } = filters;
     dispatch(fetchAttendance(apiFilters));
   }, [dispatch, filters.startDate, filters.endDate, filters.status]);
@@ -57,7 +65,7 @@ export default function AttendancePage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  if (!mounted || loading) return (
+  if (!mounted || (loading && attendance.length === 0)) return (
     <div style={{ padding: "20px" }}>
       <div className="skeleton-line" style={{ width: "200px", height: "32px", marginBottom: "8px" }} />
       <div className="skeleton-line" style={{ width: "150px", height: "16px", marginBottom: "32px" }} />
@@ -78,7 +86,7 @@ export default function AttendancePage() {
   );
 
   return (
-    <div>
+    <div style={{ opacity: loading ? 0.75 : 1, transition: "opacity 0.15s" }}>
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div className="page-title">Attendance & Leaves</div>

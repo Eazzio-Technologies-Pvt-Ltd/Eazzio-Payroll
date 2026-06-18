@@ -427,26 +427,33 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Due Date (optional)',
-                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _dueDate != null
-                                ? DateFormat('dd MMM yyyy').format(_dueDate!)
-                                : 'Select date',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: _dueDate != null ? AppColors.textPrimary : AppColors.textTertiary,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Due Date (optional)',
+                              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              _dueDate != null
+                                  ? DateFormat('dd MMM yyyy').format(_dueDate!)
+                                  : 'Select date',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: _dueDate != null ? AppColors.textPrimary : AppColors.textTertiary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       const Icon(Icons.calendar_today_outlined, color: AppColors.primary, size: 20),
                     ],
                   ),
