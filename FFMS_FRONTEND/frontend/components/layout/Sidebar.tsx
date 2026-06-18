@@ -180,22 +180,21 @@ export default function Sidebar() {
     >
       {/* Brand Header */}
       <div style={{
-        padding: isExpanded ? "24px 20px" : "24px 0",
+        padding: isExpanded ? "10px 0" : "20px 0",
         borderBottom: "1px solid var(--sidebar-border)",
         display: "flex",
-        justifyContent: isExpanded ? "flex-start" : "center",
+        justifyContent: "center",
         alignItems: "center",
-        minHeight: "85px",
+        minHeight: "70px",
         transition: "padding 0.25s ease",
       }}>
           {/* Logo image */}
           <div style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: isExpanded ? "flex-start" : "center",
+            justifyContent: "center",
             width: "100%",
-            height: "40px",
-            overflow: "hidden",
+            height: isExpanded ? "60px" : "36px",
             transition: "all 0.25s ease",
           }}>
             <img 
@@ -203,9 +202,9 @@ export default function Sidebar() {
               alt="Eazzio Logo" 
               style={{
                 height: "100%",
-                width: isExpanded ? "auto" : "32px",
+                width: isExpanded ? "100%" : "32px",
                 objectFit: "contain",
-                objectPosition: isExpanded ? "left center" : "center",
+                objectPosition: "center",
                 maxWidth: "200px"
               }} 
             />
@@ -213,7 +212,7 @@ export default function Sidebar() {
       </div>
 
       {/* Accordion Navigation */}
-      <nav style={{ flex: 1, padding: isExpanded ? "16px 12px" : "16px 0", overflowY: "auto", transition: "padding 0.25s ease" }}>
+      <nav style={{ flex: 1, padding: isExpanded ? "8px 12px" : "16px 0", overflowY: "auto", transition: "padding 0.25s ease" }}>
 
         {/* Main Menu Subtitle */}
         <div
