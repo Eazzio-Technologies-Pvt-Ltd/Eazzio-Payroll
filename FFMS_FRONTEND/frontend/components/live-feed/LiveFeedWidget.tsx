@@ -63,6 +63,7 @@ export default function LiveFeedWidget({
   const [isSocketOffline, setIsSocketOffline] = useState(false);
   const [pastFeedEmployee, setPastFeedEmployee] = useState<Employee | null>(null);
   const [pastFeedLoading, setPastFeedLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -128,8 +129,8 @@ export default function LiveFeedWidget({
         
         // Get all attendance records for the user today, sorted by checkInTime ascending
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userAttendances = attendance
-          .filter((att: any) => att.userId === user.id)
+        const userAttObj = attendance.find((att: any) => att.userId === user.id);
+        const userAttendances = (userAttObj?.attendances || [])
           .sort((a: any, b: any) => new Date(a.checkInTime).getTime() - new Date(b.checkInTime).getTime());
         
         const todayAtt = userAttendances[userAttendances.length - 1]; // Latest one for legacy inTime/outTime
@@ -420,6 +421,13 @@ export default function LiveFeedWidget({
 
   const activeCount = employeesList.filter(e => e.status === "online").length;
 
+  const totalPages = Math.ceil(filteredEmployees.length / gridSize);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [territory, role, status, gridSize]);
+
   return (
     <div 
       ref={containerRef} 
@@ -575,6 +583,7 @@ export default function LiveFeedWidget({
               employees={[pastFeedEmployee]} 
               gridSize={gridSize} 
               isPastFeed={true} 
+              isFullscreen={isFullscreen}
             />
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
@@ -586,11 +595,65 @@ export default function LiveFeedWidget({
             No matching employees found for the selected filters.
           </div>
         ) : (
-          <GridView 
-            employees={filteredEmployees.slice(0, gridSize)} 
-            gridSize={gridSize} 
-            isPastFeed={false} 
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', height: isFullscreen ? '100%' : 'auto', gap: isFullscreen ? 0 : '16px' }}>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <GridView 
+                employees={filteredEmployees.slice(currentPage * gridSize, (currentPage + 1) * gridSize)} 
+                gridSize={gridSize} 
+                isPastFeed={false} 
+                isFullscreen={isFullscreen}
+              />
+            </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                gap: '16px', 
+                marginTop: isFullscreen ? '16px' : '0', 
+                flexShrink: 0 
+              }}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                  disabled={currentPage === 0}
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border-color)', 
+                    background: currentPage === 0 ? '#f1f5f9' : '#fff', 
+                    color: currentPage === 0 ? '#94a3b8' : 'var(--text-primary)',
+                    cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Previous
+                </button>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
+                  Screen {currentPage + 1} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                  disabled={currentPage === totalPages - 1}
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border-color)', 
+                    background: currentPage === totalPages - 1 ? '#f1f5f9' : '#fff', 
+                    color: currentPage === totalPages - 1 ? '#94a3b8' : 'var(--text-primary)',
+                    cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

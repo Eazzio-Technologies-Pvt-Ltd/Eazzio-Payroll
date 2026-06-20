@@ -44,7 +44,7 @@ export default function AdminManagersPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const [formData, setFormData] = useState({
-    name: "", email: "", password: "", department: "Operations", phone: "",
+    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: ""
   });
 
   const showToast = (message: string, type: "success" | "error") => {
@@ -98,7 +98,8 @@ export default function AdminManagersPage() {
 
   const handleAddManager = async (e: React.FormEvent) => {
     e.preventDefault();
-    const employeeId = `MGR-${Math.floor(1000 + Math.random() * 9000)}`;
+    const prefix = formData.role === "MANAGER" ? "MGR" : "EMP";
+    const employeeId = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
     try {
       const res = await usersApi.create({
         name: formData.name,
@@ -107,30 +108,35 @@ export default function AdminManagersPage() {
         phone: formData.phone || undefined,
         department: formData.department,
         employeeId,
-        role: "MANAGER",
+        role: formData.role,
+        managerId: formData.role !== "MANAGER" && formData.managerId ? formData.managerId : undefined,
         status: "ACTIVE"
       });
-      const newMgr: Manager = {
-        id: res.data?.id || `temp-${Date.now()}`,
-        name: formData.name,
-        email: formData.email,
-        department: formData.department,
-        assignedProjects: 0,
-        teamSize: 0,
-        status: "active",
-        avatar: formData.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-        phone: formData.phone || "",
-        joinedDate: new Date().toISOString().split('T')[0],
-        performanceScore: 0
-      };
       
-      // Optimistic UI Update - immediate feedback
-      setManagers(prev => [newMgr, ...prev]);
+      if (formData.role === "MANAGER") {
+        const newMgr: Manager = {
+          id: res.data?.id || `temp-${Date.now()}`,
+          name: formData.name,
+          email: formData.email,
+          department: formData.department,
+          assignedProjects: 0,
+          teamSize: 0,
+          status: "active",
+          avatar: formData.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+          phone: formData.phone || "",
+          joinedDate: new Date().toISOString().split('T')[0],
+          performanceScore: 0,
+          team: []
+        };
+        // Optimistic UI Update for Managers
+        setManagers(prev => [newMgr, ...prev]);
+      }
+      
       setShowAddModal(false);
-      setFormData({ name: "", email: "", password: "", department: "Operations", phone: "" });
-      showToast(`${formData.name} added as a manager successfully!`, "success");
+      setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" });
+      showToast(`${formData.name} added successfully!`, "success");
       
-      // Sync in background
+      // Sync in background to update teams
       loadData();
     } catch (err: any) {
       showToast(err.message || "Failed to add manager", "error");
@@ -169,7 +175,7 @@ export default function AdminManagersPage() {
   };
 
   const openEdit = (m: Manager) => {
-    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone });
+    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "" });
     setEditingManager(m);
   };
 
@@ -282,9 +288,9 @@ export default function AdminManagersPage() {
               <option value="inactive">Inactive</option>
             </select>
             {/* Add Manager */}
-            <button id="add-manager-btn" onClick={() => { setFormData({ name: "", email: "", password: "", department: "Operations", phone: "" }); setShowAddModal(true); }}
+            <button id="add-manager-btn" onClick={() => { setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" }); setShowAddModal(true); }}
               className="btn-primary">
-              <UserPlus size={16} /> Add Manager
+              <UserPlus size={16} /> Add User/Manager
             </button>
           </div>
         </div>
@@ -381,12 +387,13 @@ export default function AdminManagersPage() {
       {/* ── Add Manager Modal ── */}
       {showAddModal && (
         <ManagerFormModal
-          title="Add New Manager"
+          title="Add New User"
           formData={formData}
           setFormData={setFormData}
           onSubmit={handleAddManager}
           onClose={() => setShowAddModal(false)}
-          submitLabel="Add Manager"
+          submitLabel="Add User"
+          managers={managers}
         />
       )}
 
@@ -399,6 +406,7 @@ export default function AdminManagersPage() {
           onSubmit={handleEditManager}
           onClose={() => setEditingManager(null)}
           submitLabel="Save Changes"
+          managers={managers}
         />
       )}
 
@@ -413,13 +421,14 @@ export default function AdminManagersPage() {
   );
 }
 
-function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel }: {
+function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers }: {
   title: string;
-  formData: { name: string; email: string; password: string; department: string; phone: string; };
-  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; }>>;
+  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; };
+  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   submitLabel: string;
+  managers: Manager[];
 }) {
   const isAdd = title.includes("Add");
   return (
@@ -442,6 +451,29 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             </div>
             <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" /></div>
           </div>
+          {isAdd && (
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role *</label>
+                <select className="input" value={formData.role} onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))} required>
+                  <option value="MANAGER">Manager</option>
+                  <option value="FIELD_STAFF">Field Staff</option>
+                  <option value="OFFICE_STAFF">Office Staff</option>
+                </select>
+              </div>
+              {formData.role !== "MANAGER" && (
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Reports To *</label>
+                  <select className="input" value={formData.managerId} onChange={(e) => setFormData((p) => ({ ...p, managerId: e.target.value }))} required>
+                    <option value="">-- Select Manager --</option>
+                    {managers.map(m => (
+                      <option key={m.id} value={m.id}>{m.name} ({m.department})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{isAdd ? "Password *" : "New Password (Optional)"}</label>
             <input type="text" required={isAdd} autoComplete="new-password" className="input" value={formData.password || ""} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))} placeholder={isAdd ? "Enter a secure password" : "Leave blank to keep current password"} />

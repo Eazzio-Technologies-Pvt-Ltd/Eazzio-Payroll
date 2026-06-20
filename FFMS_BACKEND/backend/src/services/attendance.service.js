@@ -526,15 +526,14 @@ const getTodayAttendance = async (organizationId, requestingUser = null) => {
       profileImage: true,
       attendances: {
         where: { date: todayDate },
-        orderBy: { sessionNumber: 'desc' },
-        take: 1
+        orderBy: { sessionNumber: 'asc' }
       }
     }
   });
 
   // Format response indicating check-in status
   return staffUsers.map(staff => {
-    const att = staff.attendances[0] || null;
+    const att = staff.attendances[staff.attendances.length - 1] || null;
 
     return {
       userId: staff.id,
@@ -547,7 +546,8 @@ const getTodayAttendance = async (organizationId, requestingUser = null) => {
       checkOutTime: att ? att.checkOutTime : null,
       status: att ? att.status : 'ABSENT',
       isLate: att ? att.isLate : false,
-      selfieUrl: att ? att.selfieUrl : null
+      selfieUrl: att ? att.selfieUrl : null,
+      attendances: staff.attendances
     };
   });
 };

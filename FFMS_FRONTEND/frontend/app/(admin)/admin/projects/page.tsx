@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { projectsApi, usersApi, tasksApi, ApiProject } from "@/lib/api-client";
-import { FolderPlus, Search, Edit2, X, Check, RefreshCw, Briefcase, CheckCircle2, PauseCircle, Clock4, Plus } from "lucide-react";
-
+import { FolderPlus, Search, Edit2, X, Check, RefreshCw, Briefcase, CheckCircle2, PauseCircle, Clock4, Plus, Trash2 } from "lucide-react";
 
 const statusColors: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
   ACTIVE: { bg: "#dcfce7", text: "#16a34a", icon: <CheckCircle2 size={13} />, label: "Active" },
@@ -130,6 +129,23 @@ export default function AdminProjectsPage() {
       showToast(`Project reassigned to ${randomManager.name}!`, "success");
     } else {
       showToast("Failed to reassign project", "error");
+    }
+  };
+
+  const handleDeleteProject = async (p: ApiProject) => {
+    if (!window.confirm(`Are you sure you want to delete the project "${p.name}"?`)) return;
+    try {
+      const res = await projectsApi.delete(p.id);
+      if (res.success) {
+        showToast("Project deleted successfully!", "success");
+        loadData();
+      } else {
+        alert("Error from server: " + JSON.stringify(res.error));
+        showToast(res.error?.message || "Failed to delete project", "error");
+      }
+    } catch (err: any) {
+      alert("Exception: " + err.message + "\nDetails: " + JSON.stringify(err.details || err));
+      showToast(err.message || "Failed to delete project", "error");
     }
   };
 
@@ -328,6 +344,10 @@ export default function AdminProjectsPage() {
                         <button onClick={() => handleReassign(p)}
                           style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(59,130,246,0.1)", color: "#3b82f6", border: "none", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                           <RefreshCw size={12} /> Reassign
+                        </button>
+                        <button onClick={() => handleDeleteProject(p)}
+                          style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(239, 68, 68,0.1)", color: "#ef4444", border: "none", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          <Trash2 size={12} /> Delete
                         </button>
                       </div>
                     </td>
