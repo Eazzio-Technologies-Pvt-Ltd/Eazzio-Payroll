@@ -95,6 +95,7 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
           center: [lat, lng],
           zoom: isPastFeed ? 12 : 14,
           zoomControl: !!isPastFeed,
+          fullscreenControl: true,
           search: false,
           interactive: !!isPastFeed, // Disable interaction in grid view
         });
@@ -106,15 +107,40 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
             renderAuditTrail();
           }
         });
+
+        // Add Resize Observer to fix map centering when flex container resizes
+        const containerElem = document.getElementById(containerId);
+        if (containerElem) {
+          const resizeObserver = new ResizeObserver(() => {
+            if (mapRef.current && typeof mapRef.current.resize === 'function') {
+              mapRef.current.resize();
+              // Re-center after resize
+              if (typeof mapRef.current.setCenter === 'function') {
+                mapRef.current.setCenter({ lat, lng });
+              }
+            }
+          });
+          resizeObserver.observe(containerElem);
+          // Store observer on mapRef so we can disconnect it on unmount
+          mapRef.current.__resizeObserver = resizeObserver;
+        }
       } catch (e) {
         console.error("Map init error:", e);
       }
     } else {
+      // Map already exists, just update it
       renderMarker();
       renderGeofenceCircle();
       if (isPastFeed) {
         renderAuditTrail();
       }
+      
+      // If lat/lng changed, re-center
+      try {
+        if (typeof mapRef.current.setCenter === 'function') {
+          mapRef.current.setCenter({ lat, lng });
+        }
+      } catch(e) {}
     }
 
     function renderMarker() {
@@ -239,6 +265,9 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
   useEffect(() => {
     return () => {
       if (mapRef.current) {
+        if (mapRef.current.__resizeObserver) {
+          mapRef.current.__resizeObserver.disconnect();
+        }
         if (circleRef.current) {
           try { mappls.remove({ map: mapRef.current, layer: circleRef.current }); } catch { }
         }
@@ -269,6 +298,29 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
+      <style>{`
+        #${containerId} .mapmyindia-ctrl-bottom-left,
+        #${containerId} .mappls-ctrl-bottom-left,
+        #${containerId} .mapboxgl-ctrl-bottom-left {
+          transform: scale(0.4);
+          transform-origin: bottom left;
+          z-index: 2;
+        }
+        #${containerId} .mapmyindia-ctrl-bottom-right,
+        #${containerId} .mappls-ctrl-bottom-right,
+        #${containerId} .mapboxgl-ctrl-bottom-right {
+          transform: scale(0.4);
+          transform-origin: bottom right;
+          z-index: 2;
+        }
+        #${containerId} .mapmyindia-ctrl-top-right,
+        #${containerId} .mappls-ctrl-top-right,
+        #${containerId} .mapboxgl-ctrl-top-right {
+          transform: scale(0.5);
+          transform-origin: top right;
+          z-index: 2;
+        }
+      `}</style>
       {!sdkReady && (
         <div style={{
           position: "absolute", inset: 0,

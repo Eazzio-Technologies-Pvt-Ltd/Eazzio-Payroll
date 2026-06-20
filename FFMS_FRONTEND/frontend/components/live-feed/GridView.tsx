@@ -53,15 +53,17 @@ interface GridViewProps {
   employees: Employee[];
   gridSize: number;
   isPastFeed: boolean;
+  isFullscreen?: boolean;
 }
 
-export default function GridView({ employees, gridSize, isPastFeed }: GridViewProps) {
+export default function GridView({ employees, gridSize, isPastFeed, isFullscreen }: GridViewProps) {
   // Compute grid template columns based on gridSize
   let columns = 4;
-  if (gridSize === 4) columns = 2;
-  else if (gridSize === 8) columns = 2;
-  else if (gridSize === 12) columns = 3;
-  else if (gridSize === 16) columns = 4;
+  let rows = 4;
+  if (gridSize === 4) { columns = 2; rows = 2; }
+  else if (gridSize === 8) { columns = 4; rows = 2; } // 8 grid -> 4 cols, 2 rows fits nicely
+  else if (gridSize === 12) { columns = 4; rows = 3; } // 12 grid -> 4 cols, 3 rows
+  else if (gridSize === 16) { columns = 4; rows = 4; }
 
   if (isPastFeed) {
     return (
@@ -75,7 +77,7 @@ export default function GridView({ employees, gridSize, isPastFeed }: GridViewPr
         {employees.slice(0, 1).map((emp) => (
           // Error boundary prevents one bad card from crashing entire feed
           <CardErrorBoundary key={`past-${emp.id}`}>
-            <EmployeeCard employee={emp} isPastFeed={true} />
+            <EmployeeCard employee={emp} isPastFeed={true} gridSize={gridSize} isFullscreen={isFullscreen} />
           </CardErrorBoundary>
         ))}
         {employees.length === 0 && (
@@ -91,12 +93,15 @@ export default function GridView({ employees, gridSize, isPastFeed }: GridViewPr
     <div style={{
       display: "grid",
       gridTemplateColumns: `repeat(${columns}, 1fr)`,
-      gap: "20px",
+      gridTemplateRows: isFullscreen ? `repeat(${rows}, 1fr)` : "auto",
+      height: isFullscreen ? "100%" : "auto",
+      gap: columns >= 3 ? "12px" : "20px",
+      minHeight: isFullscreen ? "0" : "auto", // allow grid to compress
     }}>
       {employees.map((emp) => (
         // Error boundary prevents one bad card from crashing entire feed
         <CardErrorBoundary key={emp.id}>
-          <EmployeeCard employee={emp} isPastFeed={false} />
+          <EmployeeCard employee={emp} isPastFeed={false} gridSize={gridSize} isFullscreen={isFullscreen} />
         </CardErrorBoundary>
       ))}
       {employees.length === 0 && (

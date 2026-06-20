@@ -15,14 +15,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // @ts-ignore - NextConfig type might not include eslint in your current version, but it's needed to bypass lint errors during build
-  eslint: {
-    ignoreDuringBuilds: true,
+  turbopack: {
+    root: path.resolve(__dirname),
   },
-
-  //turbopack: {
-  //  root: path.resolve(__dirname),
-  //},
 };
 
 export default nextConfig;
