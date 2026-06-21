@@ -149,21 +149,21 @@ export default function AdminSidebar() {
           <div style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: isExpanded ? "flex-start" : "center",
+            justifyContent: "center",
             width: "100%",
-            height: "40px",
+            height: "35px",
             overflow: "hidden",
             transition: "all 0.25s ease",
           }}>
             <img 
               src="/logo.png" 
-              alt="TR@NSForce" 
+              alt="Eazzio Payroll" 
               style={{
                 height: "100%",
-                width: isExpanded ? "auto" : "200px",
+                width: isExpanded ? "140px" : "35px",
                 objectFit: "contain",
-                objectPosition: "left center",
-                maxWidth: "200px"
+                objectPosition: isExpanded ? "left center" : "center",
+                transition: "all 0.25s ease",
               }} 
             />
           </div>

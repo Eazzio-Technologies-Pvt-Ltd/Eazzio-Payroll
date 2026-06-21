@@ -103,7 +103,7 @@ export default function LiveFeedWidget({
     try {
       if (!hasLoadedInit) setLoading(true);
 
-      const usersRes = await usersApi.list();
+      const usersRes = await usersApi.list({ limit: 5000 });
       const activeUsers = usersRes.data.filter(u => u.role === "FIELD_STAFF" || u.role === "OFFICE_STAFF" || u.role === "MANAGER");
 
       const liveLocationsRes = await locationApi.getLive();
@@ -361,7 +361,46 @@ export default function LiveFeedWidget({
       setPastFeedLoading(true);
       const res = await locationApi.getHistory(empId, { startDate: dateStr, endDate: dateStr });
       if (res.success && res.data) {
-        const logs = (res.data as any)?.logs || [];
+        let logs = (res.data as any)?.logs || [];
+        
+        try {
+          // Fetch attendance to use as fallback/additional waypoints from frontend
+          const attRes = await attendanceApi.list({ userId: empId });
+          if (attRes.success && Array.isArray(attRes.data)) {
+            // Filter attendance records to match the selected date
+            const dayAtts = attRes.data.filter((att: any) => att.date && att.date.startsWith(dateStr));
+            
+            dayAtts.forEach((att: any) => {
+              if (att.checkInLatitude && att.checkInLongitude) {
+                logs.push({
+                  latitude: att.checkInLatitude,
+                  longitude: att.checkInLongitude,
+                  accuracy: 10,
+                  speed: 0,
+                  recordedAt: att.checkInTime || att.date,
+                  isMoving: false,
+                  type: "check-in"
+                });
+              }
+              if (att.checkOutLatitude && att.checkOutLongitude && att.checkOutTime) {
+                logs.push({
+                  latitude: att.checkOutLatitude,
+                  longitude: att.checkOutLongitude,
+                  accuracy: 10,
+                  speed: 0,
+                  recordedAt: att.checkOutTime,
+                  isMoving: false,
+                  type: "check-out"
+                });
+              }
+            });
+            // Sort merged logs by time
+            logs.sort((a: any, b: any) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+          }
+        } catch (attErr) {
+          console.error("Failed to fetch attendance for map fallback:", attErr);
+        }
+
         const baseEmp = employeesList.find(e => e.id === empId);
         
         if (!baseEmp) {

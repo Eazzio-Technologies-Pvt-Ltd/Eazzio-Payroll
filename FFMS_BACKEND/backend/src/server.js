@@ -27,8 +27,10 @@ server.listen(PORT, async () => {
   // Initialize scheduled jobs
   try {
     await initPayrollCron();
+    const { startRecurringTaskWorker } = require('./workers/recurringTasks');
+    startRecurringTaskWorker();
   } catch (err) {
-    logger.error('Failed to initialize payroll cron (Redis limit?)', err.message);
+    logger.error('Failed to initialize cron jobs', err.message);
   }
 });
 

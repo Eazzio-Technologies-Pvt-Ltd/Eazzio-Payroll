@@ -117,11 +117,11 @@ export default function AdminTopbar() {
   const results = getResults();
   const showDropdown = isFocused && query.trim().length > 0;
 
-  const handleLogout = () => { 
-    dispatch(logout()); 
+  const handleLogout = () => {
+    dispatch(logout());
     document.cookie = "auth_token=; path=/; max-age=0; SameSite=Lax";
     document.cookie = "ff_user_role=; path=/; max-age=0; SameSite=Lax";
-    window.location.href = "/login"; 
+    window.location.href = "/login";
   };
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,28 +160,52 @@ export default function AdminTopbar() {
       }}
     >
       {/* Left */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-        {isMobile && (
-          <button
-            onClick={toggleMobileSidebar}
-            aria-label="Toggle navigation menu"
-            style={{ background: "none", border: "1px solid var(--border)", cursor: "pointer", color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", flexShrink: 0 }}
-          >
-            <Menu size={20} />
-          </button>
-        )}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {info.title}
-            </h1>
-            {!isMobile && (
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#3b82f6", background: "rgba(59, 130, 246,0.1)", padding: "2px 8px", borderRadius: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                Admin
-              </span>
-            )}
+      <div style={{ display: "flex", alignItems: "center", gap: "24px", minWidth: 0 }}>
+        {/* Logo */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          height: "70px",
+          width: "240px",
+          background: "var(--sidebar-bg)",
+          padding: "0 20px",
+          marginLeft: isMobile ? "-16px" : "-28px",
+          borderRight: "1px solid var(--sidebar-border)",
+        }}>
+          <img
+            src="/logo.png"
+            alt="Eazzio Logo"
+            style={{ height: "56px", objectFit: "contain", maxWidth: "200px" }}
+          />
+        </div>
+
+        {/* Separator */}
+        <div style={{ width: "1px", height: "32px", background: "var(--border)", display: isMobile ? "none" : "block" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+          {isMobile && (
+            <button
+              onClick={toggleMobileSidebar}
+              aria-label="Toggle navigation menu"
+              style={{ background: "none", border: "1px solid var(--border)", cursor: "pointer", color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", flexShrink: 0 }}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {info.title}
+              </h1>
+              {!isMobile && (
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#3b82f6", background: "rgba(59, 130, 246,0.1)", padding: "2px 8px", borderRadius: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Admin
+                </span>
+              )}
+            </div>
+            {!isMobile && <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
           </div>
-          {!isMobile && <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
         </div>
       </div>
 
