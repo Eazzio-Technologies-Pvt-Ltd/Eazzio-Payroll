@@ -3,6 +3,7 @@ const cloudinary = require('../config/cloudinary')
 const notificationService = require('./notification.service')
 // Socket.IO emitter — real-time status push to mobile app
 const { emitToUser } = require('../config/socket')
+const { validateBase64Image } = require('../utils/validateBase64Image')
 
 // Helper: calculate working days between two dates (excludes weekends)
 const calcWorkingDays = (startDate, endDate) => {
@@ -50,6 +51,7 @@ const applyLeave = async (userId, { type, startDate, endDate, reason, attachment
   
   let attachmentUrl = null;
   if (attachmentBase64) {
+    validateBase64Image(attachmentBase64);
     try {
       const formattedStr = attachmentBase64.startsWith('data:') 
         ? attachmentBase64 

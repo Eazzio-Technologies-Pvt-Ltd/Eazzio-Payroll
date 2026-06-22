@@ -8,6 +8,7 @@ const { signAccessToken, signRefreshToken, hashToken } = require('../utils/jwt')
 const { refreshTokenSecret } = require('../config/jwt');
 const { sendOTPEmail } = require('../utils/email');
 const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError } = require('../utils/errors');
+const { validateBase64Image } = require('../utils/validateBase64Image');
 const logger = require('../config/logger');
 
 /**
@@ -322,6 +323,9 @@ const updateProfileImage = async (userId, base64Image) => {
   if (!base64Image) {
     throw new BadRequestError('Base64 image is required');
   }
+
+  // Validate image type and size first
+  validateBase64Image(base64Image);
 
   // Upload to Cloudinary
   const formatted = base64Image.startsWith('data:image')
