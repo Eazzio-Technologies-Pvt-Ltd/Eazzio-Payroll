@@ -10,14 +10,14 @@ const apply = async (req, res, next) => {
 
 const approve = async (req, res, next) => {
   try {
-    const leave = await leaveService.approveLeave(req.params.id, req.user.id, req.body.approvalNote)
+    const leave = await leaveService.approveLeave(req.params.id, req.user.id, req.user.organizationId, req.body.approvalNote)
     return successResponse(res, leave)
   } catch (err) { next(err) }
 }
 
 const reject = async (req, res, next) => {
   try {
-    const leave = await leaveService.rejectLeave(req.params.id, req.user.id, req.body.approvalNote)
+    const leave = await leaveService.rejectLeave(req.params.id, req.user.id, req.user.organizationId, req.body.approvalNote)
     return successResponse(res, leave)
   } catch (err) { next(err) }
 }
@@ -56,7 +56,7 @@ const teamLeaves = async (req, res, next) => {
 const allLeaves = async (req, res, next) => {
   try {
     const { page, limit, status, userId } = req.query
-    const data = await leaveService.getAllLeaves({ page: +page || 1, limit: +limit || 10, status, userId })
+    const data = await leaveService.getAllLeaves(req.user.organizationId, { page: +page || 1, limit: +limit || 10, status, userId })
     return successResponse(res, data)
   } catch (err) { next(err) }
 }

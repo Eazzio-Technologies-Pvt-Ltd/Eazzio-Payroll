@@ -81,8 +81,10 @@ const applyLeave = async (userId, { type, startDate, endDate, reason, attachment
 }
 
 // ─── Approve leave ─────────────────────────────────────────────────
-const approveLeave = async (leaveId, managerId, approvalNote) => {
-  const leave = await prisma.leave.findUnique({ where: { id: leaveId } })
+const approveLeave = async (leaveId, managerId, organizationId, approvalNote) => {
+  const leave = await prisma.leave.findFirst({
+    where: { id: leaveId, user: { organizationId } }
+  })
   if (!leave) {
     const err = new Error('Leave request not found'); err.statusCode = 404; throw err
   }
@@ -119,8 +121,10 @@ const approveLeave = async (leaveId, managerId, approvalNote) => {
 }
 
 // ─── Reject leave ──────────────────────────────────────────────────
-const rejectLeave = async (leaveId, managerId, approvalNote) => {
-  const leave = await prisma.leave.findUnique({ where: { id: leaveId } })
+const rejectLeave = async (leaveId, managerId, organizationId, approvalNote) => {
+  const leave = await prisma.leave.findFirst({
+    where: { id: leaveId, user: { organizationId } }
+  })
   if (!leave) {
     const err = new Error('Leave request not found'); err.statusCode = 404; throw err
   }
@@ -215,8 +219,9 @@ const getTeamLeaves = async (managerId, { page = 1, limit = 10, status } = {}) =
 }
 
 // ─── Get all leaves (admin) ────────────────────────────────────────
-const getAllLeaves = async ({ page = 1, limit = 10, status, userId } = {}) => {
+const getAllLeaves = async (organizationId, { page = 1, limit = 10, status, userId } = {}) => {
   const where = {
+    user: { organizationId },
     ...(status && { status }),
     ...(userId && { userId }),
   }
