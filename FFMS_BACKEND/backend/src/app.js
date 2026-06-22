@@ -46,11 +46,13 @@ app.use(auditLogger);
 app.use('/api/', apiLimiter);
 
 // ─── Swagger Docs ─────────────────────────────────────────────────────────────
-app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get('/api/v1/docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api/v1/docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/v1', v1Router);
