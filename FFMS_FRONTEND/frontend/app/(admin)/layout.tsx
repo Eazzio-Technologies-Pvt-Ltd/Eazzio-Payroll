@@ -12,23 +12,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <DataInitializer />
         <div
           data-panel="admin"
-          style={{ display: "flex", minHeight: "100vh", background: "var(--bg-primary)" }}
+          style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg-primary)" }}
         >
-          <Sidebar />
-          <div
-            className="dashboard-main"
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              transition: "margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-          >
-            <AdminTopbar />
+          <AdminTopbar />
+          <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+            <Sidebar />
             <main
               className="dashboard-content"
-              style={{ flex: 1, padding: "28px", animation: "fadeIn 0.4s ease" }}
+              style={{ flex: 1, padding: "28px", animation: "fadeIn 0.4s ease", overflowY: "auto" }}
             >
               {children}
             </main>

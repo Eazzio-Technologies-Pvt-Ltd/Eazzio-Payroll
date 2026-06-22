@@ -330,9 +330,9 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
         <div style={{
           position: "relative",
           width: "100%",
-          height: (isFullscreen && !isPastFeed) ? "100%" : mapHeight,
-          flexGrow: (isFullscreen && !isPastFeed) ? 1 : 0,
-          flexBasis: (isFullscreen && !isPastFeed) ? "0%" : "auto",
+          height: (isFullscreen || isPastFeed) ? "100%" : mapHeight,
+          flexGrow: (isFullscreen || isPastFeed) ? 1 : 0,
+          flexBasis: (isFullscreen || isPastFeed) ? "0%" : "auto",
           minHeight: 0,
           flexShrink: 0
         }}>

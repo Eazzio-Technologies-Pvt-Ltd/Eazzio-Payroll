@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { projectsApi, usersApi, tasksApi, ApiProject } from "@/lib/api-client";
 import { FolderPlus, Search, Edit2, X, Check, RefreshCw, Briefcase, CheckCircle2, PauseCircle, Clock4, Plus, Trash2 } from "lucide-react";
 
@@ -12,6 +13,7 @@ const statusColors: Record<string, { bg: string; text: string; icon: React.React
 };
 
 export default function AdminProjectsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [managers, setManagers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function AdminProjectsPage() {
   
   const [employees, setEmployees] = useState<any[]>([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [taskForm, setTaskForm] = useState({ title: "", description: "", assigneeId: "", priority: "MEDIUM", dueDate: "" });
+  const [taskForm, setTaskForm] = useState({ title: "", description: "", assigneeRole: "EMPLOYEE", assigneeId: "", priority: "MEDIUM", dueDate: "", recurring: false, recurrenceRule: "WEEKLY" });
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -174,13 +176,15 @@ export default function AdminProjectsPage() {
       description: taskForm.description,
       priority: taskForm.priority,
       assigneeIds: [taskForm.assigneeId],
-      dueDate: taskForm.dueDate ? new Date(taskForm.dueDate).toISOString() : undefined
+      dueDate: taskForm.dueDate ? new Date(taskForm.dueDate).toISOString() : undefined,
+      recurring: taskForm.recurring,
+      recurrenceRule: taskForm.recurring ? taskForm.recurrenceRule : undefined
     });
 
     if (res.success) {
       setShowTaskModal(false);
-      setTaskForm({ title: "", description: "", assigneeId: employees[0]?.id || "", priority: "MEDIUM", dueDate: "" });
-      showToast(`Task "${taskForm.title}" assigned successfully!`, "success");
+      setTaskForm({ title: "", description: "", assigneeRole: "EMPLOYEE", assigneeId: employees[0]?.id || "", priority: "MEDIUM", dueDate: "", recurring: false, recurrenceRule: "WEEKLY" });
+      router.push("/admin/tasks");
     } else {
       showToast(res.error?.message || "Failed to create task", "error");
     }
@@ -280,7 +284,7 @@ export default function AdminProjectsPage() {
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
-            <button onClick={() => { setTaskForm({ title: "", description: "", assigneeId: employees[0]?.id || "", priority: "MEDIUM", dueDate: "" }); setShowTaskModal(true); }}
+            <button onClick={() => { setTaskForm({ title: "", description: "", assigneeRole: "EMPLOYEE", assigneeId: employees[0]?.id || "", priority: "MEDIUM", dueDate: "", recurring: false, recurrenceRule: "WEEKLY" }); setShowTaskModal(true); }}
               className="btn-primary" style={{ background: "#10b981", border: "none" }}>
               <Plus size={16} /> Create Task
             </button>
@@ -424,11 +428,27 @@ export default function AdminProjectsPage() {
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Assign To *</label>
-                  <select className="input" required value={taskForm.assigneeId} onChange={(e) => setTaskForm((p) => ({ ...p, assigneeId: e.target.value }))}>
-                    {employees.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Assign To Role *</label>
+                  <select className="input" value={taskForm.assigneeRole} onChange={(e) => {
+                      const role = e.target.value;
+                      const isManager = role === "MANAGER";
+                      const filtered = isManager ? managers : employees.filter(m => m.role !== "MANAGER");
+                      setTaskForm((p) => ({ ...p, assigneeRole: role, assigneeId: filtered[0]?.id || "" }));
+                    }}>
+                    <option value="EMPLOYEE">Employee (Field / Office)</option>
+                    <option value="MANAGER">Manager</option>
                   </select>
                 </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Select User *</label>
+                  <select className="input" required value={taskForm.assigneeId} onChange={(e) => setTaskForm((p) => ({ ...p, assigneeId: e.target.value }))}>
+                    {(taskForm.assigneeRole === "MANAGER" ? managers : employees.filter(m => m.role !== "MANAGER")).map((m) => (
+                      <option key={m.id} value={m.id}>{m.name} ({m.role})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Priority</label>
                   <select className="input" value={taskForm.priority} onChange={(e) => setTaskForm((p) => ({ ...p, priority: e.target.value }))}>
@@ -437,10 +457,23 @@ export default function AdminProjectsPage() {
                     <option value="HIGH">High</option>
                   </select>
                 </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Deadline</label>
+                  <input type="date" className="input" value={taskForm.dueDate} onChange={(e) => setTaskForm((p) => ({ ...p, dueDate: e.target.value }))} />
+                </div>
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Deadline</label>
-                <input type="date" className="input" value={taskForm.dueDate} onChange={(e) => setTaskForm((p) => ({ ...p, dueDate: e.target.value }))} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#1e293b", cursor: "pointer", flex: 1 }}>
+                  <input type="checkbox" checked={taskForm.recurring} onChange={(e) => setTaskForm(p => ({ ...p, recurring: e.target.checked }))} style={{ width: 16, height: 16, accentColor: "#10b981" }} />
+                  Repeated / Recurring Task
+                </label>
+                {taskForm.recurring && (
+                  <select className="input" style={{ width: "150px", padding: "6px 10px", fontSize: 13 }} value={taskForm.recurrenceRule} onChange={(e) => setTaskForm(p => ({ ...p, recurrenceRule: e.target.value }))}>
+                    <option value="DAILY">Every Day</option>
+                    <option value="WEEKLY">Every Week</option>
+                    <option value="MONTHLY">Every Month</option>
+                  </select>
+                )}
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowTaskModal(false)} className="btn-secondary">Cancel</button>

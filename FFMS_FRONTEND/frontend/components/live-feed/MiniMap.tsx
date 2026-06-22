@@ -18,6 +18,8 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
   const polylineRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const circleRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const auditMarkersRef = useRef<any[]>([]);
   const [sdkReady, setSdkReady] = useState(false);
   const containerId = `mappls-mini-map-${employee.id}`;
 
@@ -235,6 +237,14 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
         try { mappls.remove({ map, layer: polylineRef.current }); } catch { }
       }
       
+      // Clear any existing audit markers
+      if (auditMarkersRef.current.length > 0) {
+        auditMarkersRef.current.forEach(marker => {
+          try { mappls.remove({ map, layer: marker }); } catch { }
+        });
+        auditMarkersRef.current = [];
+      }
+      
       const logs = employee.historyLogs;
       if (!logs || logs.length === 0) return;
 
@@ -259,6 +269,28 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
       } catch(e) {
         console.error("Polyline error", e);
       }
+
+      // Draw custom markers for Check-In and Check-Out
+      logs.forEach((log: any) => {
+        if (!log.latitude || !log.longitude || !log.type) return;
+
+        const isCheckIn = log.type === "check-in";
+        const iconHtml = `<div style="background-color: ${isCheckIn ? '#10b981' : '#ef4444'}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap;">${isCheckIn ? '📍 IN' : '📍 OUT'}</div>`;
+
+        try {
+          const m = new mappls.Marker({
+            map: map,
+            position: { lat: log.latitude, lng: log.longitude },
+            html: iconHtml,
+            width: 60,
+            height: 30,
+            offset: [0, -15]
+          });
+          auditMarkersRef.current.push(m);
+        } catch(e) {
+          console.error("Marker render error:", e);
+        }
+      });
     }
   }, [employee, sdkReady, isPastFeed, containerId, lat, lng, geofenceEnabled, geofenceCenterLat, geofenceCenterLng, geofenceRadius, circleColor]);
 
@@ -270,6 +302,12 @@ export default function MiniMap({ employee, isPastFeed }: MiniMapProps) {
         }
         if (circleRef.current) {
           try { mappls.remove({ map: mapRef.current, layer: circleRef.current }); } catch { }
+        }
+        if (auditMarkersRef.current.length > 0) {
+          auditMarkersRef.current.forEach(marker => {
+            try { mappls.remove({ map: mapRef.current, layer: marker }); } catch { }
+          });
+          auditMarkersRef.current = [];
         }
         try { mapRef.current.remove(); } catch { }
         mapRef.current = null;
