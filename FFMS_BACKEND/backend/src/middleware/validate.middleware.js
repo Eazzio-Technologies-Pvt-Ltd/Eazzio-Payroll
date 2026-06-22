@@ -1,8 +1,8 @@
 const { ZodError } = require('zod')
 
-const validate = (schema) => (req, res, next) => {
+const validate = (schema, source = 'body') => (req, res, next) => {
   try {
-    req.body = schema.parse(req.body)
+    req[source] = schema.parse(req[source])
     next()
   } catch (err) {
     if (err instanceof ZodError) {
