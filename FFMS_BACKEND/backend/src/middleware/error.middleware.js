@@ -31,11 +31,15 @@ const errorHandler = (err, req, res, next) => {
     if (err.code === 'P2002') {
       statusCode = 409;
       code = 'CONFLICT_ERROR';
-      message = `Unique constraint failed on field(s): ${err.meta?.target?.join(', ')}`;
+      message = process.env.NODE_ENV === 'production'
+        ? 'A record with this information already exists'
+        : `Unique constraint failed on field(s): ${err.meta?.target?.join(', ')}`;
     } else if (err.code === 'P2025') {
       statusCode = 404;
       code = 'NOT_FOUND_ERROR';
-      message = err.meta?.cause || 'Record not found';
+      message = process.env.NODE_ENV === 'production'
+        ? 'The requested record was not found'
+        : err.meta?.cause || 'Record not found';
     }
   }
 

@@ -8,6 +8,7 @@ const { signAccessToken, signRefreshToken, hashToken } = require('../utils/jwt')
 const { refreshTokenSecret } = require('../config/jwt');
 const { sendOTPEmail } = require('../utils/email');
 const { BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError } = require('../utils/errors');
+const { validateBase64Image } = require('../utils/validateBase64Image');
 const logger = require('../config/logger');
 
 /**
@@ -21,30 +22,80 @@ const hashOtp = (email, otp) => {
  * Generate 6-digit OTP
  */
 const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
+};
+
+/**
+ * Record failed login attempt in Redis
+ */
+const recordFailedLogin = async (failedKey) => {
+  const attempts = await redis.incr(failedKey);
+  if (attempts === 1) {
+    await redis.expire(failedKey, 1800); // 30 minutes
+  }
 };
 
 /**
  * Login service
  */
-const login = async (email, password) => {
+const login = async (email, password, ip) => {
+  const failedKey = `failed_login:${email}`;
+  const attempts = await redis.get(failedKey);
+  if (attempts && parseInt(attempts) >= 5) {
+    logger.warn('SECURITY_EVENT', {
+      type: 'LOGIN_LOCKOUT',
+      email,
+      ip,
+      timestamp: new Date().toISOString()
+    });
+    throw new ForbiddenError('Account locked due to too many failed login attempts. Try again in 30 minutes.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { email },
     include: { organization: true, territory: true, shift: true }
   });
 
   if (!user) {
+    await recordFailedLogin(failedKey);
+    logger.warn('SECURITY_EVENT', {
+      type: 'FAILED_LOGIN',
+      email,
+      ip,
+      reason: 'User not found',
+      timestamp: new Date().toISOString()
+    });
     throw new UnauthorizedError('Invalid email or password');
   }
 
   if (user.status === 'SUSPENDED' || user.status === 'INACTIVE') {
+    logger.warn('SECURITY_EVENT', {
+      type: 'SUSPENDED_LOGIN_ATTEMPT',
+      email,
+      ip,
+      userId: user.id,
+      status: user.status,
+      timestamp: new Date().toISOString()
+    });
     throw new ForbiddenError(`Your account is ${user.status.toLowerCase()}. Access denied.`);
   }
 
   const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordMatch) {
+    await recordFailedLogin(failedKey);
+    logger.warn('SECURITY_EVENT', {
+      type: 'FAILED_LOGIN',
+      email,
+      ip,
+      userId: user.id,
+      reason: 'Incorrect password',
+      timestamp: new Date().toISOString()
+    });
     throw new UnauthorizedError('Invalid email or password');
   }
+
+  // Clear failures on successful login
+  await redis.del(failedKey);
 
   const accessToken = signAccessToken(user.id, user.role, user.organizationId);
   const refreshToken = signRefreshToken(user.id);
@@ -159,6 +210,12 @@ const refresh = async (refreshToken) => {
   // Compare hashed refresh tokens
   const incomingHashed = hashToken(refreshToken);
   if (user.deviceToken !== incomingHashed) {
+    logger.error('SECURITY_EVENT', {
+      type: 'REFRESH_TOKEN_REPLAY_ATTEMPT',
+      userId: user.id,
+      email: user.email,
+      timestamp: new Date().toISOString()
+    });
     // Invalidate refresh token on compromise
     await prisma.user.update({
       where: { id: user.id },
@@ -203,7 +260,8 @@ const forgotPassword = async (email) => {
   });
 
   if (!user) {
-    throw new NotFoundError('User with this email does not exist');
+    logger.info(`Forgot password request for non-existent user: ${email}`);
+    return true;
   }
 
   // Rate Limiting: 3 OTP requests per hour using Redis
@@ -229,9 +287,14 @@ const forgotPassword = async (email) => {
     await redis.incr(rateLimitKey);
   }
 
-  // Send OTP email
-  await sendOTPEmail(email, otp);
-  logger.info(`OTP generated and sent to ${email}`);
+// Send OTP email — failures must not break the generic response contract,
+  // otherwise email delivery problems become an account-enumeration side channel
+  try {
+    await sendOTPEmail(email, otp);
+    logger.info(`OTP generated and sent to ${email}`);
+  } catch (err) {
+    logger.error(`Failed to send OTP email to ${email}`, { error: err.message });
+  }
 
   return true;
 };
@@ -322,6 +385,9 @@ const updateProfileImage = async (userId, base64Image) => {
   if (!base64Image) {
     throw new BadRequestError('Base64 image is required');
   }
+
+  // Validate image type and size first
+  validateBase64Image(base64Image);
 
   // Upload to Cloudinary
   const formatted = base64Image.startsWith('data:image')

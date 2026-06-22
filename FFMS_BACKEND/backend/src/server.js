@@ -1,4 +1,9 @@
 const dotenvResult = require('dotenv').config();
+
+// Validate environment variables before anything else runs
+const validateEnv = require('./config/validateEnv');
+validateEnv();
+
 const logger = require('./config/logger');
 // Start background job workers
 require('./jobs/geofenceAlert.job');

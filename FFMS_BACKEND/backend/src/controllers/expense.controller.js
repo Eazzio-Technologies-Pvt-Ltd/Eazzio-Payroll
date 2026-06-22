@@ -24,14 +24,14 @@ const submit = async (req, res, next) => {
 
 const approve = async (req, res, next) => {
   try {
-    const expense = await expenseService.approveExpense(req.params.id, req.user.id, req.body.approvalNote)
+    const expense = await expenseService.approveExpense(req.params.id, req.user.id, req.user.organizationId, req.body.approvalNote)
     return successResponse(res, expense)
   } catch (err) { next(err) }
 }
 
 const reject = async (req, res, next) => {
   try {
-    const expense = await expenseService.rejectExpense(req.params.id, req.user.id, req.body.approvalNote)
+    const expense = await expenseService.rejectExpense(req.params.id, req.user.id, req.user.organizationId, req.body.approvalNote)
     return successResponse(res, expense)
   } catch (err) { next(err) }
 }

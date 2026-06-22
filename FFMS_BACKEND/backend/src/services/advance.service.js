@@ -54,8 +54,10 @@ const getAllRequests = async (organizationId, { userId, status } = {}) => {
   });
 };
 
-const approveRequest = async (id, approvedById) => {
-  const advance = await prisma.advance.findUnique({ where: { id } });
+const approveRequest = async (id, approvedById, organizationId) => {
+  const advance = await prisma.advance.findFirst({
+    where: { id, user: { organizationId } }
+  });
   if (!advance) {
     throw new NotFoundError('Advance request not found');
   }
@@ -79,8 +81,10 @@ const approveRequest = async (id, approvedById) => {
   });
 };
 
-const rejectRequest = async (id, approvedById) => {
-  const advance = await prisma.advance.findUnique({ where: { id } });
+const rejectRequest = async (id, approvedById, organizationId) => {
+  const advance = await prisma.advance.findFirst({
+    where: { id, user: { organizationId } }
+  });
   if (!advance) {
     throw new NotFoundError('Advance request not found');
   }

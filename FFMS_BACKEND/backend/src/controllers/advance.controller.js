@@ -25,14 +25,14 @@ const getAll = async (req, res, next) => {
 
 const approve = async (req, res, next) => {
   try {
-    const advance = await advanceService.approveRequest(req.params.id, req.user.id);
+    const advance = await advanceService.approveRequest(req.params.id, req.user.id, req.user.organizationId);
     return successResponse(res, advance);
   } catch (err) { next(err); }
 };
 
 const reject = async (req, res, next) => {
   try {
-    const advance = await advanceService.rejectRequest(req.params.id, req.user.id);
+    const advance = await advanceService.rejectRequest(req.params.id, req.user.id, req.user.organizationId);
     return successResponse(res, advance);
   } catch (err) { next(err); }
 };

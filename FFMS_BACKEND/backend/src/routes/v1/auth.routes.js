@@ -6,7 +6,7 @@ const { authLimiter } = require('../../middleware/rateLimit.middleware');
 const router = express.Router();
 
 // Apply separate auth endpoints rate limiting
-router.post('/register', authController.register);
+router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authenticate, authController.logout);

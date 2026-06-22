@@ -5,14 +5,12 @@ const prisma = require('./prisma');
 const logger = require('./logger');
 let io = null;
 
+const { isOriginAllowed } = require('./cors');
+
 const _checkOrigin = (origin, callback) => {
-  if (!origin) return callback(null, true);
-  const allowed = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['http://localhost:3000'];
-  if (allowed.includes(origin)) return callback(null, true);
-  if (origin.includes('vercel.app')) return callback(null, true);
-  if (origin.includes('localhost')) return callback(null, true);
+  if (isOriginAllowed(origin)) {
+    return callback(null, true);
+  }
   return callback(new Error('CORS blocked: ' + origin));
 };
 

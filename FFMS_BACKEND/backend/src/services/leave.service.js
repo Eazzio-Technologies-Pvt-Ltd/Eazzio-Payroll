@@ -3,6 +3,7 @@ const cloudinary = require('../config/cloudinary')
 const notificationService = require('./notification.service')
 // Socket.IO emitter — real-time status push to mobile app
 const { emitToUser } = require('../config/socket')
+const { validateBase64Image } = require('../utils/validateBase64Image')
 
 // Helper: calculate working days between two dates (excludes weekends)
 const calcWorkingDays = (startDate, endDate) => {
@@ -50,6 +51,7 @@ const applyLeave = async (userId, { type, startDate, endDate, reason, attachment
   
   let attachmentUrl = null;
   if (attachmentBase64) {
+    validateBase64Image(attachmentBase64);
     try {
       const formattedStr = attachmentBase64.startsWith('data:') 
         ? attachmentBase64 
@@ -81,8 +83,10 @@ const applyLeave = async (userId, { type, startDate, endDate, reason, attachment
 }
 
 // ─── Approve leave ─────────────────────────────────────────────────
-const approveLeave = async (leaveId, managerId, approvalNote) => {
-  const leave = await prisma.leave.findUnique({ where: { id: leaveId } })
+const approveLeave = async (leaveId, managerId, organizationId, approvalNote) => {
+  const leave = await prisma.leave.findFirst({
+    where: { id: leaveId, user: { organizationId } }
+  })
   if (!leave) {
     const err = new Error('Leave request not found'); err.statusCode = 404; throw err
   }
@@ -119,8 +123,10 @@ const approveLeave = async (leaveId, managerId, approvalNote) => {
 }
 
 // ─── Reject leave ──────────────────────────────────────────────────
-const rejectLeave = async (leaveId, managerId, approvalNote) => {
-  const leave = await prisma.leave.findUnique({ where: { id: leaveId } })
+const rejectLeave = async (leaveId, managerId, organizationId, approvalNote) => {
+  const leave = await prisma.leave.findFirst({
+    where: { id: leaveId, user: { organizationId } }
+  })
   if (!leave) {
     const err = new Error('Leave request not found'); err.statusCode = 404; throw err
   }
@@ -215,8 +221,9 @@ const getTeamLeaves = async (managerId, { page = 1, limit = 10, status } = {}) =
 }
 
 // ─── Get all leaves (admin) ────────────────────────────────────────
-const getAllLeaves = async ({ page = 1, limit = 10, status, userId } = {}) => {
+const getAllLeaves = async (organizationId, { page = 1, limit = 10, status, userId } = {}) => {
   const where = {
+    user: { organizationId },
     ...(status && { status }),
     ...(userId && { userId }),
   }
