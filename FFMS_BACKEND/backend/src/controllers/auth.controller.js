@@ -15,7 +15,7 @@ const login = async (req, res, next) => {
     }
 
     const { email, password } = parseResult.data;
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, req.ip);
 
     // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', result.refreshToken, {

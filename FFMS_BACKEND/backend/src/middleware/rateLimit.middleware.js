@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const { errorResponse } = require('../utils/response');
+const logger = require('../config/logger');
 
 const authLimiter = rateLimit({
   windowMs: 30 * 60 * 1000, // 30 minutes
@@ -8,6 +9,13 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   validate: false,
   handler: (req, res) => {
+    logger.warn('SECURITY_EVENT', {
+      type: 'RATE_LIMIT_EXCEEDED',
+      limiter: 'authLimiter',
+      ip: req.ip,
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
     return errorResponse(res, 'Too many login attempts. Please try again after 30 minutes.', 429, null, 'RATE_LIMIT_ERROR');
   }
 });
@@ -20,6 +28,14 @@ const apiLimiter = rateLimit({
   validate: false,
   keyGenerator: (req) => req.user?.id || req.ip,
   handler: (req, res) => {
+    logger.warn('SECURITY_EVENT', {
+      type: 'RATE_LIMIT_EXCEEDED',
+      limiter: 'apiLimiter',
+      userId: req.user?.id,
+      ip: req.ip,
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
     return errorResponse(res, 'Too many API requests. Please slow down.', 429, null, 'RATE_LIMIT_ERROR');
   }
 });
@@ -32,6 +48,14 @@ const exportLimiter = rateLimit({
   validate: false,
   keyGenerator: (req) => req.user?.id || req.ip,
   handler: (req, res) => {
+    logger.warn('SECURITY_EVENT', {
+      type: 'RATE_LIMIT_EXCEEDED',
+      limiter: 'exportLimiter',
+      userId: req.user?.id,
+      ip: req.ip,
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
     return errorResponse(res, 'Export limit reached. Maximum 10 exports per hour.', 429, null, 'RATE_LIMIT_ERROR');
   }
 });

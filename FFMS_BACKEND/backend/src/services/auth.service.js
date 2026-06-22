@@ -38,10 +38,16 @@ const recordFailedLogin = async (failedKey) => {
 /**
  * Login service
  */
-const login = async (email, password) => {
+const login = async (email, password, ip) => {
   const failedKey = `failed_login:${email}`;
   const attempts = await redis.get(failedKey);
   if (attempts && parseInt(attempts) >= 5) {
+    logger.warn('SECURITY_EVENT', {
+      type: 'LOGIN_LOCKOUT',
+      email,
+      ip,
+      timestamp: new Date().toISOString()
+    });
     throw new ForbiddenError('Account locked due to too many failed login attempts. Try again in 30 minutes.');
   }
 
@@ -52,16 +58,39 @@ const login = async (email, password) => {
 
   if (!user) {
     await recordFailedLogin(failedKey);
+    logger.warn('SECURITY_EVENT', {
+      type: 'FAILED_LOGIN',
+      email,
+      ip,
+      reason: 'User not found',
+      timestamp: new Date().toISOString()
+    });
     throw new UnauthorizedError('Invalid email or password');
   }
 
   if (user.status === 'SUSPENDED' || user.status === 'INACTIVE') {
+    logger.warn('SECURITY_EVENT', {
+      type: 'SUSPENDED_LOGIN_ATTEMPT',
+      email,
+      ip,
+      userId: user.id,
+      status: user.status,
+      timestamp: new Date().toISOString()
+    });
     throw new ForbiddenError(`Your account is ${user.status.toLowerCase()}. Access denied.`);
   }
 
   const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordMatch) {
     await recordFailedLogin(failedKey);
+    logger.warn('SECURITY_EVENT', {
+      type: 'FAILED_LOGIN',
+      email,
+      ip,
+      userId: user.id,
+      reason: 'Incorrect password',
+      timestamp: new Date().toISOString()
+    });
     throw new UnauthorizedError('Invalid email or password');
   }
 
@@ -181,6 +210,12 @@ const refresh = async (refreshToken) => {
   // Compare hashed refresh tokens
   const incomingHashed = hashToken(refreshToken);
   if (user.deviceToken !== incomingHashed) {
+    logger.error('SECURITY_EVENT', {
+      type: 'REFRESH_TOKEN_REPLAY_ATTEMPT',
+      userId: user.id,
+      email: user.email,
+      timestamp: new Date().toISOString()
+    });
     // Invalidate refresh token on compromise
     await prisma.user.update({
       where: { id: user.id },
