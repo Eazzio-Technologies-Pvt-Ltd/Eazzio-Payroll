@@ -1,6 +1,6 @@
 const authService = require('../services/auth.service');
 const { successResponse } = require('../utils/response');
-const { loginSchema, forgotPasswordSchema, verifyOtpSchema, resetPasswordSchema } = require('../validations/auth.validation');
+const { loginSchema, registerSchema, forgotPasswordSchema, verifyOtpSchema, resetPasswordSchema } = require('../validations/auth.validation');
 const { BadRequestError } = require('../utils/errors');
 
 
@@ -48,7 +48,12 @@ const login = async (req, res, next) => {
  */
 const register = async (req, res, next) => {
   try {
-    const result = await authService.register(req.body);
+    const parseResult = registerSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new BadRequestError('Validation failed', parseResult.error.flatten().fieldErrors);
+    }
+
+    const result = await authService.register(parseResult.data);
     
     // Write audit log
     if (req.logAudit) {
