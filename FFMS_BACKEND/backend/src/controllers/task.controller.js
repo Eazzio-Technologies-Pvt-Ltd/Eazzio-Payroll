@@ -204,7 +204,8 @@ const assignTask = async (req, res, next) => {
     const assignment = await taskService.assignTask(
       req.params.id,
       req.body.userId,
-      req.user.id
+      req.user.id,
+      req.user.organizationId
     )
     return successResponse(res, assignment, 201)
   } catch (err) { next(err) }

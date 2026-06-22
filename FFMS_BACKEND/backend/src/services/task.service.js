@@ -3,6 +3,7 @@ const cloudinary = require('../config/cloudinary');
 const { emitToUser, emitToOrgAdmins } = require('../config/socket');
 const { sendPushNotification } = require('../utils/notification');
 const { NotFoundError, BadRequestError, ForbiddenError } = require('../utils/errors');
+const { validateBase64Image } = require('../utils/validateBase64Image');
 const logger = require('../config/logger');
 
 /**
@@ -12,6 +13,7 @@ const uploadCompletionImages = async (imageBufferArray) => {
   const uploadedUrls = [];
   for (const imgBase64 of imageBufferArray) {
     try {
+      validateBase64Image(imgBase64);
       const formattedStr = imgBase64.startsWith('data:image') 
         ? imgBase64 
         : `data:image/jpeg;base64,${imgBase64}`;
@@ -461,15 +463,15 @@ const getMyTasks = async (userId, { page = 1, limit = 10, status, type = 'assign
   return { tasks, total, page, limit }
 };
 
-const assignTask = async (taskId, userId, assignedBy) => {
-  // Check task exists
-  const task = await prisma.task.findUnique({ where: { id: taskId } })
+const assignTask = async (taskId, userId, assignedBy, organizationId) => {
+  // Check task exists within the same organization
+  const task = await prisma.task.findFirst({ where: { id: taskId, organizationId } })
   if (!task) {
     const err = new Error('Task not found'); err.statusCode = 404; throw err
   }
 
-  // Check user exists and is FIELD_STAFF
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  // Check user exists within the same organization
+  const user = await prisma.user.findFirst({ where: { id: userId, organizationId } })
   if (!user) {
     const err = new Error('User not found'); err.statusCode = 404; throw err
   }
