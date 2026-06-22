@@ -100,11 +100,23 @@ const checkOrgAccess = (req, res, next) => {
     return next(new UnauthorizedError('Authentication required'));
   }
 
-  const requestedOrgId = req.params.orgId || req.body.organizationId || req.query.organizationId;
+  // Ensure user has an organization assigned
+  if (!req.user.organizationId) {
+    return next(new ForbiddenError('User has no organization assigned'));
+  }
 
-  
+  // Block cross-org access attempts
+  const requestedOrgId = req.params.orgId || req.body.organizationId || req.query.organizationId;
   if (requestedOrgId && requestedOrgId !== req.user.organizationId) {
-    return next(new ForbiddenError('Access to another organization\'s resources is prohibited'));
+    logger.warn('SECURITY_EVENT', {
+      type: 'CROSS_ORG_ACCESS_ATTEMPT',
+      userId: req.user.id,
+      userOrgId: req.user.organizationId,
+      requestedOrgId,
+      path: req.originalUrl,
+      ip: req.ip,
+    });
+    return next(new ForbiddenError('Cross-organization access is prohibited'));
   }
 
   next();
