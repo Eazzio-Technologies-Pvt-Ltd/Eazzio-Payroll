@@ -6,10 +6,14 @@ const { BadRequestError }   = require('../utils/errors')
 // Socket.IO emitter — real-time status push to mobile app
 const { emitToUser }        = require('../config/socket')
 
+const { validateBase64Image } = require('../utils/validateBase64Image')
+
 /**
  * Upload receipt image to Cloudinary
  */
 const uploadReceiptImage = async (base64Str) => {
+  // Validate image type and size first
+  validateBase64Image(base64Str);
   try {
     const formatted = base64Str.startsWith('data:image')
       ? base64Str
@@ -109,9 +113,9 @@ const submitExpense = async (expenseId, userId) => {
 }
 
 // ─── Approve ──────────────────────────────────────────────────────
-const approveExpense = async (expenseId, managerId, approvalNote) => {
-  const expense = await prisma.expense.findUnique({
-    where:   { id: expenseId },
+const approveExpense = async (expenseId, managerId, organizationId, approvalNote) => {
+  const expense = await prisma.expense.findFirst({
+    where:   { id: expenseId, user: { organizationId } },
     include: { user: { select: { name: true } } }
   })
   if (!expense) {
@@ -148,8 +152,10 @@ const approveExpense = async (expenseId, managerId, approvalNote) => {
 }
 
 // ─── Reject ───────────────────────────────────────────────────────
-const rejectExpense = async (expenseId, managerId, approvalNote) => {
-  const expense = await prisma.expense.findUnique({ where: { id: expenseId } })
+const rejectExpense = async (expenseId, managerId, organizationId, approvalNote) => {
+  const expense = await prisma.expense.findFirst({
+    where: { id: expenseId, user: { organizationId } }
+  })
   if (!expense) {
     const err = new Error('Expense not found'); err.statusCode = 404; throw err
   }
