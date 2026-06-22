@@ -189,7 +189,7 @@ const listComments = async (req, res, next) => {
 const getMyTasks = async (req, res, next) => {
   try {
     const { page, limit, status, type } = req.query;
-    const data = await taskService.getMyTasks(req.user.id, {
+    const data = await taskService.getMyTasks(req.user.id, req.user.organizationId, {
       page: +page || 1,
       limit: +limit || 50,
       status,

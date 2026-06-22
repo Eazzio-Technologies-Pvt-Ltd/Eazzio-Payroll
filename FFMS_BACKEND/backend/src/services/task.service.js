@@ -38,6 +38,17 @@ const createTask = async (createdById, taskData, organizationId) => {
 
   // Use database transaction for multi-table writes
   const result = await prisma.$transaction(async (tx) => {
+    // Validate all assignees belong to the organization
+    const validUsers = await tx.user.findMany({
+      where: {
+        id: { in: assigneeIds },
+        organizationId
+      }
+    });
+    if (validUsers.length !== assigneeIds.length) {
+      throw new BadRequestError('One or more assignees do not belong to your organization');
+    }
+
     // 1. Create task
     const task = await tx.task.create({
       data: {
@@ -438,10 +449,10 @@ const listComments = async (taskId, organizationId) => {
   });
 };
 
-const getMyTasks = async (userId, { page = 1, limit = 10, status, type = 'assigned' } = {}) => {
+const getMyTasks = async (userId, organizationId, { page = 1, limit = 10, status, type = 'assigned' } = {}) => {
   const where = type === 'created' 
-    ? { createdById: userId, ...(status && { status }) }
-    : { assignments: { some: { userId } }, ...(status && { status }) };
+    ? { createdById: userId, organizationId, ...(status && { status }) }
+    : { assignments: { some: { userId } }, organizationId, ...(status && { status }) };
 
   const [tasks, total] = await Promise.all([
     prisma.task.findMany({
