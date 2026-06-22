@@ -22,19 +22,36 @@ const hashOtp = (email, otp) => {
  * Generate 6-digit OTP
  */
 const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
+};
+
+/**
+ * Record failed login attempt in Redis
+ */
+const recordFailedLogin = async (failedKey) => {
+  const attempts = await redis.incr(failedKey);
+  if (attempts === 1) {
+    await redis.expire(failedKey, 1800); // 30 minutes
+  }
 };
 
 /**
  * Login service
  */
 const login = async (email, password) => {
+  const failedKey = `failed_login:${email}`;
+  const attempts = await redis.get(failedKey);
+  if (attempts && parseInt(attempts) >= 5) {
+    throw new ForbiddenError('Account locked due to too many failed login attempts. Try again in 30 minutes.');
+  }
+
   const user = await prisma.user.findUnique({
     where: { email },
     include: { organization: true, territory: true, shift: true }
   });
 
   if (!user) {
+    await recordFailedLogin(failedKey);
     throw new UnauthorizedError('Invalid email or password');
   }
 
@@ -44,8 +61,12 @@ const login = async (email, password) => {
 
   const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isPasswordMatch) {
+    await recordFailedLogin(failedKey);
     throw new UnauthorizedError('Invalid email or password');
   }
+
+  // Clear failures on successful login
+  await redis.del(failedKey);
 
   const accessToken = signAccessToken(user.id, user.role, user.organizationId);
   const refreshToken = signRefreshToken(user.id);
@@ -204,7 +225,8 @@ const forgotPassword = async (email) => {
   });
 
   if (!user) {
-    throw new NotFoundError('User with this email does not exist');
+    logger.info(`Forgot password request for non-existent user: ${email}`);
+    return true;
   }
 
   // Rate Limiting: 3 OTP requests per hour using Redis
@@ -230,9 +252,14 @@ const forgotPassword = async (email) => {
     await redis.incr(rateLimitKey);
   }
 
-  // Send OTP email
-  await sendOTPEmail(email, otp);
-  logger.info(`OTP generated and sent to ${email}`);
+// Send OTP email — failures must not break the generic response contract,
+  // otherwise email delivery problems become an account-enumeration side channel
+  try {
+    await sendOTPEmail(email, otp);
+    logger.info(`OTP generated and sent to ${email}`);
+  } catch (err) {
+    logger.error(`Failed to send OTP email to ${email}`, { error: err.message });
+  }
 
   return true;
 };
