@@ -152,8 +152,8 @@ export default function AdminTopbar() {
     <header
       style={{
         height: "70px",
-        background: "var(--bg-secondary)",
-        borderBottom: "1px solid var(--border)",
+        background: "var(--sidebar-bg)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: isMobile ? "0 16px" : "0 28px",
         position: "sticky", top: 0, zIndex: 50,
@@ -168,10 +168,9 @@ export default function AdminTopbar() {
           justifyContent: "flex-start",
           height: "70px",
           width: "240px",
-          background: "var(--sidebar-bg)",
           padding: "0 20px",
           marginLeft: isMobile ? "-16px" : "-28px",
-          borderRight: "1px solid var(--sidebar-border)",
+          borderRight: "none",
         }}>
           <img
             src="/logo.png"
@@ -181,30 +180,30 @@ export default function AdminTopbar() {
         </div>
 
         {/* Separator */}
-        <div style={{ width: "1px", height: "32px", background: "var(--border)", display: isMobile ? "none" : "block" }} />
+        <div style={{ display: "none" }} />
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
           {isMobile && (
             <button
               onClick={toggleMobileSidebar}
               aria-label="Toggle navigation menu"
-              style={{ background: "none", border: "1px solid var(--border)", cursor: "pointer", color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", flexShrink: 0 }}
+              style={{ background: "none", border: "1px solid rgba(255, 255, 255, 0.2)", cursor: "pointer", color: "white", display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", flexShrink: 0 }}
             >
               <Menu size={20} />
             </button>
           )}
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "white", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {info.title}
               </h1>
               {!isMobile && (
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#3b82f6", background: "rgba(59, 130, 246,0.1)", padding: "2px 8px", borderRadius: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "white", background: "rgba(255, 255, 255, 0.2)", padding: "2px 8px", borderRadius: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Admin
                 </span>
               )}
             </div>
-            {!isMobile && <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
+            {!isMobile && <p style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.7)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
           </div>
         </div>
       </div>
@@ -214,7 +213,7 @@ export default function AdminTopbar() {
         {/* Search */}
         {!isMobile && (
           <div ref={searchRef} style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", zIndex: 1 }} />
+            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "rgba(255, 255, 255, 0.6)", zIndex: 1 }} />
             <input
               id="admin-topbar-search"
               placeholder="Search admin pages..."
@@ -223,10 +222,10 @@ export default function AdminTopbar() {
               onFocus={() => setIsFocused(true)}
               onKeyDown={(e) => { if (e.key === "Escape") { setIsFocused(false); setQuery(""); } }}
               style={{
-                background: "#f1f5f9", border: "none", borderRadius: "9999px",
-                padding: "10px 16px 10px 40px", color: "var(--text-primary)", fontSize: "13px",
+                background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.2)", borderRadius: "9999px",
+                padding: "10px 16px 10px 40px", color: "white", fontSize: "13px",
                 outline: "none", width: "280px", fontFamily: "Inter, sans-serif",
-                boxShadow: isFocused ? "0 0 0 2px #3b82f6" : "none",
+                boxShadow: isFocused ? "0 0 0 2px rgba(255, 255, 255, 0.5)" : "none",
               }}
             />
             {showDropdown && (
@@ -256,9 +255,9 @@ export default function AdminTopbar() {
 
         {/* Admin Badge */}
         {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "rgba(59, 130, 246,0.08)", border: "1px solid rgba(59, 130, 246,0.2)", borderRadius: 0 }}>
-            <Shield size={14} color="#3b82f6" />
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#3b82f6" }}>Super Admin</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.2)", borderRadius: 0 }}>
+            <Shield size={14} color="white" />
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "white" }}>Super Admin</span>
           </div>
         )}
 

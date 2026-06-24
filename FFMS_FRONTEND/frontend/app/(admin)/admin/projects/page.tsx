@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { projectsApi, usersApi, tasksApi, ApiProject } from "@/lib/api-client";
 import { FolderPlus, Search, Edit2, X, Check, RefreshCw, Briefcase, CheckCircle2, PauseCircle, Clock4, Plus, Trash2 } from "lucide-react";
+import TasksView from "@/components/tasks/TasksView";
 
 const statusColors: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
   ACTIVE: { bg: "#dcfce7", text: "#16a34a", icon: <CheckCircle2 size={13} />, label: "Active" },
@@ -14,6 +15,7 @@ const statusColors: Record<string, { bg: string; text: string; icon: React.React
 
 export default function AdminProjectsPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"projects" | "tasks">("projects");
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [managers, setManagers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,9 +192,36 @@ export default function AdminProjectsPage() {
     }
   };
 
+  const tabSwitcher = (
+    <div style={{ display: "flex", gap: "12px", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "8px" }}>
+      <button 
+        onClick={() => setActiveTab("projects")} 
+        style={{ padding: "8px 24px", background: activeTab === "projects" ? "#3b82f6" : "transparent", color: activeTab === "projects" ? "white" : "#64748b", border: activeTab === "projects" ? "none" : "1px solid #cbd5e1", borderRadius: "9999px", fontWeight: 600, fontSize: "13px", cursor: "pointer", transition: "all 0.2s" }}
+      >
+        Projects View
+      </button>
+      <button 
+        onClick={() => setActiveTab("tasks")} 
+        style={{ padding: "8px 24px", background: activeTab === "tasks" ? "#3b82f6" : "transparent", color: activeTab === "tasks" ? "white" : "#64748b", border: activeTab === "tasks" ? "none" : "1px solid #cbd5e1", borderRadius: "9999px", fontWeight: 600, fontSize: "13px", cursor: "pointer", transition: "all 0.2s" }}
+      >
+        Tasks View
+      </button>
+    </div>
+  );
+
+  if (activeTab === "tasks") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+        {tabSwitcher}
+        <TasksView />
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+        {tabSwitcher}
         {/* Stats Row Skeleton (5 columns) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
           {[1, 2, 3, 4, 5].map(i => (
@@ -251,6 +280,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+      {tabSwitcher}
 
       {/* ── Stats ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
@@ -284,10 +314,6 @@ export default function AdminProjectsPage() {
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
-            <button onClick={() => { setTaskForm({ title: "", description: "", assigneeRole: "EMPLOYEE", assigneeId: employees[0]?.id || "", priority: "MEDIUM", dueDate: "", recurring: false, recurrenceRule: "WEEKLY" }); setShowTaskModal(true); }}
-              className="btn-primary" style={{ background: "#10b981", border: "none" }}>
-              <Plus size={16} /> Create Task
-            </button>
             <button id="add-project-btn" onClick={() => { setFormData({ name: "", managerId: managers[0]?.id || "", startDate: "", endDate: "", status: "ACTIVE", department: "", budget: "", progress: 0, description: "" }); setShowAddModal(true); }}
               className="btn-primary">
               <FolderPlus size={16} /> Create Project
