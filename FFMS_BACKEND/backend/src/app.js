@@ -13,6 +13,12 @@ const v1Router = require('./routes/v1');
 
 const app = express();
 
+// ─── Trust Proxy (Required for Render/load-balanced deployments) ─────────────
+// Without this, req.ip always returns the load balancer's IP, not the real
+// client IP — breaking IP-based rate limiting (every user appears to share
+// one IP, causing the whole app to get rate-limited together).
+app.set('trust proxy', 1);
+
 // ─── Security Headers ────────────────────────────────────────────────────────
 app.use(helmet());
 
