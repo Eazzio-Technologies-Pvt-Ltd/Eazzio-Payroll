@@ -464,6 +464,24 @@ export default function Sidebar() {
             </Link>
           )}
 
+          {/* 5c. Salary Management */}
+          {isAdmin && (
+            <Link href={`${basePath}/salary`} style={{ textDecoration: "none" }} title="Salary Management">
+              <div style={getLinkStyle(pathname === `${basePath}/salary`)} className="sidebar-link">
+                {renderIcon(Wallet, pathname === `${basePath}/salary`)}
+                <span style={{
+                  fontSize: "13.5px",
+                  fontWeight: pathname === `${basePath}/salary` ? 700 : 500,
+                  opacity: isExpanded ? 1 : 0,
+                  width: isExpanded ? "auto" : 0,
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  transition: "opacity 0.2s ease 0.05s",
+                }}>Salary Management</span>
+              </div>
+            </Link>
+          )}
+
           {/* 6. Insights Accordion */}
           <div>
             <div

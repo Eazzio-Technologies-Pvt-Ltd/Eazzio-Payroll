@@ -167,6 +167,7 @@ model User {
 
   // Salary & Allowance (set by Admin)
   baseSalary            Float?   // monthly base salary in INR
+  bonus                 Float?   @default(0) // fixed bonus or deduction
   travelAllowanceRate   Float?   @default(4) // ₹ per KM, default ₹4
   profileImageLockedAt  DateTime? // null = not yet uploaded; non-null = locked
 

@@ -12,7 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <DataInitializer />
         <div
           data-panel="admin"
-          style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg-primary)" }}
+          style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg-primary)" }}
         >
           <AdminTopbar />
           <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
@@ -29,3 +29,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </MobileSidebarProvider>
   );
 }
+

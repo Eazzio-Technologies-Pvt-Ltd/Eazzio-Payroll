@@ -17,6 +17,7 @@ const travelRoutes = require('./travel.routes');
 const advanceRoutes = require('./advance.routes');
 const shiftRoutes = require('./shift.routes');
 const visitRoutes = require('./visit.routes');
+const salaryRoutes = require('./salary.routes');
 
 const router = express.Router();
 
@@ -39,5 +40,6 @@ router.use('/feedback', feedbackRoutes);
 router.use('/projects', projectRoutes);
 router.use('/travel', travelRoutes);
 router.use('/advance', advanceRoutes);
+router.use('/salary', salaryRoutes);
 
 module.exports = router;

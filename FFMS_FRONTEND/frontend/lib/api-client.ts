@@ -490,7 +490,13 @@ export const feedbackApi = {
 };
 
 
+// ─── Salary ──────────────────────────────────────────
+export const salaryApi = {
+  getSalaryList: (query?: { role: string; month: string }) =>
+    request<any>("GET", "/salary", undefined, query as any),
+  updateSalary: (userId: string, data: { baseSalary: number; bonus: number }) =>
+    request<any>("PATCH", `/salary/${userId}`, data),
+};
+
 export { ApiError };
 export default request;
-
-
