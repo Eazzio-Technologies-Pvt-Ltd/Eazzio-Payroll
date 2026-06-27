@@ -4,27 +4,12 @@ const { emitToOrgAdmins } = require('../config/socket');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
 const logger = require('../config/logger');
 const { getLocalDate, getLocalHoursAndMinutes } = require('../utils/timezone');
+const { validateLocationAgainstTerritory } = require('./geofence.service');
 
 
 /**
- * Point-in-polygon (Ray casting algorithm)
- * Validates whether a given lat/long falls within a GeoJSON Polygon.
- * Crucial for Geofence/Territory validation during Check-in.
- * Time Complexity: O(n) where n is the number of vertices in the polygon.
+ * Retrieve shift configuration from database or env fallback
  */
-const isPointInPolygon = (lat, lng, polygon) => {
-  const coords = polygon.coordinates[0];
-  let inside = false;
-  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
-    const [xi, yi] = coords[i]; // [lng, lat]
-    const [xj, yj] = coords[j];
-    const intersect = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
-};
-
-// Retrieve shift configuration from database or env fallback
 const getShiftConfig = (shift) => {
   if (shift) {
     const [startHours, startMinutes] = shift.startTime.split(':').map(Number);
@@ -83,9 +68,59 @@ const uploadSelfie = async (base64Str) => {
     });
     return res.secure_url;
   } catch (err) {
-    logger.error('Failed to upload check-in selfie to Cloudinary:', err);
-    throw new BadRequestError(`Failed to upload check-in selfie: ${err.message || err}`);
+    logger.error('Failed to upload selfie to Cloudinary:', err);
+    throw new BadRequestError(`Failed to upload selfie: ${err.message || err}`);
   }
+};
+
+/**
+ * Validate user location against their assigned territory.
+ * Fetches territory and performs Haversine radius / polygon check.
+ * 
+ * @param {number} latitude 
+ * @param {number} longitude 
+ * @param {string} territoryId 
+ * @param {string} action - 'check-in' or 'check-out' (for error messages)
+ * @returns {{ distanceMeters: number|null }} - Distance for audit trail
+ */
+const validateGeofence = async (latitude, longitude, territoryId, action = 'check-in') => {
+  if (!territoryId) {
+    return { distanceMeters: null };
+  }
+
+  const territory = await prisma.territory.findUnique({
+    where: { id: territoryId },
+    select: { polygon: true, centerLat: true, centerLng: true, radius: true, name: true }
+  });
+
+  if (!territory) {
+    return { distanceMeters: null };
+  }
+
+  // Skip validation if no geofence is configured at all
+  if (!territory.polygon && territory.centerLat == null) {
+    return { distanceMeters: null };
+  }
+
+  const { isValid, distanceMeters } = validateLocationAgainstTerritory(latitude, longitude, territory);
+
+  if (!isValid) {
+    const distanceInfo = distanceMeters != null
+      ? ` You are ${distanceMeters}m away from "${territory.name}".`
+      : '';
+
+    if (action === 'check-in') {
+      throw new BadRequestError(
+        `Outside permitted location. You must be within your assigned territory to ${action}.${distanceInfo}`
+      );
+    } else {
+      throw new BadRequestError(
+        `Return to your assigned location to ${action}. You are outside the permitted geofence.${distanceInfo}`
+      );
+    }
+  }
+
+  return { distanceMeters };
 };
 
 /**
@@ -95,9 +130,9 @@ const uploadSelfie = async (base64Str) => {
  * Workflow:
  * 1. Validates that user hasn't already checked in today.
  * 2. Fetches user's assigned Territory (Geofence).
- * 3. Uses Ray-Casting (`isPointInPolygon`) to ensure the user is physically inside their territory.
- * 4. Compresses & Uploads the base64 Selfie to Cloudinary.
- * 5. Calculates "Late" status based on environment config.
+ * 3. Validates location using Haversine radius check (preferred) or polygon ray-casting (fallback).
+ * 4. Uploads the mandatory base64 Selfie to Cloudinary.
+ * 5. Calculates "Late" status based on shift config.
  * 6. Commits record to Prisma DB and broadcasts a Socket.IO event to Admins.
  */
 const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizationId) => {
@@ -153,7 +188,7 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
 
   const sessionNumber = count + 1;
 
-  // 1.5 Geofence check & shift config
+  // 1.5 Fetch user record for territory + shift config
   const userRecord = await prisma.user.findUnique({
     where: { id: userId },
     select: { 
@@ -163,27 +198,20 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
     }
   });
 
-  if (userRecord && userRecord.territoryId) {
-    const territory = await prisma.territory.findUnique({
-      where: { id: userRecord.territoryId },
-      select: { polygon: true }
-    });
+  // 2. SERVER-SIDE GEOFENCE VALIDATION (Bug #1 fix)
+  //    Uses Haversine radius check (preferred) with polygon fallback.
+  //    Rejects request if user is outside permitted radius.
+  const { distanceMeters: punchInDistance } = await validateGeofence(
+    latitude, longitude, userRecord?.territoryId, 'check-in'
+  );
 
-    if (territory && territory.polygon) {
-      const inside = isPointInPolygon(latitude, longitude, territory.polygon);
-      if (!inside) {
-        throw new BadRequestError('You are outside your assigned work location. Please reach your territory to punch attendance.');
-      }
-    }
+  // 3. Upload mandatory selfie to Cloudinary (Bug #2 fix — selfie is now required by validation schema)
+  if (!selfieBase64) {
+    throw new BadRequestError('Selfie is required for attendance check-in');
   }
+  const selfieUrl = await uploadSelfie(selfieBase64);
 
-  // 2. Upload selfie to Cloudinary if provided
-  let selfieUrl = null;
-  if (selfieBase64) {
-    selfieUrl = await uploadSelfie(selfieBase64);
-  }
-
-  // 3. Determine if late
+  // 4. Determine if late
   const { startMinutes, lateThreshold } = getShiftConfig(userRecord?.shift);
   
   // Get check-in time in minutes from midnight (local time)
@@ -191,7 +219,7 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
   const currentMinutes = hours * 60 + minutes;
   const isLate = currentMinutes > (startMinutes + lateThreshold);
 
-  // 4. Create Attendance record
+  // 5. Create Attendance record with distance audit trail
   const attendance = await prisma.attendance.create({
     data: {
       userId,
@@ -200,6 +228,7 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
       checkInTime: now,
       checkInLatitude: latitude,
       checkInLongitude: longitude,
+      punchInDistance,
       status: isLate ? 'LATE' : 'PRESENT',
       isLate,
       selfieUrl
@@ -211,7 +240,7 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
     }
   });
 
-  // 5. Emit Socket.IO event to managers
+  // 6. Emit Socket.IO event to managers
   emitToOrgAdmins(organizationId, 'attendance:checkin', {
     attendanceId: attendance.id,
     userId,
@@ -238,8 +267,10 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
 
 /**
  * Check Out Service
+ * 
+ * Bug #2 fix: Now requires mandatory selfie and validates geofence location.
  */
-const checkOut = async (userId, { latitude, longitude }, organizationId) => {
+const checkOut = async (userId, { latitude, longitude, selfieBase64 }, organizationId) => {
   const now = new Date();
   const todayDate = getLocalDate(now);
 
@@ -254,7 +285,7 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
     },
     include: {
       user: {
-        select: { name: true, shiftId: true, shift: true }
+        select: { name: true, shiftId: true, shift: true, territoryId: true }
       }
     }
   });
@@ -263,15 +294,26 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
     throw new BadRequestError('No active session to check out from');
   }
 
-  // 2. Compute working minutes for this session (guarded to never be negative)
+  // 2. SERVER-SIDE GEOFENCE VALIDATION for punch-out (Bug #2 fix)
+  const { distanceMeters: punchOutDistance } = await validateGeofence(
+    latitude, longitude, openSession.user?.territoryId, 'check-out'
+  );
+
+  // 3. Upload mandatory punch-out selfie (Bug #2 fix)
+  if (!selfieBase64) {
+    throw new BadRequestError('Selfie is required for attendance check-out');
+  }
+  const punchOutSelfieUrl = await uploadSelfie(selfieBase64);
+
+  // 4. Compute working minutes for this session (guarded to never be negative)
   const checkInTime = new Date(openSession.checkInTime);
   const workingMinutes = Math.max(0, Math.floor((now - checkInTime) / 60000));
 
-  // 3. Determine if early logout using computed shift end date-time
+  // 5. Determine if early logout using computed shift end date-time
   const shiftEndTime = getShiftEndTime(openSession.checkInTime, openSession.user?.shift);
   const isEarlyLogout = now < shiftEndTime;
 
-  // 4. Determine Status based on cumulative working hours business rules
+  // 6. Determine Status based on cumulative working hours business rules
   const pastSessions = await prisma.attendance.findMany({
     where: {
       userId,
@@ -294,13 +336,15 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
     calculatedStatus = eitherLate ? 'LATE' : 'PRESENT';
   }
 
-  // 5. Update record. (The status belongs on the day's summary, which is recorded on the latest session record)
+  // 7. Update record with location, selfie, and distance audit trail
   const updatedAttendance = await prisma.attendance.update({
     where: { id: openSession.id },
     data: {
       checkOutTime: now,
       checkOutLatitude: latitude,
       checkOutLongitude: longitude,
+      punchOutDistance,
+      punchOutSelfieUrl,
       workingMinutes,
       isEarlyLogout,
       status: calculatedStatus
@@ -312,7 +356,7 @@ const checkOut = async (userId, { latitude, longitude }, organizationId) => {
     }
   });
 
-  // 6. Emit Socket event to managers
+  // 8. Emit Socket event to managers
   emitToOrgAdmins(organizationId, 'attendance:checkout', {
     attendanceId: openSession.id,
     userId,

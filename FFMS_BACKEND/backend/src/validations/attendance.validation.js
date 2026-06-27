@@ -12,7 +12,7 @@ const checkInSchema = z.object({
   longitude: z.number().min(-180).max(180).refine(validatePrecision, {
     message: 'Longitude must have at least 4 decimal places of precision (~11m accuracy)'
   }),
-  selfieBase64: z.string().optional()
+  selfieBase64: z.string().min(1, 'Selfie is required for attendance check-in')
 });
 
 const checkOutSchema = z.object({
@@ -21,7 +21,8 @@ const checkOutSchema = z.object({
   }),
   longitude: z.number().min(-180).max(180).refine(validatePrecision, {
     message: 'Longitude must have at least 4 decimal places of precision (~11m accuracy)'
-  })
+  }),
+  selfieBase64: z.string().min(1, 'Selfie is required for attendance check-out')
 });
 
 const updateAttendanceSchema = z.object({
