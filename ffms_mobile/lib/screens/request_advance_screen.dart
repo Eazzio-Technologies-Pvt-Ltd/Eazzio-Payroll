@@ -8,6 +8,7 @@ import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_toast.dart';
 import '../core/theme/app_theme.dart';
+import '../core/utils/salary_helper.dart';
 
 // Advance pay backend endpoint not yet available
 // UI ready — waiting for backend implementation
@@ -37,8 +38,9 @@ class _RequestAdvanceScreenState extends State<RequestAdvanceScreen> {
     final baseSalary = authUser?.baseSalary ?? 0.0;
     final logs = Provider.of<AttendanceProvider>(context).attendanceHistory;
 
-    // Calculate dynamic earned salary components (standard 26 working days)
-    final dailySalaryRate = baseSalary / 26.0;
+    // Calculate dynamic earned salary components using dynamic monthly working days (excluding Sundays)
+    final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
+    final dailySalaryRate = baseSalary / dynamicWorkingDays;
 
     // Group sessions by date to prevent duplicate rows
     // LATE status treated as full day pay per business rules

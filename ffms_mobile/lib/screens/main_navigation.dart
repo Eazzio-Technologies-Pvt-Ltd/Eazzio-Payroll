@@ -5,7 +5,6 @@ import 'map_screen.dart';
 import 'attendance_screen.dart';
 import 'profile_screen.dart';
 import '../core/theme/app_theme.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -70,23 +69,28 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.checkSquare),
+              icon: Icon(Icons.check_box_outlined),
+              activeIcon: Icon(Icons.check_box),
               label: 'Tasks',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.map),
+              icon: Icon(Icons.map_outlined),
+              activeIcon: Icon(Icons.map),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.calendar),
+              icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
               label: 'Attendance',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.user),
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
               label: 'Profile',
             ),
           ],

@@ -90,10 +90,10 @@ class EazzioPayrollApp extends StatelessWidget {
       title: 'Eazzio Payroll',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme.copyWith(
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _SlidePageTransition(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: const _SlidePageTransition(),
+            TargetPlatform.iOS: const ZoomPageTransitionsBuilder(),
           },
         ),
       ),

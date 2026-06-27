@@ -10,6 +10,7 @@ import '../core/theme/app_theme.dart';
 import 'expenses_screen.dart';
 import 'feedback_screen.dart';
 import 'permissions_screen.dart';
+import '../core/utils/salary_helper.dart';
 
 // Profile screen v2 — gradient header + modern stat cards + clean settings list
 class ProfileScreen extends StatefulWidget {
@@ -366,10 +367,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final totalWorkingDays = travelProvider.monthlySummary?.totalWorkingDays ?? 0;
     final baseSalary = authUser?.baseSalary ?? 0.0;
 
-    if (baseSalary > 0 && totalWorkingDays > 0) {
-      accruedSalary = (present / totalWorkingDays) * baseSalary;
-    } else if (baseSalary > 0 && present > 0) {
-      accruedSalary = (present / 26.0) * baseSalary;
+    final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
+    if (baseSalary > 0 && dynamicWorkingDays > 0) {
+      accruedSalary = (present / dynamicWorkingDays) * baseSalary;
     }
 
     double attPct = totalWorkingDays > 0 ? (present / totalWorkingDays) * 100 : 100.0;

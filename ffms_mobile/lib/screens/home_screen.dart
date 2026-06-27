@@ -27,6 +27,7 @@ import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded si
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_card.dart';
 import '../widgets/swipe_to_punch.dart';
+import '../core/utils/salary_helper.dart';
 import '../models/attendance_model.dart';
 
 // Home screen v2 — premium card layouts + modern gradients
@@ -264,8 +265,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool wasPunchedIn = attendanceProvider.isPunchedIn;
     String? base64Selfie;
 
-    // ── Selfie capture (punch-in only) ───────────────────────────────────────
+    // ── Selfie capture (punch-in & punch-out) ─────────────────────────────────
     try {
+      final String actionName = wasPunchedIn ? 'PUNCH_OUT' : 'PUNCH_IN';
+      final String actionLabel = wasPunchedIn ? 'Punch Out' : 'Punch In';
+
       if (!wasPunchedIn) {
         final battery = Battery();
         final batteryLevel = await battery.batteryLevel;
@@ -280,27 +284,27 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           return false;
         }
-
-        // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
-        await StorageHelper.savePendingAction('PUNCH_IN');
-        if (!mounted) return false;
-        final result = await ImageUploadUtil.pickAndCompressImage(
-          context,
-          cameraOnly: true,
-          preferredCameraDevice: CameraDevice.front,
-        );
-        await StorageHelper.savePendingAction(null);
-        if (result == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Selfie photo is required to Punch In.')),
-            );
-          }
-          return false;
-        }
-
-        base64Selfie = result.base64String;
       }
+
+      // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
+      await StorageHelper.savePendingAction(actionName);
+      if (!mounted) return false;
+      final result = await ImageUploadUtil.pickAndCompressImage(
+        context,
+        cameraOnly: true,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      await StorageHelper.savePendingAction(null);
+      if (result == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Selfie photo is required to $actionLabel.')),
+          );
+        }
+        return false;
+      }
+
+      base64Selfie = result.base64String;
     } catch (e) {
       await StorageHelper.savePendingAction(null);
       if (mounted) {
@@ -336,6 +340,73 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
         return false;
+      }
+    }
+    
+    // ── Geofence validation ──────────────────────────────────────────────────
+    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    if (user != null && user.territory != null && user.territory!.polygon != null) {
+      final polyData = user.territory!.polygon!;
+      if (polyData['coordinates'] != null && polyData['coordinates'] is List && (polyData['coordinates'] as List).isNotEmpty) {
+        final coords = polyData['coordinates'][0] as List;
+        
+        bool isInside = false;
+        double sumLat = 0;
+        double sumLng = 0;
+        int count = 0;
+        
+        for (var coord in coords) {
+          if (coord is List && coord.length >= 2) {
+            double lng = (coord[0] as num).toDouble();
+            double lat = (coord[1] as num).toDouble();
+            sumLat += lat;
+            sumLng += lng;
+            count++;
+          }
+        }
+        
+        if (count > 0) {
+          double centroidLat = sumLat / count;
+          double centroidLng = sumLng / count;
+          
+          // Check inside using ray-casting
+          bool inside = false;
+          for (int i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+            final xi = (coords[i][0] as num).toDouble(); // longitude
+            final yi = (coords[i][1] as num).toDouble(); // latitude
+            final xj = (coords[j][0] as num).toDouble();
+            final yj = (coords[j][1] as num).toDouble();
+            
+            final intersect = ((yi > position.latitude) != (yj > position.latitude)) &&
+                (position.longitude < (xj - xi) * (position.latitude - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+          }
+          
+          isInside = inside;
+          
+          if (!isInside) {
+            // Calculate distance to centroid
+            final double distance = Geolocator.distanceBetween(
+              position.latitude,
+              position.longitude,
+              centroidLat,
+              centroidLng,
+            );
+            
+            // If the geofence limit is set to 100m, any punch attempt beyond 100m is blocked
+            if (distance > 100.0) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("You are outside the permitted work location."),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+              return false;
+            }
+          }
+        }
       }
     }
 
@@ -1811,8 +1882,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
 
-                      // Calculate daily salary components (standard 26 working days)
-                      final dailySalaryRate = baseSalary / 26.0;
+                      // Calculate daily salary components using dynamic monthly working days (excluding Sundays)
+                      final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
+                      final dailySalaryRate = baseSalary / dynamicWorkingDays;
 
                       // Group sessions by date to prevent duplicate rows
                       // LATE status treated as full day pay per business rules
