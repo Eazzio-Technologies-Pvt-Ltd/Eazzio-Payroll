@@ -9,14 +9,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // --- PRIMARY COLORS ---
-  static const Color primary = Color(0xFF0CD693);        // Eazzio Teal
+  static const Color primary = Color(0xFF0CD693);        // Teal/Green for all buttons
   static const Color primaryLight = Color(0xFF33FFAA);   // Light Teal
   static const Color primarySoft = Color(0xFFE6FFF5);    // Soft Teal bg
   static const Color primaryDark = Color(0xFF079968);    // Dark Teal
 
   // --- ACCENT COLORS ---
-  static const Color accent = Color(0xFF0B093E);         // Eazzio Dark Navy Blue
-  static const Color accentSoft = Color(0xFFF0F1FA);     // Soft Navy bg
+  static const Color accent = Color(0xFF2563EB);         // Solid Blue accent
+  static const Color accentSoft = Color(0xFFEFF6FF);     // Soft Blue bg
 
   // --- SEMANTIC COLORS ---
   static const Color success = Color(0xFF059669);        // Green — punch in
@@ -28,17 +28,17 @@ class AppColors {
   static const Color info = Color(0xFF0891B2);           // Cyan — info
 
   // --- NEUTRAL COLORS ---
-  static const Color bgPage = Color(0xFFF1F5F9);         // Page background
+  static const Color bgPage = Color(0xFFFFFFFF);         // Page background: WHITE
   static const Color bgCard = Color(0xFFFFFFFF);         // Card background
   static const Color bgInput = Color(0xFFF8FAFC);        // Input background
   static const Color border = Color(0xFFE2E8F0);         // Border color
-  static const Color divider = Color(0xFFF1F5F9);        // Divider
+  static const Color divider = Color(0xFFE2E8F0);        // Divider
 
   // --- TEXT COLORS ---
-  static const Color textPrimary = Color(0xFF0B093E);    // Dark Navy Blue
+  static const Color textPrimary = Color(0xFF0F172A);    // Almost black for legibility
   static const Color textSecondary = Color(0xFF475569);  // Slate grey
   static const Color textTertiary = Color(0xFF94A3B8);   // Light grey
-  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on teal
+  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on buttons
 
   // Backward compatibility mappings
   static const Color onPrimary = Colors.white;
@@ -69,24 +69,24 @@ class AppColors {
 }
 
 class AppTheme {
-  // --- GRADIENTS ---
+  // --- GRADIENTS (Flat solid colors to meet no-gradient constraint) ---
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF0B093E), Color(0xFF0F0E5D), Color(0xFF0CD693)],
+    colors: [Color(0xFF2563EB), Color(0xFF2563EB)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient punchInGradient = LinearGradient(
-    colors: [Color(0xFF0CD693), Color(0xFF10B981)],
+    colors: [Color(0xFF0CD693), Color(0xFF0CD693)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient punchOutGradient = LinearGradient(
-    colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+    colors: [Color(0xFFDC2626), Color(0xFFDC2626)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient salaryGradient = LinearGradient(
-    colors: [Color(0xFF0B093E), Color(0xFF0CD693)],
+    colors: [Color(0xFF2563EB), Color(0xFF2563EB)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
