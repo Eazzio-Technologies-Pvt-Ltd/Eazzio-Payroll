@@ -33,11 +33,7 @@ class LeavePolicyScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppTheme.headerGradient,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

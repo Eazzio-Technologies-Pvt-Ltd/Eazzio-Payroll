@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../core/utils/storage_helper.dart';
+import '../core/theme/app_theme.dart';
 import 'permissions_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -90,15 +91,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _glowColor = TweenSequence([
       TweenSequenceItem(
         tween: ColorTween(
-          begin: const Color(0xFF2563EB).withOpacity(0.0),
-          end: const Color(0xFF2563EB).withOpacity(0.6),
+          begin: AppColors.primary.withValues(alpha: 0.0),
+          end: AppColors.primary.withValues(alpha: 0.6),
         ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 50,
       ),
       TweenSequenceItem(
         tween: ColorTween(
-          begin: const Color(0xFF2563EB).withOpacity(0.6),
-          end: const Color(0xFF2563EB).withOpacity(0.3),
+          begin: AppColors.primary.withValues(alpha: 0.6),
+          end: AppColors.primary.withValues(alpha: 0.3),
         ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),

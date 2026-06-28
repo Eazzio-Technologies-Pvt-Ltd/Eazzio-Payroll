@@ -947,15 +947,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20.0),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: AppTheme.headerGradient,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -991,7 +987,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       return Theme(
                                         data: Theme.of(context).copyWith(
                                           colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF2563EB),
+                                            primary: AppColors.primary,
                                             onPrimary: Colors.white,
                                             onSurface: Colors.black,
                                           ),

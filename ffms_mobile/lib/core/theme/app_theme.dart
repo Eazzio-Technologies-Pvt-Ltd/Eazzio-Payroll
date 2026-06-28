@@ -9,14 +9,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // --- PRIMARY COLORS ---
-  static const Color primary = Color(0xFF2563EB);        // Bold blue
-  static const Color primaryLight = Color(0xFF3B82F6);   // Medium blue
-  static const Color primarySoft = Color(0xFFEFF6FF);    // Very light blue bg
-  static const Color primaryDark = Color(0xFF1D4ED8);    // Dark blue
+  static const Color primary = Color(0xFF0CD693);        // Eazzio Teal
+  static const Color primaryLight = Color(0xFF33FFAA);   // Light Teal
+  static const Color primarySoft = Color(0xFFE6FFF5);    // Soft Teal bg
+  static const Color primaryDark = Color(0xFF079968);    // Dark Teal
 
   // --- ACCENT COLORS ---
-  static const Color accent = Color(0xFF7C3AED);         // Purple accent
-  static const Color accentSoft = Color(0xFFF5F3FF);     // Soft purple bg
+  static const Color accent = Color(0xFF0B093E);         // Eazzio Dark Navy Blue
+  static const Color accentSoft = Color(0xFFF0F1FA);     // Soft Navy bg
 
   // --- SEMANTIC COLORS ---
   static const Color success = Color(0xFF059669);        // Green — punch in
@@ -35,10 +35,10 @@ class AppColors {
   static const Color divider = Color(0xFFF1F5F9);        // Divider
 
   // --- TEXT COLORS ---
-  static const Color textPrimary = Color(0xFF0F172A);    // Almost black
+  static const Color textPrimary = Color(0xFF0B093E);    // Dark Navy Blue
   static const Color textSecondary = Color(0xFF475569);  // Slate grey
   static const Color textTertiary = Color(0xFF94A3B8);   // Light grey
-  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on blue
+  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on teal
 
   // Backward compatibility mappings
   static const Color onPrimary = Colors.white;
@@ -71,12 +71,12 @@ class AppColors {
 class AppTheme {
   // --- GRADIENTS ---
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF3B82F6)],
+    colors: [Color(0xFF0B093E), Color(0xFF0F0E5D), Color(0xFF0CD693)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient punchInGradient = LinearGradient(
-    colors: [Color(0xFF059669), Color(0xFF10B981)],
+    colors: [Color(0xFF0CD693), Color(0xFF10B981)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -86,7 +86,7 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
   static const LinearGradient salaryGradient = LinearGradient(
-    colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
+    colors: [Color(0xFF0B093E), Color(0xFF0CD693)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -102,7 +102,7 @@ class AppTheme {
   ];
   static List<BoxShadow> buttonShadow = [
     BoxShadow(
-      color: const Color(0xFF2563EB).withValues(alpha: 0.30),
+      color: AppColors.primary.withValues(alpha: 0.30),
       blurRadius: 12,
       offset: const Offset(0, 4),
       spreadRadius: 0,
