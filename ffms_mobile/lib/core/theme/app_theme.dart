@@ -15,8 +15,8 @@ class AppColors {
   static const Color primaryDark = Color(0xFF079968);    // Dark Teal
 
   // --- ACCENT COLORS ---
-  static const Color accent = Color(0xFF2563EB);         // Solid Blue accent
-  static const Color accentSoft = Color(0xFFEFF6FF);     // Soft Blue bg
+  static const Color accent = Color(0xFF0B093E);         // Solid Navy Blue accent from logo
+  static const Color accentSoft = Color(0xFFF0F1FA);     // Soft Navy Blue bg
 
   // --- SEMANTIC COLORS ---
   static const Color success = Color(0xFF059669);        // Green — punch in
@@ -71,7 +71,7 @@ class AppColors {
 class AppTheme {
   // --- GRADIENTS (Flat solid colors to meet no-gradient constraint) ---
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF2563EB)],
+    colors: [Color(0xFF0B093E), Color(0xFF0B093E)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -86,7 +86,7 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
   static const LinearGradient salaryGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF2563EB)],
+    colors: [Color(0xFF0B093E), Color(0xFF0B093E)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
