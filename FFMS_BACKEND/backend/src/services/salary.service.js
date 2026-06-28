@@ -197,7 +197,7 @@ const getSalaryList = async (organizationId, monthStr) => {
       employeeId: user.employeeId,
       baseSalary: Math.round(baseSalary * 100) / 100,
       bonus: Math.round(bonus * 100) / 100,
-      workingDays: daysPresent, // Keep backward compatible naming for frontend 'days present'
+      workingDays: totalWorkingDays, // Restored to original meaning: total working days in the month
       daysPresent,
       totalWorkingDays,
       totalLeaves,
