@@ -228,6 +228,7 @@ class AttendanceProvider extends ChangeNotifier {
             data: {
               'latitude': punch['latitude'],
               'longitude': punch['longitude'],
+              if (punch['selfieBase64'] != null) 'selfieBase64': punch['selfieBase64'],
             },
             options: Options(
               sendTimeout: const Duration(seconds: 90),
@@ -262,8 +263,7 @@ class AttendanceProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────────
   // PUNCH OUT (kept synchronous — no selfie, fast operation)
   // ─────────────────────────────────────────────────────────────────────────────
-  // Punch Out handler (renamed from checkOut as per v2 spec)
-  Future<bool> punchOut(Position position) async {
+  Future<bool> punchOut(Position position, {String? selfieBase64}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -274,6 +274,7 @@ class AttendanceProvider extends ChangeNotifier {
         data: {
           'latitude': position.latitude,
           'longitude': position.longitude,
+          'selfieBase64': selfieBase64,
         },
       );
 

@@ -422,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
 
-      final success = await attendanceProvider.punchOut(position);
+      final success = await attendanceProvider.punchOut(position, selfieBase64: base64Selfie);
 
       if (!mounted) return success;
       Navigator.pop(context); // Close loading dialog
