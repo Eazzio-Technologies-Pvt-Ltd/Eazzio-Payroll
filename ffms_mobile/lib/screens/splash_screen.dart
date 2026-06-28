@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/theme/app_theme.dart';
 import 'permissions_screen.dart';
+import '../core/utils/developer_mode_check.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -174,6 +175,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Future<void> _checkAuth() async {
+    final isBlocked = await DeveloperModeCheck.checkAndShowDialog(context);
+    if (isBlocked) return;
+
     // 2-second delay to show the complete premium entrance sequence
     await Future.delayed(const Duration(seconds: 2));
     
