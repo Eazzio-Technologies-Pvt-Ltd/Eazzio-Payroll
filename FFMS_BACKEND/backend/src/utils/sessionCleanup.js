@@ -78,7 +78,13 @@ const closeAbandonedSession = async (session, closeAt, source = 'CRON') => {
 
   // Calculate actual working minutes from check-in to auto-close time
   const checkInTime = new Date(session.checkInTime);
-  const actualWorkingMinutes = Math.max(0, Math.floor((closeAt - checkInTime) / 60000));
+  const rawElapsedMinutes = Math.max(0, Math.floor((closeAt - checkInTime) / 60000));
+  const shiftDurationMinutes = session.user?.shift
+    ? getShiftDurationMinutes(session.user.shift.startTime, session.user.shift.endTime)
+    : null;
+  const actualWorkingMinutes = shiftDurationMinutes != null
+    ? Math.min(rawElapsedMinutes, shiftDurationMinutes)
+    : rawElapsedMinutes;
 
   // Determine status based on actual working time
   // < 4h = ABSENT, 4-7h = HALF_DAY, otherwise keep original status
