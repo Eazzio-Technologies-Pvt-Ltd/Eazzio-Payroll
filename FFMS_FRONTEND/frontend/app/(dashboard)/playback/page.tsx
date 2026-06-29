@@ -6,13 +6,12 @@ import {
   Play, Pause, RotateCcw, Navigation, Compass, Zap, Activity, MapPin, Clock, Gauge, ListOrdered, Loader2, AlertCircle
 } from "lucide-react";
 import { usersApi, locationApi } from "@/lib/api-client";
+import MapLoader from "@/components/common/MapLoader";
 
 // Dynamically import map component to avoid SSR errors
 const PlaybackMap = dynamic(() => import("@/components/map/PlaybackMap"), {
   ssr: false,
-  loading: () => (
-    <div className="skeleton-box" style={{ height: "100%", width: "100%", minHeight: "300px", borderRadius: "0" }} />
-  ),
+  loading: () => <MapLoader overlay={false} />,
 });
 
 export default function PlaybackPage() {
@@ -40,8 +39,8 @@ export default function PlaybackPage() {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const res = await usersApi.list({ role: 'FIELD_STAFF' });
-        const staffList = (res as any).data || [];
+        const res = await usersApi.list({ status: 'ACTIVE', limit: 5000 });
+        const staffList = ((res as any).data || []).filter((u: any) => u.role !== 'SUPER_ADMIN' && u.role !== 'ADMIN');
         setAgents(staffList);
         if (staffList.length > 0) {
           setSelectedId(staffList[0].id);
@@ -190,7 +189,7 @@ export default function PlaybackPage() {
   const currentPoint = route[activePointIndex] || { lat: null, lng: null, time: "N/A", speed: "N/A", status: "No logs found" };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", height: "calc(100vh - 120px)" }}>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "calc(100vh - 100px)", overflow: "hidden" }}>
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexShrink: 0 }}>
         <div>
           <h1 className="page-title">Routes Playback</h1>
@@ -222,31 +221,31 @@ export default function PlaybackPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "350px 1fr", gap: "20px", flex: 1, minHeight: 0 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
-          <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", flex: "0 0 40%", minHeight: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", flexShrink: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "350px 1fr", gap: "16px", flex: 1, minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", height: "100%", minHeight: 0 }}>
+          <div className="card" style={{ padding: "12px", display: "flex", flexDirection: "column", flex: "0 0 45%", minHeight: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexShrink: 0 }}>
               <Navigation size={16} color="var(--accent-blue)" />
               <span style={{ fontWeight: 700, fontSize: "14px", fontFamily: "var(--font-hanken), sans-serif" }}>Select Field Agent</span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", paddingRight: "4px" }}>
               {agents.map((emp) => {
                 const active = emp.id === selectedId;
                 const avatar = emp.name ? emp.name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) : "UN";
                 return (
                   <div key={emp.id} onClick={() => setSelectedId(emp.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: "10px", padding: "10px", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: "10px", padding: "8px", cursor: "pointer",
                       border: active ? "1px solid var(--accent-blue)" : "1px solid var(--border)",
                       background: active ? "rgba(0, 82, 255, 0.04)" : "var(--bg-card)", transition: "all 0.2s ease"
                     }}
                   >
-                    <div style={{ width: "36px", height: "36px", background: "linear-gradient(135deg, #4f8ef7, #0052ff)", color: "white", fontWeight: 700, fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: "32px", height: "32px", background: "linear-gradient(135deg, #4f8ef7, #0052ff)", color: "white", fontWeight: 700, fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px" }}>
                       {avatar}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: "13px", color: "var(--text-primary)" }}>{emp.name}</div>
-                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "capitalize" }}>{emp.role?.replace("_", " ")?.toLowerCase()}</div>
+                      <div style={{ fontWeight: 600, fontSize: "12px", color: "var(--text-primary)" }}>{emp.name}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "capitalize" }}>{emp.role?.replace("_", " ")?.toLowerCase()}</div>
                     </div>
                     <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--accent-blue)" }} />
                   </div>
@@ -255,16 +254,16 @@ export default function PlaybackPage() {
             </div>
           </div>
 
-          <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", flexShrink: 0 }}>
+          <div className="card" style={{ padding: "12px", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexShrink: 0 }}>
               <ListOrdered size={16} color="var(--accent-blue)" />
               <span style={{ fontWeight: 700, fontSize: "14px", fontFamily: "var(--font-hanken), sans-serif" }}>Route Log History</span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", paddingRight: "4px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto", paddingRight: "4px" }}>
               {loadingRoute ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="skeleton-box" style={{ height: "46px", borderRadius: "4px" }} />
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="skeleton-box" style={{ height: "42px", borderRadius: "4px" }} />
                   ))}
                 </div>
               ) : route.length === 0 ? (
@@ -274,13 +273,13 @@ export default function PlaybackPage() {
                   const active = index === activePointIndex;
                   return (
                     <div key={index} onClick={() => { setIsPlaying(false); setActivePointIndex(index); }}
-                      style={{ padding: "8px 10px", cursor: "pointer", border: active ? "1px solid var(--accent-blue)" : "1px solid transparent", background: active ? "rgba(0, 82, 255, 0.03)" : "var(--bg-hover)", transition: "all 0.15s ease", display: "flex", flexDirection: "column", gap: "2px", flexShrink: 0 }}
+                      style={{ padding: "6px 8px", cursor: "pointer", border: active ? "1px solid var(--accent-blue)" : "1px solid transparent", background: active ? "rgba(0, 82, 255, 0.03)" : "var(--bg-hover)", borderRadius: "4px", transition: "all 0.15s ease", display: "flex", flexDirection: "column", gap: "2px", flexShrink: 0 }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)" }}>{pt.time}</span>
                         <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-jetbrains), monospace" }}>{pt.speed}</span>
                       </div>
-                      <div style={{ fontSize: "11px", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pt.status}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pt.status}</div>
                     </div>
                   );
                 })
@@ -289,61 +288,62 @@ export default function PlaybackPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%", minWidth: 0 }}>
-          <div className="card" style={{ padding: "0", overflow: "hidden", flex: 1, maxHeight: "40vh", minHeight: "250px", border: "1px solid var(--border)", position: "relative" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", height: "100%", minWidth: 0, minHeight: 0 }}>
+          <div className="card" style={{ padding: "0", overflow: "hidden", flex: 1, minHeight: 0, border: "1px solid var(--border)", position: "relative", background: "#2c2c2e" }}>
+            {loadingRoute && <MapLoader overlay={true} />}
             <PlaybackMap selectedEmployeeName={selectedAgent?.name || ""} route={route} activePointIndex={activePointIndex} isPlaying={isPlaying} />
           </div>
 
-          <div className="card" style={{ padding: "20px", flex: "0 0 auto", display: "flex", flexDirection: "column", gap: "16px", minHeight: 0 }}>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
+          <div className="card" style={{ padding: "12px 16px", flex: "0 0 auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <button className="btn-primary" onClick={() => setIsPlaying(!isPlaying)} disabled={route.length <= 1}
-                  style={{ padding: "8px 16px", fontSize: "13px", background: isPlaying ? "var(--accent-orange)" : "var(--accent-blue)", display: "flex", alignItems: "center", gap: "6px", opacity: route.length <= 1 ? 0.5 : 1, cursor: route.length <= 1 ? "not-allowed" : "pointer" }}
+                  style={{ padding: "6px 12px", fontSize: "12px", background: isPlaying ? "var(--accent-orange)" : "var(--accent-blue)", display: "flex", alignItems: "center", gap: "6px", opacity: route.length <= 1 ? 0.5 : 1, cursor: route.length <= 1 ? "not-allowed" : "pointer" }}
                 >
                   {isPlaying ? <Pause size={14} /> : <Play size={14} />}
                   {isPlaying ? "Pause Log" : "Play History"}
                 </button>
                 <button className="btn-secondary" onClick={() => { setIsPlaying(false); setActivePointIndex(0); }} disabled={route.length <= 1}
-                  style={{ padding: "8px 12px", opacity: route.length <= 1 ? 0.5 : 1, cursor: route.length <= 1 ? "not-allowed" : "pointer" }} title="Reset to Start"><RotateCcw size={14} /></button>
-                <div style={{ display: "flex", background: "var(--bg-hover)", border: "1px solid var(--border)", marginLeft: "8px", opacity: route.length <= 1 ? 0.5 : 1, pointerEvents: route.length <= 1 ? "none" : "auto" }}>
+                  style={{ padding: "6px 10px", opacity: route.length <= 1 ? 0.5 : 1, cursor: route.length <= 1 ? "not-allowed" : "pointer" }} title="Reset to Start"><RotateCcw size={14} /></button>
+                <div style={{ display: "flex", background: "var(--bg-hover)", border: "1px solid var(--border)", marginLeft: "4px", opacity: route.length <= 1 ? 0.5 : 1, pointerEvents: route.length <= 1 ? "none" : "auto", borderRadius: "4px", overflow: "hidden" }}>
                   {[{ label: "1x", delay: 1500 }, { label: "2x", delay: 750 }, { label: "4x", delay: 300 }].map((speed) => (
                     <button key={speed.label} onClick={() => setPlaybackSpeed(speed.delay)}
-                      style={{ padding: "6px 12px", fontSize: "12px", fontWeight: 600, border: "none", cursor: "pointer", background: playbackSpeed === speed.delay ? "var(--accent-blue)" : "transparent", color: playbackSpeed === speed.delay ? "white" : "var(--text-secondary)", transition: "all 0.15s ease" }}
+                      style={{ padding: "4px 10px", fontSize: "11px", fontWeight: 600, border: "none", cursor: "pointer", background: playbackSpeed === speed.delay ? "var(--accent-blue)" : "transparent", color: playbackSpeed === speed.delay ? "white" : "var(--text-secondary)", transition: "all 0.15s ease" }}
                     >{speed.label}</button>
                   ))}
                 </div>
               </div>
-              <div style={{ fontSize: "13px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Clock size={14} color="var(--accent-blue)" />
+              <div style={{ fontSize: "12px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Clock size={12} color="var(--accent-blue)" />
                 Log Point {route.length > 0 ? activePointIndex + 1 : 0} of {route.length > 0 ? route.length : 0}
               </div>
             </div>
 
-            <div style={{ marginBottom: "20px" }}>
+            <div>
               <input type="range" min="0" max={Math.max(0, route.length - 1)} value={activePointIndex}
                 onChange={(e) => { setIsPlaying(false); setActivePointIndex(parseInt(e.target.value)); }} disabled={route.length <= 1}
-                style={{ width: "100%", cursor: route.length <= 1 ? "not-allowed" : "pointer", accentColor: "var(--accent-blue)", height: "6px", borderRadius: "3px" }}
+                style={{ width: "100%", cursor: route.length <= 1 ? "not-allowed" : "pointer", accentColor: "var(--accent-blue)", height: "4px", borderRadius: "2px" }}
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", background: "var(--bg-secondary)", padding: "16px", border: "1px solid var(--border)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "8px", background: "var(--bg-secondary)", padding: "10px", border: "1px solid var(--border)", borderRadius: "6px" }}>
               <div>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Clock size={10} /> Timestamp</span>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", display: "block", marginTop: "2px" }}>{currentPoint.time}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Clock size={10} /> Timestamp</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)", display: "block", marginTop: "2px" }}>{currentPoint.time}</span>
               </div>
               <div>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Gauge size={10} /> Logged Speed</span>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)", display: "block", marginTop: "2px" }}>{currentPoint.speed}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Gauge size={10} /> Logged Speed</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)", display: "block", marginTop: "2px" }}>{currentPoint.speed}</span>
               </div>
               <div>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Zap size={10} /> Status Message</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--accent-blue)", display: "block", marginTop: "2px" }}>{currentPoint.status}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><Zap size={10} /> Status Message</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent-blue)", display: "block", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentPoint.status}</span>
               </div>
               <div>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><MapPin size={10} /> GPS Location</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", display: "block", marginTop: "2px" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "var(--font-jetbrains), monospace" }}><MapPin size={10} /> GPS Location</span>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", display: "block", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {currentPoint.lat !== null && currentPoint.lng !== null
-                    ? `${currentPoint.lat.toFixed(5)}° N, ${currentPoint.lng.toFixed(5)}° E`
+                    ? `${currentPoint.lat.toFixed(5)}°, ${currentPoint.lng.toFixed(5)}°`
                     : "N/A"}
                 </span>
               </div>
