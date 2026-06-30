@@ -102,15 +102,75 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
   ];
 
   const hasPunchedIn = punches.some(p => p.in && p.in !== "Not Punched");
+  const lastPunch = punches[punches.length - 1];
+  const hasPunchedOut = lastPunch && lastPunch.out !== "Not yet";
 
-  let statusColor = "#94a3b8"; // grey (inactive)
-  let statusTooltip = "Inactive";
-  if (isOnline) {
-    statusColor = "#10b981"; // green (active)
-    statusTooltip = "Active";
-  } else if (!hasPunchedIn) {
-    statusColor = "#ef4444"; // red (absent)
-    statusTooltip = "Absent";
+  let workingMinutes = 0;
+  punches.forEach(p => {
+    const inMins = parseTimeStr(p.in);
+    if (inMins !== null) {
+      if (p.out && p.out !== "Not yet") {
+        const outMins = parseTimeStr(p.out);
+        if (outMins !== null) {
+          let diff = outMins - inMins;
+          if (diff < 0) diff += 24 * 60;
+          workingMinutes += diff;
+        }
+      } else {
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        let diff = currentMins - inMins;
+        if (diff < 0) diff += 24 * 60;
+        workingMinutes += diff;
+      }
+    }
+  });
+
+  // Assume 9 hour shift (540 minutes) for 100% progress
+  const progressPercent = Math.min((workingMinutes / 540) * 100, 100);
+  const progressHue = 45 + (progressPercent / 100) * (145 - 45); // 45 is Yellow, 145 is Green
+
+  let cardBorderColor = "#e2e8f0"; // default grey (Shift not started)
+  let statusBg = "#f1f5f9";
+  let statusText = "#64748b";
+  let statusTooltip = "Not Started";
+  let progressColor = `hsl(${progressHue}, 90%, 45%)`;
+  let progressWidth = `${Math.max(progressPercent, 2)}%`;
+
+  if (hasPunchedIn) {
+    if (hasPunchedOut) {
+      if (workingMinutes < 480) { // Less than 8 hours -> Half Day
+        cardBorderColor = "#f97316"; // Orange
+        statusBg = "#ffedd5";
+        statusText = "#c2410c";
+        statusTooltip = "Half Day";
+        progressColor = "#f97316";
+      } else {
+        cardBorderColor = "#10b981"; // Green
+        statusBg = "#d1fae5";
+        statusText = "#059669";
+        statusTooltip = "Completed";
+        progressColor = "#10b981";
+        progressWidth = "100%";
+      }
+    } else {
+      cardBorderColor = "#eab308"; // Yellow (Shift ongoing)
+      statusBg = "#fef08a";
+      statusText = "#b45309";
+      statusTooltip = "Ongoing";
+    }
+  } else {
+    if (!isOnline) {
+      cardBorderColor = "#ef4444"; // Red (Absent)
+      statusBg = "#fee2e2";
+      statusText = "#dc2626";
+      statusTooltip = "Absent";
+    } else {
+      cardBorderColor = "#e2e8f0"; // White/Grey (Shift not started)
+      statusBg = "#f1f5f9";
+      statusText = "#64748b";
+      statusTooltip = "Not Started";
+    }
   }
 
   return (
@@ -175,21 +235,21 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
                 textOverflow: "ellipsis",
                 lineHeight: 1.1,
                 textTransform: "capitalize"
-              }} title={employee.name}>
+              }} title={`${employee.name} (${statusTooltip})`}>
                 {employee.name}
               </h4>
-              <span
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  background: statusColor,
-                  display: "inline-block",
-                  flexShrink: 0,
-                  boxShadow: `0 0 0 2px ${statusColor}33`
-                }}
-                title={`Status: ${statusTooltip}`}
-              />
+              <span style={{
+                padding: "2px 6px",
+                borderRadius: "12px",
+                background: statusBg,
+                color: statusText,
+                fontSize: "9px",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                border: `1px solid ${cardBorderColor}40`
+              }}>
+                {statusTooltip}
+              </span>
             </div>
             <span style={{
               fontSize: mode === "full" ? "12px" : mode === "compact" ? "11px" : "10px",
@@ -339,15 +399,37 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
           <MiniMap employee={employee} isPastFeed={isPastFeed} />
         </div>
 
-        {/* Tasks strip */}
+        {/* Tasks strip with progress bar */}
         <div style={{
-          padding: taskPad, background: "#ffffff",
+          position: "relative",
+          padding: taskPad, 
+          background: "#ffffff",
           borderTop: "1px solid #e2e8f0",
           display: "flex", justifyContent: "center", alignItems: "center",
           flexShrink: 0,
-          marginTop: "auto"
+          marginTop: "auto",
+          overflow: "hidden"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          {(!hasPunchedIn && !isOnline) ? (
+            <div style={{
+              position: "absolute",
+              left: 0, top: 0, bottom: 0,
+              width: "100%",
+              background: "#ef4444",
+              opacity: 0.45,
+              transition: "background 1s ease"
+            }} />
+          ) : hasPunchedIn ? (
+            <div style={{
+              position: "absolute",
+              left: 0, top: 0, bottom: 0,
+              width: progressWidth,
+              background: progressColor,
+              opacity: 0.25,
+              transition: "width 1s ease-in-out, background 1s ease"
+            }} />
+          ) : null}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", position: "relative", zIndex: 1 }}>
             <CheckSquare size={taskFont} color="#3b82f6" />
             <span style={{ fontSize: `${taskFont - 1}px`, fontWeight: 500, color: "#475569" }}>
               Tasks: <strong style={{ color: "#0f172a" }}>{employee.tasksToday || 0}</strong>
