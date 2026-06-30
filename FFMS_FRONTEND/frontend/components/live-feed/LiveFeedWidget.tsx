@@ -447,7 +447,7 @@ export default function LiveFeedWidget({
   };
 
   // Filter list
-  let filteredEmployees = employeesList;
+  let filteredEmployees = [...employeesList];
   if (territory !== "All") {
     filteredEmployees = filteredEmployees.filter(e => e.territory === territory);
   }
@@ -457,6 +457,39 @@ export default function LiveFeedWidget({
   if (status !== "All") {
     filteredEmployees = filteredEmployees.filter(e => e.status === status);
   }
+
+  // Helper to parse time and get minutes for sorting
+  const getLatestPunchMinutes = (emp: Employee) => {
+    if (!emp.punches || emp.punches.length === 0) return -1;
+    const last = emp.punches[emp.punches.length - 1];
+    
+    const parse = (str: string) => {
+      if (!str || str === "Not yet" || str === "Not Punched") return -1;
+      const match = str.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+      if (!match) return -1;
+      let [, h, m, ampm] = match;
+      let hours = parseInt(h, 10);
+      const mins = parseInt(m, 10);
+      if (ampm.toLowerCase() === "pm" && hours < 12) hours += 12;
+      if (ampm.toLowerCase() === "am" && hours === 12) hours = 0;
+      return hours * 60 + mins;
+    };
+
+    const inMins = parse(last.in);
+    const outMins = parse(last.out);
+    return Math.max(inMins, outMins);
+  };
+
+  // Sort: Active (online) members first, then inactive (offline)
+  // Within same status group, sort by latest punch time (most recent first)
+  filteredEmployees.sort((a, b) => {
+    if (a.status === "online" && b.status !== "online") return -1;
+    if (a.status !== "online" && b.status === "online") return 1;
+    
+    const aTime = getLatestPunchMinutes(a);
+    const bTime = getLatestPunchMinutes(b);
+    return bTime - aTime;
+  });
 
   const activeCount = employeesList.filter(e => e.status === "online").length;
 
