@@ -8,10 +8,11 @@ import { MapPin, Users, Navigation } from "lucide-react";
 import dynamic from "next/dynamic";
 import { locationApi } from "@/lib/api-client";
 import { fetchEmployees } from "@/store/slices/employeeSlice";
+import MapLoader from "@/components/common/MapLoader";
 
 // Dynamically import map to avoid SSR issues with Leaflet
 const LiveMapInner = dynamic(() => import("@/components/map/LiveMap"), { ssr: false, loading: () => (
-  <div className="skeleton-box" style={{ height: "100%", width: "100%", borderRadius: "0" }} />
+  <MapLoader overlay={false} />
 )});
 
 export default function MapPage() {

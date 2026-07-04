@@ -4,6 +4,7 @@ const { emitToOrgAdmins } = require('../config/socket');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
 const logger = require('../config/logger');
 const { getLocalDate, getLocalHoursAndMinutes } = require('../utils/timezone');
+const { closeAbandonedSessions } = require('../utils/sessionCleanup');
 
 
 /**
@@ -106,27 +107,13 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
   // Date truncated to day in IST
   const todayDate = getLocalDate(now);
 
-  // Auto-close any open/abandoned sessions from previous days (older than 18 hours)
-  const openPastSessions = await prisma.attendance.findMany({
-    where: {
-      userId,
-      checkOutTime: null,
-      checkInTime: { lt: new Date(now.getTime() - 18 * 60 * 60 * 1000) }
-    }
-  });
-
-  for (const session of openPastSessions) {
-    await prisma.attendance.update({
-      where: { id: session.id },
-      data: {
-        checkOutTime: session.checkInTime,
-        workingMinutes: 0,
-        status: 'ABSENT',
-        isEarlyLogout: true
-      }
-    });
-    logger.info(`[Auto-Checkout] Closed abandoned session ${session.id} for user ${userId} from date ${session.date.toISOString().substring(0, 10)}`);
-  }
+  // Auto-close any open/abandoned sessions from previous days.
+  // Uses the shared utility (same logic as the midnight cron job):
+  //   - Shift-based threshold: shiftDuration + 4h grace (per-user)
+  //   - Flat fallback: ABANDONED_SESSION_HOURS env var (default 24h)
+  //   - Race-condition guard: checks checkOutTime before writing
+  //   - Preserves actual working minutes instead of zeroing them
+  await closeAbandonedSessions({ userId, source: 'CHECKIN' });
 
   // 1. Count today's sessions for the user and validate session state
   const todaySessions = await prisma.attendance.findMany({
