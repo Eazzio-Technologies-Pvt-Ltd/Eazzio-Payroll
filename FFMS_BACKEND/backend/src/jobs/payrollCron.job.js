@@ -2,47 +2,47 @@ const { Worker, Queue } = require('bullmq');
 const prisma = require('../config/prisma');
 const connection = require('../config/redis');
 const logger = require('../config/logger');
+const { closeAbandonedSessions } = require('../utils/sessionCleanup');
 
 // Setup queue
 const payrollQueue = new Queue('payroll-cron', { connection });
 
 // Function to add the repeating job
 const initPayrollCron = async () => {
+  // Drain any stale repeatable jobs from prior deploys to prevent duplicates
+  const existing = await payrollQueue.getRepeatableJobs();
+  for (const job of existing) {
+    await payrollQueue.removeRepeatableByKey(job.key);
+  }
+
   // Run every night at midnight
   await payrollQueue.add('calculate-deductions', {}, {
     repeat: {
       pattern: '0 0 * * *'
-    }
+    },
+    // Overlap guard: BullMQ will not start a new run until the previous one finishes
+    // when using a unique jobId for repeatable jobs. removeOnComplete/Fail keeps the
+    // queue clean and prevents stale job data from accumulating.
+    removeOnComplete: { count: 5 },  // keep last 5 completed for debugging
+    removeOnFail: { count: 10 }       // keep last 10 failures for debugging
   });
   logger.info('[PayrollCron] Repeating job registered (0 0 * * *)');
 };
 
 const worker = new Worker('payroll-cron', async (job) => {
   if (job.name === 'calculate-deductions') {
-    logger.info('[PayrollCron] Starting late arrival deduction check...');
+    logger.info('[PayrollCron] Starting nightly payroll job...');
     
-    // Auto-close any open/abandoned sessions (older than 18 hours) across all users
-    const now = new Date();
-    const abandonedSessions = await prisma.attendance.findMany({
-      where: {
-        checkOutTime: null,
-        checkInTime: { lt: new Date(now.getTime() - 18 * 60 * 60 * 1000) }
-      }
-    });
+    // ─── Phase 1: Close abandoned sessions ───────────────────────────
+    // Uses the shared utility which:
+    //   - Calculates per-user threshold based on their assigned shift
+    //   - Falls back to ABANDONED_SESSION_HOURS env var (default 24h) if no shift
+    //   - Includes a race-condition guard (checks checkOutTime before updating)
+    //   - Calculates actual working minutes instead of zeroing them out
+    const closedCount = await closeAbandonedSessions({ source: 'CRON' });
+    logger.info(`[PayrollCron] Phase 1 complete: ${closedCount} abandoned session(s) closed`);
 
-    for (const session of abandonedSessions) {
-      await prisma.attendance.update({
-        where: { id: session.id },
-        data: {
-          checkOutTime: session.checkInTime,
-          workingMinutes: 0,
-          status: 'ABSENT',
-          isEarlyLogout: true
-        }
-      });
-      logger.info(`[PayrollCron Auto-Checkout] Closed abandoned session ${session.id} for user ${session.userId} from date ${session.date.toISOString().substring(0, 10)}`);
-    }
-
+    // ─── Phase 2: Late arrival deduction check ───────────────────────
     // Logic: 3 consecutive lates = 2.5 days salary deduction
     // 1. Get all active field staff
     const users = await prisma.user.findMany({
@@ -110,9 +110,13 @@ const worker = new Worker('payroll-cron', async (job) => {
       }
     }
     
-    logger.info('[PayrollCron] Finished late arrival deduction check.');
+    logger.info('[PayrollCron] Finished nightly payroll job.');
   }
-}, { connection });
+}, {
+  connection,
+  // Concurrency = 1 ensures the cron cannot double-process if BullMQ retries overlap
+  concurrency: 1
+});
 
 worker.on('failed', (job, err) => {
   logger.error(`[PayrollCron] Job ${job.id} failed:`, err);
