@@ -283,7 +283,7 @@ export default function Sidebar() {
             </Link>
           )}
 
-          {mounted && !isAdmin && (<>
+          {mounted && (<>
             {/* 3. My Task Accordion */}
             <div>
               <div

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { salaryApi, advanceApi } from "@/lib/api-client";
-import { Edit2, X, Users, Briefcase, CheckCircle, CreditCard, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { salaryApi, advanceApi, attendanceApi } from "@/lib/api-client";
+import { Edit2, X, Users, Briefcase, CheckCircle, CreditCard, Clock, CheckCircle2, XCircle, FileText, Calendar } from "lucide-react";
 
 interface SalaryData {
   id: string;
@@ -38,8 +38,12 @@ export default function SalaryPage() {
   });
 
   const [editModal, setEditModal] = useState<{ isOpen: boolean; user: SalaryData | null }>({ isOpen: false, user: null });
+  const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; url: string | null; user: SalaryData | null; downloading: boolean }>({ isOpen: false, url: null, user: null, downloading: false });
+  const [attendanceModal, setAttendanceModal] = useState<{ isOpen: boolean; user: SalaryData | null; data: any[]; stats: any; loading: boolean }>({ isOpen: false, user: null, data: [], stats: null, loading: false });
   const [editForm, setEditForm] = useState({ baseSalary: "", bonus: "" });
+  const [companyName, setCompanyName] = useState("Eazzio Technologies Pvt Ltd");
   const [toast, setToast] = useState<string | null>(null);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   const fetchSalaryData = async () => {
     setLoading(true);
@@ -115,6 +119,145 @@ export default function SalaryPage() {
     }
   };
 
+  const handleGenerateSlip = async (user: SalaryData) => {
+    try {
+      setGenerating(user.id);
+      const res = await salaryApi.generateSlip(user.id, month, companyName);
+      
+      if (!res.ok) {
+        throw new Error("Failed to generate slip");
+      }
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      setPreviewModal({ isOpen: true, url, user, downloading: false });
+      
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to generate payslip preview");
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const handleDownloadSlip = () => {
+    if (!previewModal.url || !previewModal.user) return;
+    const a = document.createElement("a");
+    a.href = previewModal.url;
+    a.download = `Salary_Slip_${previewModal.user.name.replace(/\s+/g, '_')}_${month}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    setToast(`Payslip downloaded for ${previewModal.user.name}`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleEmailSlip = async () => {
+    if (!previewModal.user) return;
+    try {
+      setPreviewModal(prev => ({ ...prev, downloading: true }));
+      const res = await salaryApi.emailSlip(previewModal.user.id, month, companyName);
+      if (res.success) {
+        setToast(`Payslip sent to ${previewModal.user.name} via email`);
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        throw new Error(res.error?.message || "Failed");
+      }
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to email payslip");
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setPreviewModal(prev => ({ ...prev, downloading: false }));
+    }
+  };
+
+  const handleViewAttendance = async (user: SalaryData) => {
+    setAttendanceModal({ isOpen: true, user, data: [], stats: null, loading: true });
+    try {
+      const [yearStr, monthStr] = month.split('-');
+      const y = parseInt(yearStr);
+      const m = parseInt(monthStr);
+      
+      const res = await attendanceApi.list({ userId: user.id, month: monthStr, year: yearStr });
+      if (res.success) {
+        const rawData = res.data || [];
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const fullMonthData = [];
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        let workingDaysCount = 0;
+        let presentCount = 0;
+        let lateCount = 0;
+        let halfDayCount = 0;
+        let absentCount = 0;
+
+        for (let i = 1; i <= daysInMonth; i++) {
+          const currentDate = new Date(y, m - 1, i);
+          const dow = currentDate.getDay();
+          const isWeekend = dow === 0 || dow === 6;
+          
+          if (!isWeekend) workingDaysCount++;
+          
+          const record = rawData.find((r: any) => {
+            const rd = new Date(r.date);
+            return rd.getDate() === i && rd.getMonth() === (m - 1);
+          });
+          
+          let finalStatus = "";
+          let checkIn = null;
+          let checkOut = null;
+          
+          if (record) {
+            finalStatus = record.status;
+            checkIn = record.checkInTime;
+            checkOut = record.checkOutTime;
+            
+            if (finalStatus === "PRESENT") presentCount++;
+            if (finalStatus === "LATE") lateCount++; 
+            if (finalStatus === "HALF_DAY") halfDayCount++;
+            if (finalStatus === "ABSENT") absentCount++;
+          } else {
+            if (isWeekend) {
+              finalStatus = "WEEKEND";
+            } else if (currentDate > today) {
+              finalStatus = "--";
+            } else {
+              finalStatus = "ABSENT";
+              absentCount++;
+            }
+          }
+          
+          fullMonthData.push({
+            id: record ? record.id : `generated-${i}`,
+            date: currentDate.toISOString(),
+            status: finalStatus,
+            checkInTime: checkIn,
+            checkOutTime: checkOut
+          });
+        }
+        
+        // Sort descending (latest dates first)
+        fullMonthData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        setAttendanceModal(prev => ({ 
+          ...prev, 
+          data: fullMonthData, 
+          stats: { workingDays: workingDaysCount, present: presentCount, late: lateCount, halfDay: halfDayCount, absent: absentCount },
+          loading: false 
+        }));
+      } else {
+        throw new Error("Failed to fetch attendance");
+      }
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to load attendance data");
+      setAttendanceModal(prev => ({ ...prev, loading: false }));
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   const currentData = activeTab === "managers" ? managers : employees;
 
   return (
@@ -125,15 +268,46 @@ export default function SalaryPage() {
           <div className="page-title">Salary Management</div>
           <div className="page-subtitle">Track and manage employee salaries and bonuses</div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Select Month</label>
-          <input
-            type="month"
-            className="input"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            style={{ width: "160px" }}
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>Company Name on Payslip</span>
+            <input
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Company Name"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                background: "var(--bg-secondary)",
+                color: "var(--text-primary)",
+                fontSize: "14px",
+                fontWeight: 500,
+                outline: "none",
+                width: "220px",
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "4px" }}>Select Month</span>
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                background: "var(--bg-secondary)",
+                color: "var(--text-primary)",
+                fontSize: "14px",
+                fontWeight: 500,
+                outline: "none",
+                width: "160px"
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -248,17 +422,18 @@ export default function SalaryPage() {
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Working Days</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Leaves</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase" }}>Computed Salary</th>
+                <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Payslip</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "right" }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Loading data...</td>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Loading data...</td>
                 </tr>
               ) : currentData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No records found for this category.</td>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No records found for this category.</td>
                 </tr>
               ) : (
                 currentData.map(user => (
@@ -275,6 +450,27 @@ export default function SalaryPage() {
                     <td style={{ padding: "14px 20px", textAlign: "center", fontWeight: 600, color: user.totalLeaves > 0 ? "var(--accent-red)" : "inherit" }}>{user.totalLeaves}</td>
                     <td style={{ padding: "14px 20px" }}>
                       <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--accent-blue)" }}>₹{(user.computedSalary || 0).toLocaleString()}</div>
+                    </td>
+                    <td style={{ padding: "16px", borderBottom: "1px solid var(--border)" }}>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
+                        <button
+                          className="btn-secondary"
+                          style={{ padding: "6px 12px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", border: "1px solid var(--border)", background: "transparent", cursor: generating === user.id ? "not-allowed" : "pointer", borderRadius: "6px", fontWeight: 600, color: "var(--text-primary)", opacity: generating === user.id ? 0.6 : 1 }}
+                          onClick={() => handleGenerateSlip(user)}
+                          disabled={generating === user.id}
+                          title="Generate Payslip"
+                        >
+                          {generating === user.id ? <Clock size={13} className="spin" /> : <FileText size={13} />} 
+                          {generating === user.id ? "Generating..." : "Generate"}
+                        </button>
+                        <button
+                          style={{ background: "rgba(34, 211, 165, 0.1)", border: "none", color: "var(--accent-green)", padding: "6px 8px", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", height: "28px" }}
+                          onClick={() => handleViewAttendance(user)}
+                          title="View Attendance"
+                        >
+                          <Calendar size={14} />
+                        </button>
+                      </div>
                     </td>
                     <td style={{ padding: "14px 20px", textAlign: "right" }}>
                       <button
@@ -328,6 +524,182 @@ export default function SalaryPage() {
                 <button className="btn-secondary" style={{ flex: 1, justifyContent: "center" }} onClick={() => setEditModal({ isOpen: false, user: null })}>Cancel</button>
                 <button className="btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={handleSaveEdit}>Save Changes</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewModal.isOpen && previewModal.user && (
+        <div className="modal-overlay" onClick={() => {
+          setPreviewModal({ isOpen: false, url: null, user: null, downloading: false });
+        }}>
+          <div className="modal-box" style={{ maxWidth: "800px", width: "90%", height: "80vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h2 style={{ fontWeight: 700, fontSize: "18px" }}>Payslip Preview: {previewModal.user.name}</h2>
+                <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Month: {month}</div>
+              </div>
+              <button onClick={() => setPreviewModal({ isOpen: false, url: null, user: null, downloading: false })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ flex: 1, background: "#f0f0f0", borderRadius: "8px", overflow: "hidden", marginBottom: "20px" }}>
+              {previewModal.url ? (
+                <iframe src={previewModal.url} width="100%" height="100%" style={{ border: "none" }} />
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)" }}>Loading preview...</div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button 
+                className="btn-secondary" 
+                onClick={handleDownloadSlip}
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <FileText size={16} /> Download PDF
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleEmailSlip}
+                disabled={previewModal.downloading}
+                style={{ display: "flex", alignItems: "center", gap: "6px", opacity: previewModal.downloading ? 0.7 : 1 }}
+              >
+                {previewModal.downloading ? <Clock size={16} className="spin" /> : <CheckCircle size={16} />} 
+                {previewModal.downloading ? "Sending Email..." : "Send via Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance Modal */}
+      {attendanceModal.isOpen && attendanceModal.user && (
+        <div className="modal-overlay" onClick={() => setAttendanceModal({ isOpen: false, user: null, data: [], stats: null, loading: false })}>
+          <div className="modal-box" style={{ maxWidth: "700px", width: "90%", maxHeight: "85vh", display: "flex", flexDirection: "column", padding: "0" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", borderBottom: "1px solid var(--border)" }}>
+              <div>
+                <h2 style={{ fontWeight: 700, fontSize: "18px", color: "var(--text-primary)" }}>Attendance Records</h2>
+                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", fontWeight: 500 }}>
+                  <span style={{ color: "var(--accent-blue)" }}>{attendanceModal.user.name}</span> • {month}
+                </div>
+              </div>
+              <button 
+                onClick={() => setAttendanceModal({ isOpen: false, user: null, data: [], stats: null, loading: false })} 
+                style={{ background: "var(--bg-secondary)", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "8px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--border)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--bg-secondary)"}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", background: "var(--bg-card)", padding: "20px 24px" }}>
+              {attendanceModal.loading ? (
+                <div style={{ padding: "60px 0", textAlign: "center", color: "var(--text-muted)", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                  <Clock size={24} className="spin" color="var(--accent-blue)" />
+                  <span style={{ fontSize: "14px", fontWeight: 500 }}>Loading attendance records...</span>
+                </div>
+              ) : attendanceModal.data.length === 0 ? (
+                <div style={{ padding: "60px 0", textAlign: "center", color: "var(--text-muted)", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                  <Calendar size={32} opacity={0.5} />
+                  <span style={{ fontSize: "14px", fontWeight: 500 }}>No attendance records found for this month.</span>
+                </div>
+              ) : (
+                <>
+                  {attendanceModal.stats && (
+                    <div style={{ display: "flex", gap: "24px", marginBottom: "16px", padding: "16px", background: "var(--bg-secondary)", borderRadius: "8px", border: "1px solid var(--border)", overflowX: "auto" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Working Days:</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)" }}>{attendanceModal.stats.workingDays}</span>
+                      </div>
+                      <div style={{ width: "1px", background: "var(--border)" }}></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Present:</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-green)" }}>{attendanceModal.stats.present}</span>
+                      </div>
+                      <div style={{ width: "1px", background: "var(--border)" }}></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Late:</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "#f59e0b" }}>{attendanceModal.stats.late}</span>
+                      </div>
+                      <div style={{ width: "1px", background: "var(--border)" }}></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Half Day:</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-blue)" }}>{attendanceModal.stats.halfDay}</span>
+                      </div>
+                      <div style={{ width: "1px", background: "var(--border)" }}></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>Absent:</span>
+                        <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-red)" }}>{attendanceModal.stats.absent}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div style={{ border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                      <thead style={{ background: "var(--bg-secondary)" }}>
+                        <tr>
+                          <th style={{ padding: "12px 16px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", width: "25%", borderBottom: "1px solid var(--border)" }}>Date</th>
+                          <th style={{ padding: "12px 16px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", width: "25%", borderBottom: "1px solid var(--border)" }}>Status</th>
+                          <th style={{ padding: "12px 16px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", width: "25%", borderBottom: "1px solid var(--border)" }}>Punch In</th>
+                          <th style={{ padding: "12px 16px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", width: "25%", borderBottom: "1px solid var(--border)" }}>Punch Out</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attendanceModal.data.map((record: any, idx: number) => {
+                          const dateObj = new Date(record.date);
+                          const isWeekend = record.status === "WEEKEND";
+                          const isEmpty = record.status === "--";
+                          const isLast = idx === attendanceModal.data.length - 1;
+                          
+                          let statusElement = <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>-</span>;
+                          if (record.status === "PRESENT") {
+                            statusElement = <span style={{ background: "rgba(34, 211, 165, 0.1)", color: "var(--accent-green)", padding: "4px 8px", borderRadius: "4px", fontWeight: 600, fontSize: "11px", border: "1px solid rgba(34, 211, 165, 0.2)" }}>PRESENT</span>;
+                          } else if (record.status === "LATE") {
+                            statusElement = <span style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b", padding: "4px 8px", borderRadius: "4px", fontWeight: 600, fontSize: "11px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>LATE</span>;
+                          } else if (record.status === "HALF_DAY") {
+                            statusElement = <span style={{ background: "rgba(59, 130, 246, 0.1)", color: "var(--accent-blue)", padding: "4px 8px", borderRadius: "4px", fontWeight: 600, fontSize: "11px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>HALF DAY</span>;
+                          } else if (record.status === "ABSENT") {
+                            statusElement = <span style={{ background: "rgba(239, 68, 68, 0.1)", color: "var(--accent-red)", padding: "4px 8px", borderRadius: "4px", fontWeight: 600, fontSize: "11px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>ABSENT</span>;
+                          } else if (isWeekend) {
+                            statusElement = <span style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: 500 }}>WEEKEND</span>;
+                          }
+                          
+                          return (
+                            <tr key={record.id} style={{ 
+                              background: (isWeekend || isEmpty) ? "rgba(0,0,0,0.01)" : "var(--bg-card)",
+                              borderBottom: isLast ? "none" : "1px solid var(--border)",
+                            }}>
+                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 500, color: (isWeekend || isEmpty) ? "var(--text-muted)" : "var(--text-primary)" }}>
+                                {dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                <span style={{ marginLeft: "8px", fontSize: "11px", color: "var(--text-muted)" }}>{dateObj.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
+                              </td>
+                              <td style={{ padding: "12px 16px" }}>
+                                {statusElement}
+                              </td>
+                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>
+                                {record.checkInTime ? (
+                                  new Date(record.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                ) : (
+                                  <span style={{ color: "var(--border)" }}>--:--</span>
+                                )}
+                              </td>
+                              <td style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 500, color: "var(--text-secondary)" }}>
+                                {record.checkOutTime ? (
+                                  new Date(record.checkOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                ) : (
+                                  <span style={{ color: "var(--border)" }}>--:--</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

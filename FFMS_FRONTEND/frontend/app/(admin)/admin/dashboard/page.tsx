@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { dashboardApi, projectsApi, ApiProject } from "@/lib/api-client";
+import { dashboardApi, projectsApi, attendanceApi, ApiProject } from "@/lib/api-client";
 import {
   Users, UserCheck, UserX, Briefcase, CalendarCheck, Clock, MapPin,
-  TrendingUp, TrendingDown, UserPlus, FolderPlus, BarChart3, FileText,
+  TrendingUp, TrendingDown, UserPlus, FolderPlus, BarChart3, FileText, ChevronDown
 } from "lucide-react";
 import LiveFeedWidget from "@/components/live-feed/LiveFeedWidget";
 
@@ -15,17 +15,24 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [projects, setProjects] = useState<ApiProject[]>([]);
+  const [todayStaff, setTodayStaff] = useState<any[]>([]);
+  const [showPresent, setShowPresent] = useState(false);
+  const [showAbsent, setShowAbsent] = useState(false);
 
   useEffect(() => {
     Promise.all([
       dashboardApi.getAdmin(),
-      projectsApi.list()
-    ]).then(([statsRes, projectsRes]) => {
+      projectsApi.list(),
+      attendanceApi.today()
+    ]).then(([statsRes, projectsRes, attendanceRes]) => {
       if (statsRes.success) {
         setStats(statsRes.data);
       }
       if (projectsRes.success) {
         setProjects(projectsRes.data);
+      }
+      if (attendanceRes.success) {
+        setTodayStaff(attendanceRes.data);
       }
     })
     .catch(err => console.error(err))
@@ -124,7 +131,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Card 2: Today's Attendance */}
-        <div className="card" style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, borderRadius: 10 }}>
+        <div className="card" style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, borderRadius: 10, position: "relative", zIndex: (showPresent || showAbsent) ? 50 : 1 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#ecfdf5", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981", flexShrink: 0 }}>
@@ -137,19 +144,74 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <div style={{ flex: 1, background: "#f8fafc", padding: "6px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-              <UserCheck size={14} color="#10b981" />
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{stats.todayStats.totalCheckedIn}</span>
-                <span style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>Present</span>
+            {/* PRESENT */}
+            <div style={{ flex: 1, position: "relative" }}>
+              <div 
+                onClick={() => { setShowPresent(!showPresent); setShowAbsent(false); }}
+                style={{ background: "#f8fafc", padding: "6px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: "1px solid transparent", transition: "border 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.border = "1px solid #10b981"}
+                onMouseLeave={e => e.currentTarget.style.border = "1px solid transparent"}
+              >
+                <UserCheck size={14} color="#10b981" />
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{stats.todayStats.totalCheckedIn}</span>
+                  <span style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>Present <ChevronDown size={10} style={{ display: "inline", verticalAlign: "middle" }}/></span>
+                </div>
               </div>
+              
+              {showPresent && (
+                <div style={{ position: "absolute", top: "100%", left: 0, width: "180px", background: "white", border: "1px solid var(--border)", borderRadius: 8, marginTop: 4, zIndex: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: 200, overflowY: "auto" }}>
+                  {todayStaff.filter(s => s.checkedIn).map(s => (
+                    <div key={s.userId} style={{ padding: "8px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
+                        {s.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
+                        <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{s.employeeId}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {todayStaff.filter(s => s.checkedIn).length === 0 && (
+                    <div style={{ padding: "12px", textAlign: "center", fontSize: 11, color: "var(--text-muted)" }}>No one present</div>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{ flex: 1, background: "#fef2f2", padding: "6px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-              <UserX size={14} color="#ef4444" />
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{Math.max(0, stats.totalEmployees - stats.todayStats.totalCheckedIn)}</span>
-                <span style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>Absent</span>
+
+            {/* ABSENT */}
+            <div style={{ flex: 1, position: "relative" }}>
+              <div 
+                onClick={() => { setShowAbsent(!showAbsent); setShowPresent(false); }}
+                style={{ background: "#fef2f2", padding: "6px 8px", borderRadius: 8, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", border: "1px solid transparent", transition: "border 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.border = "1px solid #ef4444"}
+                onMouseLeave={e => e.currentTarget.style.border = "1px solid transparent"}
+              >
+                <UserX size={14} color="#ef4444" />
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{Math.max(0, stats.totalEmployees - stats.todayStats.totalCheckedIn)}</span>
+                  <span style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>Absent <ChevronDown size={10} style={{ display: "inline", verticalAlign: "middle" }}/></span>
+                </div>
               </div>
+
+              {showAbsent && (
+                <div style={{ position: "absolute", top: "100%", right: 0, width: "180px", background: "white", border: "1px solid var(--border)", borderRadius: 8, marginTop: 4, zIndex: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: 200, overflowY: "auto" }}>
+                  {todayStaff.filter(s => !s.checkedIn).map(s => (
+                    <div key={s.userId} style={{ padding: "8px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
+                        {s.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
+                        <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{s.employeeId}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {todayStaff.filter(s => !s.checkedIn).length === 0 && (
+                    <div style={{ padding: "12px", textAlign: "center", fontSize: 11, color: "var(--text-muted)" }}>Everyone present</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

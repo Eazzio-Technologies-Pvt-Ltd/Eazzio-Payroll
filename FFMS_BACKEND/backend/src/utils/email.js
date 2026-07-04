@@ -2,30 +2,28 @@ const nodemailer = require('nodemailer');
 const logger = require('../config/logger');
 
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
-  port: parseInt(process.env.EMAIL_PORT || '2525'),
+  host: process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.mailtrap.io',
+  port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '2525'),
   auth: {
-    user: process.env.EMAIL_USER || '',
-    pass: process.env.EMAIL_PASS || ''
+    user: process.env.SMTP_USER || process.env.EMAIL_USER || '',
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || ''
   }
 });
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, attachments }) => {
   try {
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"FFMS Admin" <noreply@ffms.com>',
+      from: process.env.FROM_EMAIL || process.env.EMAIL_FROM || '"FFMS Admin" <noreply@ffms.com>',
       to,
       subject,
-      html
+      html,
+      attachments
     });
     logger.info(`Email sent successfully: ${info.messageId}`);
     return info;
   } catch (err) {
     logger.error('Error sending email:', err);
-    // Don't throw in development so auth flow works even without valid SMTP config
-    if (process.env.NODE_ENV === 'production') {
-      throw err;
-    }
+    throw err;
   }
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from "react";
-import { usersApi, dashboardApi } from "@/lib/api-client";
+import { usersApi, dashboardApi, ApiUser, geofenceApi } from "@/lib/api-client";
 import {
   UserPlus, Search, Edit2, ToggleLeft, ToggleRight, X, Check,
   Users, Briefcase, TrendingUp,
@@ -41,11 +41,23 @@ export default function AdminManagersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [expandedManagers, setExpandedManagers] = useState<Set<string>>(new Set());
   const [editingManager, setEditingManager] = useState<Manager | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [territories, setTerritories] = useState<any[]>([]);
 
-  const [formData, setFormData] = useState({
-    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: ""
-  });
+  const defaultFormData = {
+    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: "ACTIVE"
+  };
+
+  const [formData, setFormData] = useState(defaultFormData);
+
+  useEffect(() => {
+    geofenceApi.getZones().then(res => {
+      if (res.success && res.data) {
+        setTerritories(Array.isArray(res.data) ? res.data : ((res.data as any).zones || []));
+      }
+    }).catch(console.error);
+  }, []);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -98,8 +110,7 @@ export default function AdminManagersPage() {
 
   const handleAddManager = async (e: React.FormEvent) => {
     e.preventDefault();
-    const prefix = formData.role === "MANAGER" ? "MGR" : "EMP";
-    const employeeId = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const employeeId = `${formData.empPrefix}-${formData.empSuffix || Math.floor(1000 + Math.random() * 9000)}`;
     try {
       const res = await usersApi.create({
         name: formData.name,
@@ -110,7 +121,8 @@ export default function AdminManagersPage() {
         employeeId,
         role: formData.role,
         managerId: formData.role !== "MANAGER" && formData.managerId ? formData.managerId : undefined,
-        status: "ACTIVE"
+        territoryId: formData.territoryId || undefined,
+        status: formData.status
       });
       
       if (formData.role === "MANAGER") {
@@ -133,7 +145,7 @@ export default function AdminManagersPage() {
       }
       
       setShowAddModal(false);
-      setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" });
+      setFormData(defaultFormData);
       showToast(`${formData.name} added successfully!`, "success");
       
       // Sync in background to update teams
@@ -152,6 +164,8 @@ export default function AdminManagersPage() {
         email: formData.email,
         phone: formData.phone || undefined,
         department: formData.department,
+        status: formData.status,
+        territoryId: formData.territoryId || undefined,
         ...(formData.password ? { password: formData.password } : {})
       });
       // Optimistic UI Update - immediate feedback
@@ -161,6 +175,7 @@ export default function AdminManagersPage() {
         email: formData.email,
         phone: formData.phone || "",
         department: formData.department,
+        status: formData.status === "ACTIVE" ? "active" : "inactive",
         avatar: formData.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
       } : m));
       
@@ -175,7 +190,7 @@ export default function AdminManagersPage() {
   };
 
   const openEdit = (m: Manager) => {
-    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "" });
+    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: m.status === "active" ? "ACTIVE" : "INACTIVE" });
     setEditingManager(m);
   };
 
@@ -288,7 +303,7 @@ export default function AdminManagersPage() {
               <option value="inactive">Inactive</option>
             </select>
             {/* Add Manager */}
-            <button id="add-manager-btn" onClick={() => { setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" }); setShowAddModal(true); }}
+            <button id="add-manager-btn" onClick={() => { setFormData(defaultFormData); setShowAddModal(true); }}
               className="btn-primary">
               <UserPlus size={16} /> Add User/Manager
             </button>
@@ -394,6 +409,7 @@ export default function AdminManagersPage() {
           onClose={() => setShowAddModal(false)}
           submitLabel="Add User"
           managers={managers}
+          territories={territories}
         />
       )}
 
@@ -407,7 +423,13 @@ export default function AdminManagersPage() {
           onClose={() => setEditingManager(null)}
           submitLabel="Save Changes"
           managers={managers}
+          territories={territories}
         />
+      )}
+
+      {/* ── Member Details Modal ── */}
+      {selectedMemberId && (
+        <MemberDetailsModal memberId={selectedMemberId} onClose={() => setSelectedMemberId(null)} />
       )}
 
       {/* Toast */}
@@ -421,14 +443,15 @@ export default function AdminManagersPage() {
   );
 }
 
-function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers }: {
+function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers, territories }: {
   title: string;
-  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; };
-  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; }>>;
+  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; };
+  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   submitLabel: string;
   managers: Manager[];
+  territories: any[];
 }) {
   const isAdd = title.includes("Add");
   return (
@@ -451,11 +474,35 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             </div>
             <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" /></div>
           </div>
+          
+          <div style={{ display: "flex", gap: 12 }}>
+            {isAdd && (
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Employee ID *</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input className="input" style={{ width: 80, textAlign: "center" }} value={formData.empPrefix} onChange={(e) => setFormData(p => ({ ...p, empPrefix: e.target.value.toUpperCase() }))} placeholder="EMP" required />
+                  <span style={{ display: "flex", alignItems: "center", color: "#94a3b8" }}>-</span>
+                  <input type="number" className="input" style={{ flex: 1 }} value={formData.empSuffix} onChange={(e) => setFormData(p => ({ ...p, empSuffix: e.target.value }))} placeholder="Auto-generated if empty" />
+                </div>
+              </div>
+            )}
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Status *</label>
+              <select className="input" value={formData.status} onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))} required>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </div>
+          </div>
+
           {isAdd && (
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role *</label>
-                <select className="input" value={formData.role} onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))} required>
+                <select className="input" value={formData.role} onChange={(e) => {
+                  const role = e.target.value;
+                  setFormData((p) => ({ ...p, role, empPrefix: role === "MANAGER" ? "MGR" : "EMP" }));
+                }} required>
                   <option value="MANAGER">Manager</option>
                   <option value="FIELD_STAFF">Field Staff</option>
                   <option value="OFFICE_STAFF">Office Staff</option>
@@ -474,6 +521,20 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
               )}
             </div>
           )}
+          
+          {(!isAdd || formData.role !== "MANAGER") && (
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Territory</label>
+                <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
+                  <option value="">-- Select Territory --</option>
+                  {territories.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{isAdd ? "Password *" : "New Password (Optional)"}</label>
             <input type="text" required={isAdd} autoComplete="new-password" className="input" value={formData.password || ""} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))} placeholder={isAdd ? "Enter a secure password" : "Leave blank to keep current password"} />
@@ -483,6 +544,98 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             <button type="submit" className="btn-primary" style={{ background: "#3b82f6" }}>{submitLabel}</button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function MemberDetailsModal({ memberId, onClose }: { memberId: string; onClose: () => void }) {
+  const [member, setMember] = useState<ApiUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    usersApi.getById(memberId)
+      .then(res => {
+        if (res.success && res.data) {
+          setMember(res.data);
+        } else {
+          setError("Failed to load details");
+        }
+      })
+      .catch(err => {
+        setError(err.message || "Failed to load details");
+      })
+      .finally(() => setLoading(false));
+  }, [memberId]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 999 }}>
+      <div className="modal-box" style={{ maxWidth: 500, padding: 24 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", margin: 0 }}>Team Member Details</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", padding: 0 }}><X size={20} /></button>
+        </div>
+        
+        {loading ? (
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#64748b" }}>
+             <div className="skeleton-circle" style={{ width: 64, height: 64, margin: "0 auto 16px" }} />
+             <div className="skeleton-line" style={{ width: "60%", height: 20, margin: "0 auto 8px" }} />
+             <div className="skeleton-line" style={{ width: "40%", height: 16, margin: "0 auto" }} />
+          </div>
+        ) : error ? (
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
+        ) : member ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8, padding: "16px", background: "#f8fafc", borderRadius: 12 }}>
+              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6", fontWeight: 700, fontSize: 24, flexShrink: 0, boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.2)" }}>
+                {member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", margin: 0 }}>{member.name}</h3>
+                <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0", fontWeight: 500 }}>
+                  <span style={{ color: "#3b82f6", fontWeight: 600 }}>{member.role.replace('_', ' ')}</span> • {member.employeeId}
+                </p>
+              </div>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Email</div>
+                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600, wordBreak: "break-all" }}>{member.email}</div>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Phone</div>
+                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>{member.phone || "N/A"}</div>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Status</div>
+                <div style={{ fontSize: 13, color: member.status === "ACTIVE" ? "#10b981" : "#ef4444", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: member.status === "ACTIVE" ? "#10b981" : "#ef4444" }}></div>
+                  {member.status}
+                </div>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Joined</div>
+                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>{new Date(member.createdAt).toLocaleDateString()}</div>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Territory</div>
+                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>{member.territory?.name || "Not Assigned"}</div>
+              </div>
+              <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Shift</div>
+                <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>
+                  {member.shift ? `${member.shift.name} (${member.shift.startTime} - ${member.shift.endTime})` : "Not Assigned"}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+               <button onClick={onClose} className="btn-secondary" style={{ padding: "8px 20px" }}>Close</button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

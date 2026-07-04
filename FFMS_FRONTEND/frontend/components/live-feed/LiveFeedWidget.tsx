@@ -130,7 +130,7 @@ export default function LiveFeedWidget({
         // Get all attendance records for the user today, sorted by checkInTime ascending
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userAttObj = attendance.find((att: any) => att.userId === user.id);
-        const userAttendances = (userAttObj?.attendances || [])
+        const userAttendances = ((userAttObj as any)?.attendances || [])
           .sort((a: any, b: any) => new Date(a.checkInTime).getTime() - new Date(b.checkInTime).getTime());
         
         const todayAtt = userAttendances[userAttendances.length - 1]; // Latest one for legacy inTime/outTime
@@ -354,7 +354,6 @@ export default function LiveFeedWidget({
     }
   }, [liveEmployees, isStandalone, pastFeedEmpId]);
 
-  // Handle Past Feed search (fetching location history)
   const handlePastFeedSearch = async (empId: string, dateStr: string) => {
     if (!empId) return;
     try {
@@ -362,13 +361,14 @@ export default function LiveFeedWidget({
       const res = await locationApi.getHistory(empId, { startDate: dateStr, endDate: dateStr });
       if (res.success && res.data) {
         let logs = (res.data as any)?.logs || [];
+        let dayAtts: any[] = [];
         
         try {
           // Fetch attendance to use as fallback/additional waypoints from frontend
           const attRes = await attendanceApi.list({ userId: empId });
           if (attRes.success && Array.isArray(attRes.data)) {
             // Filter attendance records to match the selected date
-            const dayAtts = attRes.data.filter((att: any) => att.date && att.date.startsWith(dateStr));
+            dayAtts = attRes.data.filter((att: any) => att.date && att.date.startsWith(dateStr));
             
             dayAtts.forEach((att: any) => {
               if (att.checkInLatitude && att.checkInLongitude) {
@@ -408,9 +408,31 @@ export default function LiveFeedWidget({
           return;
         }
 
+        // Parse historical punches for the selected date
+        const userAttendances = [...dayAtts].sort((a: any, b: any) => {
+          const aTime = a.checkInTime ? new Date(a.checkInTime).getTime() : 0;
+          const bTime = b.checkInTime ? new Date(b.checkInTime).getTime() : 0;
+          return aTime - bTime;
+        });
+        
+        const latestAtt = userAttendances[userAttendances.length - 1]; 
+        
+        const mappedPunches = userAttendances.map((att: any) => ({
+          in: att.checkInTime ? new Date(att.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not Punched",
+          out: att.checkOutTime ? new Date(att.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not yet"
+        }));
+
+        const totalMinutes = userAttendances.reduce((acc: number, att: any) => acc + (att.workingMinutes || 0), 0);
+        const workingHoursStr = `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+
         const updatedEmp: Employee = {
           ...baseEmp,
           historyLogs: logs,
+          punches: mappedPunches.length > 0 ? mappedPunches : undefined,
+          inTime: latestAtt?.checkInTime ? new Date(latestAtt.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
+          outTime: latestAtt?.checkOutTime ? new Date(latestAtt.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
+          workingHours: workingHoursStr,
+          status: "offline", // Past dates are inherently offline
         };
 
         // Rule 20 Safety: only set location center if historical logs exist
