@@ -33,6 +33,40 @@ const haversineKm = (lat1, lng1, lat2, lng2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+/**
+ * Validate a user's location against their assigned territory.
+ * Uses Haversine radius check (preferred) with polygon fallback.
+ * 
+ * @param {number} lat - User's latitude
+ * @param {number} lng - User's longitude
+ * @param {object} territory - Territory record with { polygon, centerLat, centerLng, radius }
+ * @returns {{ isValid: boolean, distanceMeters: number|null }} 
+ */
+const validateLocationAgainstTerritory = (lat, lng, territory) => {
+  // Strategy 1: Haversine radius check (precise, preferred)
+  if (territory.centerLat != null && territory.centerLng != null && territory.radius != null) {
+    const distanceKm = haversineKm(lat, lng, territory.centerLat, territory.centerLng)
+    const distanceMeters = Math.round(distanceKm * 1000)
+    const radiusMeters = territory.radius // already in meters
+    return {
+      isValid: distanceMeters <= radiusMeters,
+      distanceMeters
+    }
+  }
+
+  // Strategy 2: Polygon-based ray-casting (fallback)
+  if (territory.polygon) {
+    const inside = isPointInPolygon(lat, lng, territory.polygon)
+    return {
+      isValid: inside,
+      distanceMeters: null // distance not available for polygon checks
+    }
+  }
+
+  // No geofence configured — allow (no restriction)
+  return { isValid: true, distanceMeters: null }
+}
+
 // ─── Store GPS ping + check geofence ──────────────────────────────
 const storePing = async (userId, pingData) => {
   const { latitude, longitude, accuracy, speed, heading,
@@ -58,15 +92,20 @@ const storePing = async (userId, pingData) => {
 
   const territory = await prisma.territory.findUnique({
     where:  { id: user.territoryId },
-    select: { id: true, polygon: true, name: true }
+    select: { id: true, polygon: true, centerLat: true, centerLng: true, radius: true, name: true }
   })
 
-  if (!territory?.polygon) return { stored: true, zoneCheck: 'no_polygon_defined' }
+  if (!territory) return { stored: true, zoneCheck: 'no_zone_found' }
 
-  // 3. Check if inside zone
-  const inside = isPointInPolygon(latitude, longitude, territory.polygon)
+  // Skip if no geofence configured (no polygon and no radius)
+  if (!territory.polygon && territory.centerLat == null) {
+    return { stored: true, zoneCheck: 'no_geofence_defined' }
+  }
 
-  if (!inside) {
+  // 3. Check if inside zone using unified validation
+  const { isValid } = validateLocationAgainstTerritory(latitude, longitude, territory)
+
+  if (!isValid) {
     // 4. Check if alert already fired in last 10 minutes (prevent spam)
     const recentAlert = await prisma.geofenceAlert.findFirst({
       where: {
@@ -284,6 +323,9 @@ const resolveAlert = async (alertId, orgId) => {
 }
 
 module.exports = {
+  isPointInPolygon,
+  haversineKm,
+  validateLocationAgainstTerritory,
   storePing,
   getTodayRoute,
   saveTravelLog,

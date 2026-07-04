@@ -227,6 +227,9 @@ model Territory {
   name           String
   description    String?
   polygon        Json?        // GeoJSON polygon coordinates
+  centerLat      Float?       // Center latitude for radius-based validation
+  centerLng      Float?       // Center longitude for radius-based validation
+  radius         Float?       // Geofence radius in meters (e.g. 200 = 200m)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   geofenceAlerts GeofenceAlert[]
@@ -329,13 +332,18 @@ model Attendance {
   checkOutLatitude  Float?
   checkOutLongitude Float?
   
+  // Distance audit trail (meters from territory center at punch time)
+  punchInDistance   Float?           // Distance in meters from territory center at check-in
+  punchOutDistance  Float?           // Distance in meters from territory center at check-out
+  
   workingMinutes    Int?             // computed
   status            AttendanceStatus @default(PRESENT)
   isLate            Boolean          @default(false)
   isEarlyLogout     Boolean          @default(false)
   
   notes             String?
-  selfieUrl         String?
+  selfieUrl         String?          // Punch-in selfie
+  punchOutSelfieUrl String?          // Punch-out selfie (mandatory)
   
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
