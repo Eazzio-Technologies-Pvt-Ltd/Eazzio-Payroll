@@ -6,6 +6,7 @@ import StoreProvider from "@/components/StoreProvider";
 import AuthProvider from "@/components/AuthProvider";
 import { SocketInitializer } from "@/components/SocketInitializer";
 import { Toaster } from "react-hot-toast";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], display: "swap", variable: '--font-hanken' });
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SocketInitializer />
             <Toaster position="top-right" />
             {children}
+            <SpeedInsights />
           </StoreProvider>
         </AuthProvider>
       </body>
