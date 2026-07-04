@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from "react";
-import { usersApi, dashboardApi, ApiUser, geofenceApi } from "@/lib/api-client";
+import { usersApi, dashboardApi, ApiUser, geofenceApi, shiftApi } from "@/lib/api-client";
 import {
   UserPlus, Search, Edit2, ToggleLeft, ToggleRight, X, Check,
   Users, Briefcase, TrendingUp,
@@ -46,7 +46,7 @@ export default function AdminManagersPage() {
   const [territories, setTerritories] = useState<any[]>([]);
 
   const defaultFormData = {
-    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: "ACTIVE"
+    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: "ACTIVE", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0
   };
 
   const [formData, setFormData] = useState(defaultFormData);
@@ -57,6 +57,7 @@ export default function AdminManagersPage() {
         setTerritories(Array.isArray(res.data) ? res.data : ((res.data as any).zones || []));
       }
     }).catch(console.error);
+    shiftApi.list().then(res => setShifts(res.data || [])).catch(console.error);
   }, []);
 
   const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export default function AdminManagersPage() {
   const [empFormData, setEmpFormData] = useState({
     name: "", email: "", department: "", phone: "", status: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0, territoryId: "", shiftId: "", role: "FIELD_STAFF", password: ""
   });
-  const [territories, setTerritories] = useState<any[]>([]);
+
   const [shifts, setShifts] = useState<any[]>([]);
 
   const showToast = (message: string, type: "success" | "error") => {
@@ -134,7 +135,7 @@ export default function AdminManagersPage() {
         territoryId: formData.territoryId || undefined,
         status: formData.status
       });
-      
+
       if (formData.role === "MANAGER") {
         const newMgr: Manager = {
           id: res.data?.id || `temp-${Date.now()}`,
@@ -153,11 +154,11 @@ export default function AdminManagersPage() {
         // Optimistic UI Update for Managers
         setManagers(prev => [newMgr, ...prev]);
       }
-      
+
       setShowAddModal(false);
       setFormData(defaultFormData);
       showToast(`${formData.name} added successfully!`, "success");
-      
+
       // Sync in background to update teams
       loadData();
     } catch (err: any) {
@@ -188,7 +189,7 @@ export default function AdminManagersPage() {
         status: formData.status === "ACTIVE" ? "active" : "inactive",
         avatar: formData.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
       } : m));
-      
+
       setEditingManager(null);
       showToast("Manager details updated successfully!", "success");
 
@@ -200,7 +201,7 @@ export default function AdminManagersPage() {
   };
 
   const openEdit = (m: Manager) => {
-    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: m.status === "active" ? "ACTIVE" : "INACTIVE" });
+    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "", empPrefix: "MGR", empSuffix: "", territoryId: "", status: m.status === "active" ? "ACTIVE" : "INACTIVE", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0 });
     setEditingManager(m);
   };
 
@@ -289,7 +290,7 @@ export default function AdminManagersPage() {
               <div className="skeleton-box" style={{ width: 140, height: 38, borderRadius: 6 }} />
             </div>
           </div>
-          
+
           {/* Table Rows */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
             <div className="skeleton-box" style={{ width: "100%", height: "40px" }} />
@@ -386,40 +387,40 @@ export default function AdminManagersPage() {
               {filtered.map((m) => (
                 <Fragment key={m.id}>
                   <tr style={{ cursor: "pointer", transition: "background 0.2s" }} onClick={() => toggleExpand(m.id)}>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{m.avatar}</div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{m.name}</div>
-                        <div style={{ fontSize: 11, color: "#94a3b8" }}>Joined {m.joinedDate}</div>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{m.avatar}</div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{m.name}</div>
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>Joined {m.joinedDate}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ fontSize: 13, color: "#64748b" }}>{m.email}</td>
-                  <td><span style={{ background: "#eff6ff", color: "#3b82f6", fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>{m.department}</span></td>
-                  <td style={{ fontSize: 13, fontWeight: 600, textAlign: "center" }}>{m.assignedProjects}</td>
-                  <td style={{ fontSize: 13, fontWeight: 600, textAlign: "center" }}>{m.teamSize}</td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 999 }}>
-                        <div style={{ height: "100%", width: `${m.performanceScore}%`, background: m.performanceScore >= 90 ? "#22c55e" : m.performanceScore >= 75 ? "#3b82f6" : "#f97316", borderRadius: 999 }} />
+                    </td>
+                    <td style={{ fontSize: 13, color: "#64748b" }}>{m.email}</td>
+                    <td><span style={{ background: "#eff6ff", color: "#3b82f6", fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>{m.department}</span></td>
+                    <td style={{ fontSize: 13, fontWeight: 600, textAlign: "center" }}>{m.assignedProjects}</td>
+                    <td style={{ fontSize: 13, fontWeight: 600, textAlign: "center" }}>{m.teamSize}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 999 }}>
+                          <div style={{ height: "100%", width: `${m.performanceScore}%`, background: m.performanceScore >= 90 ? "#22c55e" : m.performanceScore >= 75 ? "#3b82f6" : "#f97316", borderRadius: 999 }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", minWidth: 32 }}>{m.performanceScore}%</span>
                       </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", minWidth: 32 }}>{m.performanceScore}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <button onClick={(e) => { e.stopPropagation(); toggleStatus(m.id); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      {m.status === "active" ? <ToggleRight size={24} color="#22c55e" /> : <ToggleLeft size={24} color="#94a3b8" />}
-                      <span style={{ fontSize: 12, fontWeight: 700, color: m.status === "active" ? "#22c55e" : "#94a3b8" }}>{m.status === "active" ? "Active" : "Inactive"}</span>
-                    </button>
-                  </td>
-                  <td>
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(59, 130, 246,0.1)", color: "#3b82f6", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                      <Edit2 size={13} /> Edit
-                    </button>
-                  </td>
-                </tr>
-                  
+                    </td>
+                    <td>
+                      <button onClick={(e) => { e.stopPropagation(); toggleStatus(m.id); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                        {m.status === "active" ? <ToggleRight size={24} color="#22c55e" /> : <ToggleLeft size={24} color="#94a3b8" />}
+                        <span style={{ fontSize: 12, fontWeight: 700, color: m.status === "active" ? "#22c55e" : "#94a3b8" }}>{m.status === "active" ? "Active" : "Inactive"}</span>
+                      </button>
+                    </td>
+                    <td>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(m); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(59, 130, 246,0.1)", color: "#3b82f6", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                        <Edit2 size={13} /> Edit
+                      </button>
+                    </td>
+                  </tr>
+
                   {/* Expanded Subordinates Row */}
                   {expandedManagers.has(m.id) && (
                     <tr>
@@ -428,7 +429,7 @@ export default function AdminManagersPage() {
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                             <h4 style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", margin: 0 }}>Team Members ({m.teamSize})</h4>
                           </div>
-                          
+
                           {(!m.team || m.team.length === 0) ? (
                             <div style={{ padding: "16px", background: "white", borderRadius: 8, border: "1px dashed #cbd5e1", textAlign: "center", fontSize: 13, color: "#94a3b8", fontStyle: "italic" }}>
                               No team members assigned yet.
@@ -474,6 +475,7 @@ export default function AdminManagersPage() {
           submitLabel="Add User"
           managers={managers}
           territories={territories}
+          shifts={shifts}
         />
       )}
 
@@ -488,6 +490,7 @@ export default function AdminManagersPage() {
           submitLabel="Save Changes"
           managers={managers}
           territories={territories}
+          shifts={shifts}
         />
       )}
 
@@ -516,6 +519,7 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
   submitLabel: string;
   managers: Manager[];
   territories: any[];
+  shifts: any[];
 }) {
   const isAdd = title.includes("Add");
   return (
@@ -538,7 +542,7 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             </div>
             <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" /></div>
           </div>
-          
+
           <div style={{ display: "flex", gap: 12 }}>
             {isAdd && (
               <div style={{ flex: 1 }}>
@@ -602,9 +606,9 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
                   <input type="number" className="input" value={formData.travelAllowanceRate} onChange={(e) => setFormData((p) => ({ ...p, travelAllowanceRate: Number(e.target.value) }))} />
                 </div>
               </div>
-            </>
+            </div>
           )}
-          
+
           {(!isAdd || formData.role !== "MANAGER") && (
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
@@ -660,12 +664,12 @@ function MemberDetailsModal({ memberId, onClose }: { memberId: string; onClose: 
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", margin: 0 }}>Team Member Details</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", padding: 0 }}><X size={20} /></button>
         </div>
-        
+
         {loading ? (
           <div style={{ padding: "40px 0", textAlign: "center", color: "#64748b" }}>
-             <div className="skeleton-circle" style={{ width: 64, height: 64, margin: "0 auto 16px" }} />
-             <div className="skeleton-line" style={{ width: "60%", height: 20, margin: "0 auto 8px" }} />
-             <div className="skeleton-line" style={{ width: "40%", height: 16, margin: "0 auto" }} />
+            <div className="skeleton-circle" style={{ width: 64, height: 64, margin: "0 auto 16px" }} />
+            <div className="skeleton-line" style={{ width: "60%", height: 20, margin: "0 auto 8px" }} />
+            <div className="skeleton-line" style={{ width: "40%", height: 16, margin: "0 auto" }} />
           </div>
         ) : error ? (
           <div style={{ padding: "40px 0", textAlign: "center", color: "#ef4444", fontWeight: 600 }}>{error}</div>
@@ -682,7 +686,7 @@ function MemberDetailsModal({ memberId, onClose }: { memberId: string; onClose: 
                 </p>
               </div>
             </div>
-            
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                 <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Email</div>
@@ -715,7 +719,7 @@ function MemberDetailsModal({ memberId, onClose }: { memberId: string; onClose: 
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-               <button onClick={onClose} className="btn-secondary" style={{ padding: "8px 20px" }}>Close</button>
+              <button onClick={onClose} className="btn-secondary" style={{ padding: "8px 20px" }}>Close</button>
             </div>
           </div>
         ) : null}
