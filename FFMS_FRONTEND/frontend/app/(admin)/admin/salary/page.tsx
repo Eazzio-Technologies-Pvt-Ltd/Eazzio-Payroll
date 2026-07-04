@@ -12,6 +12,7 @@ interface SalaryData {
   baseSalary: number;
   bonus: number;
   workingDays: number;
+  daysPresent: number;
   totalLeaves: number;
   computedSalary: number;
 }
