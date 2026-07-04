@@ -266,7 +266,7 @@ export default function FormsPage() {
       const dbCategory = catMap[feedbackForm.category] || "OTHER";
 
       await feedbackApi.submit({
-        organizationId: currentUser?.organizationId || "",
+        organizationId: (currentUser as any)?.organizationId || "",
         category: dbCategory,
         content: feedbackForm.message,
         rating: feedbackForm.rating

@@ -9,5 +9,7 @@ router.use(authorize('ADMIN'));
 
 router.get('/', salaryController.getSalaryList);
 router.patch('/:userId', salaryController.updateSalaryStructure);
+router.get('/slip/:userId', salaryController.generateSlip);
+router.post('/slip/:userId/email', salaryController.emailSlip);
 
 module.exports = router;

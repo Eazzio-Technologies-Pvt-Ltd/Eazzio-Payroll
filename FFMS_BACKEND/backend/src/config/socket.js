@@ -29,6 +29,7 @@ const initSocket = (server) => {
 
   // ─── Authentication Middleware ──────────────────────────────────────────────
   io.use(async (socket, next) => {
+    let decoded;
     try {
       const token =
         socket.handshake.auth?.token ||
@@ -38,8 +39,13 @@ const initSocket = (server) => {
         return next(new Error('Authentication error: Token is required'));
       }
 
-      const decoded = jwt.verify(token, accessTokenSecret);
+      decoded = jwt.verify(token, accessTokenSecret);
+    } catch (err) {
+      logger.error('Socket token verification failed:', err.message);
+      return next(new Error('Authentication error: Invalid token'));
+    }
 
+    try {
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
       });
@@ -58,8 +64,8 @@ const initSocket = (server) => {
 
       next();
     } catch (err) {
-      logger.error('Socket authentication failed:', err.message);
-      next(new Error('Authentication error: Invalid token'));
+      logger.error('Socket DB authentication failed:', err.message);
+      next(new Error('Database error: Unable to connect'));
     }
   });
 

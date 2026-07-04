@@ -492,10 +492,29 @@ export const feedbackApi = {
 
 // ─── Salary ──────────────────────────────────────────
 export const salaryApi = {
-  getSalaryList: (query?: { role?: string; month?: string }) =>
+  getSalaryList: (query?: { role?: string; month: string }) =>
     request<any>("GET", "/salary", undefined, query as any),
   updateSalary: (userId: string, data: { baseSalary: number; bonus: number }) =>
     request<any>("PATCH", `/salary/${userId}`, data),
+  generateSlip: (userId: string, month: string, companyName?: string) => {
+    const token = getAuthToken();
+    let url = `${BASE_URL}/salary/slip/${userId}?month=${month}`;
+    if (companyName) {
+      url += `&companyName=${encodeURIComponent(companyName)}`;
+    }
+    return fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+  emailSlip: (userId: string, month: string, companyName?: string) => {
+    let url = `/salary/slip/${userId}/email?month=${month}`;
+    if (companyName) {
+      url += `&companyName=${encodeURIComponent(companyName)}`;
+    }
+    return request<any>("POST", url);
+  }
 };
 
 export { ApiError };

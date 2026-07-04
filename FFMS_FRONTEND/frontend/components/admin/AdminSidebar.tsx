@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Shield,
   Briefcase,
+  Clock,
 } from "lucide-react";
 
 const COLLAPSED_WIDTH = 64;
@@ -275,10 +276,17 @@ export default function AdminSidebar() {
             </div>
           </Link>
 
-          <Link href="/admin/tasks" style={{ textDecoration: "none" }} title="Tasks & Attendance">
-            <div style={getLinkStyle(pathname === "/admin/tasks" || pathname === "/tasks" || pathname === "/attendance")} className="sidebar-link">
-              {renderIcon(FolderKanban, pathname === "/admin/tasks" || pathname === "/tasks" || pathname === "/attendance")}
-              <span style={{ fontSize: "13.5px", fontWeight: (pathname === "/admin/tasks" || pathname === "/tasks" || pathname === "/attendance") ? 700 : 500, opacity: isExpanded ? 1 : 0, width: isExpanded ? "auto" : 0, overflow: "hidden", whiteSpace: "nowrap", transition: "opacity 0.2s ease 0.05s", color: (pathname === "/admin/tasks" || pathname === "/tasks" || pathname === "/attendance") ? "#3b82f6" : "var(--text-secondary)" }}>Tasks & Attendance</span>
+          <Link href="/admin/tasks" style={{ textDecoration: "none" }} title="Tasks">
+            <div style={getLinkStyle(pathname === "/admin/tasks" || pathname === "/tasks")} className="sidebar-link">
+              {renderIcon(FolderKanban, pathname === "/admin/tasks" || pathname === "/tasks")}
+              <span style={{ fontSize: "13.5px", fontWeight: (pathname === "/admin/tasks" || pathname === "/tasks") ? 700 : 500, opacity: isExpanded ? 1 : 0, width: isExpanded ? "auto" : 0, overflow: "hidden", whiteSpace: "nowrap", transition: "opacity 0.2s ease 0.05s", color: (pathname === "/admin/tasks" || pathname === "/tasks") ? "#3b82f6" : "var(--text-secondary)" }}>Tasks</span>
+            </div>
+          </Link>
+
+          <Link href="/admin/attendance" style={{ textDecoration: "none" }} title="Attendance">
+            <div style={getLinkStyle(pathname === "/admin/attendance" || pathname === "/attendance")} className="sidebar-link">
+              {renderIcon(Clock, pathname === "/admin/attendance" || pathname === "/attendance")}
+              <span style={{ fontSize: "13.5px", fontWeight: (pathname === "/admin/attendance" || pathname === "/attendance") ? 700 : 500, opacity: isExpanded ? 1 : 0, width: isExpanded ? "auto" : 0, overflow: "hidden", whiteSpace: "nowrap", transition: "opacity 0.2s ease 0.05s", color: (pathname === "/admin/attendance" || pathname === "/attendance") ? "#3b82f6" : "var(--text-secondary)" }}>Attendance</span>
             </div>
           </Link>
 

@@ -1,34 +1,36 @@
 "use client";
 
 import { useState, useMemo, useEffect, Fragment } from "react";
+import { createPortal } from "react-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
-import { 
-  addExpense, 
-  approveExpense, 
-  rejectExpense, 
-  deleteExpense, 
-  ExpenseRecord 
+import {
+  addExpense,
+  approveExpense,
+  rejectExpense,
+  deleteExpense,
+  ExpenseRecord
 } from "@/store/slices/expenseSlice";
 import { getStatusColor } from "@/lib/utils";
 import { addNotification } from "@/store/slices/notificationSlice";
 import { fetchExpenses } from "@/store/slices/expenseSlice";
 import { expensesApi } from "@/lib/api-client";
-import { 
-  Wallet, 
-  Plus, 
-  Search, 
-  FileSpreadsheet, 
-  Eye, 
-  RotateCcw, 
-  Check, 
-  X, 
+import {
+  Wallet,
+  Plus,
+  Search,
+  FileSpreadsheet,
+  Eye,
+  RotateCcw,
+  Check,
+  X,
   AlertCircle,
   Clock,
   ThumbsUp,
   ThumbsDown,
-  UserCheck
+  UserCheck,
+  UploadCloud
 } from "lucide-react";
 
 const CATEGORIES = ["Food / Meal", "Travel / Conveyance", "Lodging / Hotel", "Client Entertainment", "Other"];
@@ -73,7 +75,8 @@ export default function ExpensesPage() {
     amount: "",
     expenseDate: new Date().toISOString().split("T")[0],
     customer: "",
-    remark: ""
+    remark: "",
+    receiptFile: null as File | null
   });
 
   // Reject dialog state
@@ -82,6 +85,19 @@ export default function ExpensesPage() {
 
   // Toast message
   const [toast, setToast] = useState<string | null>(null);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    const mainEl = document.querySelector('.dashboard-content') as HTMLElement;
+    if (showAddModal || rejectingId) {
+      if (mainEl) mainEl.style.overflow = "hidden";
+    } else {
+      if (mainEl) mainEl.style.overflow = "auto";
+    }
+    return () => {
+      if (mainEl) mainEl.style.overflow = "auto";
+    };
+  }, [showAddModal, rejectingId]);
 
   // Apply filters trigger
   const [appliedFilters, setAppliedFilters] = useState({
@@ -283,11 +299,12 @@ export default function ExpensesPage() {
       submittedOn: new Date().toISOString().split("T")[0],
       customer: modalForm.customer || "Internal / General",
       status: activeTab === "ME" ? "Approved" : "Pending Approval by Manager", // Admin gets auto-approved, others go pending
-      remark: modalForm.remark
+      remark: modalForm.remark,
+      receiptUrl: modalForm.receiptFile ? URL.createObjectURL(modalForm.receiptFile) : undefined
     };
 
     dispatch(addExpense(newRecord));
-    
+
     // Dispatch to Notification center
     dispatch(addNotification({
       employeeId: newRecord.employeeId,
@@ -305,7 +322,8 @@ export default function ExpensesPage() {
       amount: "",
       expenseDate: new Date().toISOString().split("T")[0],
       customer: "",
-      remark: ""
+      remark: "",
+      receiptFile: null
     });
     setToast("New expense voucher successfully generated!");
     setTimeout(() => setToast(null), 3000);
@@ -337,7 +355,7 @@ export default function ExpensesPage() {
     }
 
     const headers = "User Name,Expense Head,Expense Category,Amount (INR),Expense Date,Submitted On,Customer,Status,Remark\n";
-    const rows = filteredList.map(item => 
+    const rows = filteredList.map(item =>
       `"${item.userName}","${item.expenseHead}","${item.expenseCategory}",${item.amount},"${item.expenseDate}","${item.submittedOn}","${item.customer}","${item.status}","${item.remark}"`
     ).join("\n");
 
@@ -442,8 +460,8 @@ export default function ExpensesPage() {
         </button>
       </div>
 
-      {/* Filters Card */}
-      <div className="card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      {/* Combined Filters and Main Table section */}
+      <div className="card" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }}>Search Filters</span>
         </div>
@@ -558,12 +576,9 @@ export default function ExpensesPage() {
             <FileSpreadsheet size={14} /> Save as CSV
           </button>
         </div>
-      </div>
 
-      {/* Main Table section */}
-      <div className="card" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px" }}>
         {/* Table header operations */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
           {/* Search field */}
           <div style={{ position: "relative", minWidth: "260px" }}>
             <Search size={14} style={{ position: "absolute", left: "10px", top: "11px", color: "var(--text-muted)" }} />
@@ -593,24 +608,20 @@ export default function ExpensesPage() {
             <thead>
               <tr>
                 <th style={{ width: "40px", textAlign: "center" }}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     checked={filteredList.length > 0 && filteredList.every(item => selectedIds[item.id])}
                     style={{ cursor: "pointer" }}
                   />
                 </th>
-                <th>User Name</th>
-                <th>Expense Head</th>
-                <th>Expense Category</th>
-                <th style={{ textAlign: "right" }}>Amount (₹)</th>
-                <th>Expense Date</th>
-                <th>Submitted On</th>
-                <th>Customer</th>
-                <th>Receipt</th>
-                <th>Status</th>
-                <th>Remark</th>
-                {activeTab === "APPROVALS" && <th style={{ textAlign: "center" }}>Actions</th>}
+                <th>Expense Details</th>
+                <th style={{ width: "130px" }}>Category</th>
+                <th style={{ textAlign: "right", width: "120px" }}>Amount (₹)</th>
+                <th style={{ width: "130px" }}>Date</th>
+                <th style={{ width: "70px", textAlign: "center" }}>Receipt</th>
+                <th style={{ width: "100px", textAlign: "center" }}>Status</th>
+                {activeTab === "APPROVALS" && <th style={{ textAlign: "center", width: "140px" }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -623,7 +634,7 @@ export default function ExpensesPage() {
                       <Fragment key={`emp-group-${empName}`}>
                         {/* Employee Group Header */}
                         <tr style={{ background: "var(--bg-secondary)" }}>
-                          <td colSpan={12} style={{ padding: "10px 16px" }}>
+                          <td colSpan={8} style={{ padding: "10px 16px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <span style={{ fontWeight: 800, fontSize: "13px", color: "var(--text-primary)" }}>
                                 Employee: {empName}
@@ -638,7 +649,7 @@ export default function ExpensesPage() {
                           <Fragment key={`cat-group-${empName}-${catName}`}>
                             {/* Category Sub-Header */}
                             <tr>
-                              <td colSpan={12} style={{ padding: "6px 24px", background: "rgba(0,0,0,0.01)" }}>
+                              <td colSpan={8} style={{ padding: "6px 24px", background: "rgba(0,0,0,0.01)" }}>
                                 <span style={{ fontWeight: 700, fontSize: "11px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                                   Category: {catName} ({items.length} items, Total: ₹{items.reduce((s, i) => s + i.amount, 0).toLocaleString("en-IN")})
                                 </span>
@@ -648,40 +659,47 @@ export default function ExpensesPage() {
                             {items.map(item => (
                               <tr key={item.id} style={{ background: selectedIds[item.id] ? "rgba(0,82,255,0.02)" : "transparent" }}>
                                 <td style={{ textAlign: "center" }}>
-                                  <input 
-                                    type="checkbox" 
-                                    checked={!!selectedIds[item.id]} 
+                                  <input
+                                    type="checkbox"
+                                    checked={!!selectedIds[item.id]}
                                     onChange={(e) => handleSelectRow(item.id, e.target.checked)}
                                     style={{ cursor: "pointer" }}
                                   />
                                 </td>
                                 <td>
-                                  <div style={{ fontWeight: 700, fontSize: "13px" }}>{item.userName}</div>
-                                </td>
-                                <td>
-                                  <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>{item.expenseHead}</div>
+                                  <div style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                                    {item.expenseHead}
+                                  </div>
+                                  {(item.customer || item.remark) && (
+                                    <div style={{ fontSize: "11.5px", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                      {item.customer && <span><span style={{fontWeight: 600}}>Client:</span> {item.customer}</span>}
+                                      {item.remark && <span style={{ maxWidth: "250px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}><span style={{fontWeight: 600}}>Note:</span> {item.remark}</span>}
+                                    </div>
+                                  )}
                                 </td>
                                 <td>
                                   <span className="badge" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: "11px" }}>
                                     {item.expenseCategory}
                                   </span>
                                 </td>
-                                <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "13px" }}>
+                                <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "14px" }}>
                                   ₹{item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
-                                <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace" }}>{item.expenseDate}</td>
-                                <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-muted)" }}>{item.submittedOn}</td>
-                                <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.customer || "--"}</td>
                                 <td>
-                                  <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} />
+                                  <div style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-primary)", marginBottom: "2px" }}>
+                                    {item.expenseDate}
+                                  </div>
+                                  <div style={{ fontSize: "10.5px", color: "var(--text-muted)", fontFamily: "var(--font-jetbrains), monospace" }}>
+                                    Sub: {item.submittedOn}
+                                  </div>
                                 </td>
-                                <td>
+                                <td style={{ textAlign: "center" }}>
+                                  <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} width="36px" height="36px" />
+                                </td>
+                                <td style={{ textAlign: "center" }}>
                                   <span className={`badge ${getStatusColor(item.status === "Pending Approval by Manager" ? "pending" : item.status === "Approved" ? "present" : "absent")}`} style={{ fontSize: "11px" }}>
-                                    {item.status}
+                                    {item.status === "Pending Approval by Manager" ? "Pending" : item.status}
                                   </span>
-                                </td>
-                                <td style={{ fontSize: "12.5px", color: "var(--text-muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}>
-                                  {item.remark || "--"}
                                 </td>
                                 <td style={{ textAlign: "center" }}>
                                   {item.status === "Pending Approval by Manager" ? (
@@ -730,7 +748,7 @@ export default function ExpensesPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={12} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
+                    <td colSpan={8} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
                       No data available in table
                     </td>
                   </tr>
@@ -740,46 +758,53 @@ export default function ExpensesPage() {
                   filteredList.map(item => (
                     <tr key={item.id} style={{ background: selectedIds[item.id] ? "rgba(0,82,255,0.02)" : "transparent" }}>
                       <td style={{ textAlign: "center" }}>
-                        <input 
-                          type="checkbox" 
-                          checked={!!selectedIds[item.id]} 
+                        <input
+                          type="checkbox"
+                          checked={!!selectedIds[item.id]}
                           onChange={(e) => handleSelectRow(item.id, e.target.checked)}
                           style={{ cursor: "pointer" }}
                         />
                       </td>
                       <td>
-                        <div style={{ fontWeight: 700, fontSize: "13px" }}>{item.userName}</div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: "13px", color: "var(--text-primary)" }}>{item.expenseHead}</div>
+                        <div style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                          {item.expenseHead}
+                        </div>
+                        {(item.customer || item.remark) && (
+                          <div style={{ fontSize: "11.5px", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "2px" }}>
+                            {item.customer && <span><span style={{fontWeight: 600}}>Client:</span> {item.customer}</span>}
+                            {item.remark && <span style={{ maxWidth: "250px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}><span style={{fontWeight: 600}}>Note:</span> {item.remark}</span>}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <span className="badge" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", fontSize: "11px" }}>
                           {item.expenseCategory}
                         </span>
                       </td>
-                      <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "13px" }}>
+                      <td style={{ textAlign: "right", fontFamily: "var(--font-jetbrains), monospace", fontWeight: 700, fontSize: "14px" }}>
                         ₹{item.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace" }}>{item.expenseDate}</td>
-                      <td style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-muted)" }}>{item.submittedOn}</td>
-                      <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{item.customer || "--"}</td>
                       <td>
-                        <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} />
+                        <div style={{ fontSize: "12.5px", fontFamily: "var(--font-jetbrains), monospace", color: "var(--text-primary)", marginBottom: "2px" }}>
+                          {item.expenseDate}
+                        </div>
+                        <div style={{ fontSize: "10.5px", color: "var(--text-muted)", fontFamily: "var(--font-jetbrains), monospace" }}>
+                          Sub: {item.submittedOn}
+                        </div>
                       </td>
-                      <td>
+                      <td style={{ textAlign: "center" }}>
+                        <CloudinaryImage url={item.receiptUrl} alt={`Receipt for ${item.expenseHead}`} width="36px" height="36px" />
+                      </td>
+                      <td style={{ textAlign: "center" }}>
                         <span className={`badge ${getStatusColor(item.status === "Pending Approval by Manager" ? "pending" : item.status === "Approved" ? "present" : "absent")}`} style={{ fontSize: "11px" }}>
-                          {item.status}
+                          {item.status === "Pending Approval by Manager" ? "Pending" : item.status}
                         </span>
-                      </td>
-                      <td style={{ fontSize: "12.5px", color: "var(--text-muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.remark}>
-                        {item.remark || "--"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={11} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "13px" }}>
                       No data available in table
                     </td>
                   </tr>
@@ -834,7 +859,7 @@ export default function ExpensesPage() {
       )}
 
       {/* Add Expense Voucher Modal */}
-      {showAddModal && (
+      {showAddModal && typeof document !== 'undefined' && createPortal(
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-box" style={{ maxWidth: "520px" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -902,6 +927,43 @@ export default function ExpensesPage() {
               </div>
 
               <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Attach Receipt (Optional)</label>
+                <label
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1.5px dashed rgba(59, 130, 246, 0.4)",
+                    borderRadius: "8px",
+                    padding: "20px 16px",
+                    background: "rgba(59, 130, 246, 0.04)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = "#3b82f6";
+                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.08)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.4)";
+                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.04)";
+                  }}
+                >
+                  <UploadCloud size={28} color="#3b82f6" style={{ marginBottom: "10px" }} />
+                  <span style={{ fontSize: "13px", color: "#3b82f6", fontWeight: 600 }}>
+                    {modalForm.receiptFile ? modalForm.receiptFile.name : "Click to browse or drag image here"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => setModalForm(prev => ({ ...prev, receiptFile: e.target.files ? e.target.files[0] : null }))}
+                  />
+                </label>
+              </div>
+
+              <div>
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Remark / Description</label>
                 <textarea
                   className="input"
@@ -919,10 +981,10 @@ export default function ExpensesPage() {
             </form>
           </div>
         </div>
-      )}
+        , document.body)}
 
       {/* Reject Dialog Prompt Modal */}
-      {rejectingId && (
+      {rejectingId && typeof document !== 'undefined' && createPortal(
         <div className="modal-overlay" onClick={() => setRejectingId(null)}>
           <div className="modal-box" style={{ maxWidth: "420px" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
@@ -933,7 +995,7 @@ export default function ExpensesPage() {
                 <X size={18} />
               </button>
             </div>
-            
+
             <p style={{ fontSize: "12.5px", color: "var(--text-secondary)", marginBottom: "12px" }}>
               Please provide a brief audit reason or remark for rejecting this expense claim.
             </p>
@@ -957,7 +1019,7 @@ export default function ExpensesPage() {
             </div>
           </div>
         </div>
-      )}
+        , document.body)}
     </div>
   );
 }
