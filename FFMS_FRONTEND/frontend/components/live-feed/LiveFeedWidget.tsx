@@ -10,6 +10,7 @@ import { Employee } from "@/types/live-feed";
 import { usersApi, locationApi, attendanceApi, tasksApi } from "@/lib/api-client";
 import { io, Socket } from "socket.io-client";
 import toast from "react-hot-toast";
+import MapLoader from "@/components/common/MapLoader";
 
 interface SocketLocationUpdate {
   userId: string;
@@ -640,16 +641,10 @@ export default function LiveFeedWidget({
       {/* Cards Area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px", background: "#f8fafc" }}>
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "12px" }}>
-            <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#3b82f6", animation: "spin 1s linear infinite" }} />
-            <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 500 }}>Loading live monitoring records...</span>
-          </div>
+          <MapLoader overlay={false} message="Loading live monitoring records..." />
         ) : showPastFeed ? (
           pastFeedLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "12px" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#3b82f6", animation: "spin 1s linear infinite" }} />
-              <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 500 }}>Fetching GPS historical data...</span>
-            </div>
+            <MapLoader overlay={false} message="Fetching GPS historical data..." />
           ) : pastFeedEmployee ? (
             <GridView 
               employees={[pastFeedEmployee]} 

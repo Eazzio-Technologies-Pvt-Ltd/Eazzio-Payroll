@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from "react";
-import { usersApi, dashboardApi } from "@/lib/api-client";
+import { usersApi, dashboardApi, geofenceApi, shiftApi } from "@/lib/api-client";
 import {
   UserPlus, Search, Edit2, ToggleLeft, ToggleRight, X, Check,
   Users, Briefcase, TrendingUp,
@@ -44,8 +44,16 @@ export default function AdminManagersPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const [formData, setFormData] = useState({
-    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: ""
+    name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", territoryId: "", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0
   });
+
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
+  const [employeeDetails, setEmployeeDetails] = useState<any>(null);
+  const [empFormData, setEmpFormData] = useState({
+    name: "", email: "", department: "", phone: "", status: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0, territoryId: "", shiftId: "", role: "FIELD_STAFF", password: ""
+  });
+  const [territories, setTerritories] = useState<any[]>([]);
+  const [shifts, setShifts] = useState<any[]>([]);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -65,6 +73,8 @@ export default function AdminManagersPage() {
 
   useEffect(() => {
     loadData();
+    geofenceApi.getZones().then(res => setTerritories(res.data || [])).catch(console.error);
+    shiftApi.list().then(res => setShifts(res.data || [])).catch(console.error);
   }, []);
 
   const filtered = managers.filter((m) => {
@@ -110,6 +120,11 @@ export default function AdminManagersPage() {
         employeeId,
         role: formData.role,
         managerId: formData.role !== "MANAGER" && formData.managerId ? formData.managerId : undefined,
+        territoryId: formData.territoryId || undefined,
+        shiftId: formData.shiftId || undefined,
+        baseSalary: Number(formData.baseSalary) || undefined,
+        bonus: Number(formData.bonus) || undefined,
+        travelAllowanceRate: Number(formData.travelAllowanceRate) || undefined,
         status: "ACTIVE"
       });
       
@@ -133,7 +148,7 @@ export default function AdminManagersPage() {
       }
       
       setShowAddModal(false);
-      setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" });
+      setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", territoryId: "", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0 });
       showToast(`${formData.name} added successfully!`, "success");
       
       // Sync in background to update teams
@@ -175,8 +190,62 @@ export default function AdminManagersPage() {
   };
 
   const openEdit = (m: Manager) => {
-    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "" });
+    setFormData({ name: m.name, email: m.email, password: "", department: m.department, phone: m.phone, role: "MANAGER", managerId: "", territoryId: "", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0 });
     setEditingManager(m);
+  };
+
+  const handleEmployeeClick = async (empId: string) => {
+    try {
+      const res = await usersApi.getById(empId);
+      if (res.success && res.data) {
+        const d = res.data as any;
+        setEditingEmployeeId(empId);
+        setEmployeeDetails(d);
+        setEmpFormData({
+          name: d.name || "",
+          email: d.email || "",
+          department: d.department || "",
+          phone: d.phone || "",
+          status: d.status || "",
+          baseSalary: d.baseSalary || 0,
+          bonus: d.bonus || 0,
+          travelAllowanceRate: d.travelAllowanceRate || 0,
+          territoryId: d.territoryId || "",
+          shiftId: d.shiftId || "",
+          role: d.role || "FIELD_STAFF",
+          password: ""
+        });
+      }
+    } catch (err: any) {
+      showToast("Failed to fetch employee details", "error");
+    }
+  };
+
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployeeId) return;
+    try {
+      await usersApi.update(editingEmployeeId, {
+        name: empFormData.name,
+        email: empFormData.email,
+        phone: empFormData.phone || undefined,
+        department: empFormData.department,
+        status: empFormData.status,
+        baseSalary: Number(empFormData.baseSalary),
+        bonus: Number(empFormData.bonus),
+        travelAllowanceRate: Number(empFormData.travelAllowanceRate),
+        territoryId: empFormData.territoryId || undefined,
+        shiftId: empFormData.shiftId || undefined,
+        role: empFormData.role,
+        ...(empFormData.password ? { password: empFormData.password } : {})
+      });
+      showToast("Employee details updated successfully!", "success");
+      setEditingEmployeeId(null);
+      setEmployeeDetails(null);
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to update employee", "error");
+    }
   };
 
   if (loading) {
@@ -288,7 +357,7 @@ export default function AdminManagersPage() {
               <option value="inactive">Inactive</option>
             </select>
             {/* Add Manager */}
-            <button id="add-manager-btn" onClick={() => { setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "" }); setShowAddModal(true); }}
+            <button id="add-manager-btn" onClick={() => { setFormData({ name: "", email: "", password: "", department: "Operations", phone: "", role: "MANAGER", managerId: "", territoryId: "", shiftId: "", baseSalary: 0, bonus: 0, travelAllowanceRate: 0 }); setShowAddModal(true); }}
               className="btn-primary">
               <UserPlus size={16} /> Add User/Manager
             </button>
@@ -357,7 +426,7 @@ export default function AdminManagersPage() {
                           ) : (
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
                               {m.team.map(sub => (
-                                <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "white", borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
+                                <div key={sub.id} onClick={() => handleEmployeeClick(sub.id)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "white", borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
                                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontWeight: 600, fontSize: 12, flexShrink: 0 }}>{sub.avatar}</div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub.name}</div>
@@ -394,6 +463,8 @@ export default function AdminManagersPage() {
           onClose={() => setShowAddModal(false)}
           submitLabel="Add User"
           managers={managers}
+          territories={territories}
+          shifts={shifts}
         />
       )}
 
@@ -407,6 +478,21 @@ export default function AdminManagersPage() {
           onClose={() => setEditingManager(null)}
           submitLabel="Save Changes"
           managers={managers}
+          territories={territories}
+          shifts={shifts}
+        />
+      )}
+
+      {/* ── Edit Employee Modal ── */}
+      {editingEmployeeId && employeeDetails && (
+        <EmployeeFormModal
+          title={`Employee Details — ${employeeDetails.name}`}
+          formData={empFormData}
+          setFormData={setEmpFormData}
+          onSubmit={handleUpdateEmployee}
+          onClose={() => { setEditingEmployeeId(null); setEmployeeDetails(null); }}
+          territories={territories}
+          shifts={shifts}
         />
       )}
 
@@ -421,14 +507,16 @@ export default function AdminManagersPage() {
   );
 }
 
-function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers }: {
+function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers, territories, shifts }: {
   title: string;
-  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; };
-  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; }>>;
+  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; territoryId: string; shiftId: string; baseSalary: number; bonus: number; travelAllowanceRate: number; };
+  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; territoryId: string; shiftId: string; baseSalary: number; bonus: number; travelAllowanceRate: number; }>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   submitLabel: string;
   managers: Manager[];
+  territories: any[];
+  shifts: any[];
 }) {
   const isAdd = title.includes("Add");
   return (
@@ -452,27 +540,59 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" /></div>
           </div>
           {isAdd && (
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role *</label>
-                <select className="input" value={formData.role} onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))} required>
-                  <option value="MANAGER">Manager</option>
-                  <option value="FIELD_STAFF">Field Staff</option>
-                  <option value="OFFICE_STAFF">Office Staff</option>
-                </select>
-              </div>
-              {formData.role !== "MANAGER" && (
+            <>
+              <div style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Reports To *</label>
-                  <select className="input" value={formData.managerId} onChange={(e) => setFormData((p) => ({ ...p, managerId: e.target.value }))} required>
-                    <option value="">-- Select Manager --</option>
-                    {managers.map(m => (
-                      <option key={m.id} value={m.id}>{m.name} ({m.department})</option>
-                    ))}
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role *</label>
+                  <select className="input" value={formData.role} onChange={(e) => setFormData((p) => ({ ...p, role: e.target.value }))} required>
+                    <option value="MANAGER">Manager</option>
+                    <option value="FIELD_STAFF">Field Staff</option>
+                    <option value="OFFICE_STAFF">Office Staff</option>
                   </select>
                 </div>
-              )}
-            </div>
+                {formData.role !== "MANAGER" && (
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Reports To *</label>
+                    <select className="input" value={formData.managerId} onChange={(e) => setFormData((p) => ({ ...p, managerId: e.target.value }))} required>
+                      <option value="">-- Select Manager --</option>
+                      {managers.map(m => (
+                        <option key={m.id} value={m.id}>{m.name} ({m.department})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Territory</label>
+                  <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
+                    <option value="">-- No Territory --</option>
+                    {territories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Shift</label>
+                  <select className="input" value={formData.shiftId} onChange={(e) => setFormData((p) => ({ ...p, shiftId: e.target.value }))}>
+                    <option value="">-- No Shift --</option>
+                    {shifts.map(s => <option key={s.id} value={s.id}>{s.name} ({s.startTime} - {s.endTime})</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Base Salary (₹)</label>
+                  <input type="number" className="input" value={formData.baseSalary} onChange={(e) => setFormData((p) => ({ ...p, baseSalary: Number(e.target.value) }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Bonus (₹)</label>
+                  <input type="number" className="input" value={formData.bonus} onChange={(e) => setFormData((p) => ({ ...p, bonus: Number(e.target.value) }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Travel Allowance (₹/km)</label>
+                  <input type="number" className="input" value={formData.travelAllowanceRate} onChange={(e) => setFormData((p) => ({ ...p, travelAllowanceRate: Number(e.target.value) }))} />
+                </div>
+              </div>
+            </>
           )}
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{isAdd ? "Password *" : "New Password (Optional)"}</label>
@@ -481,6 +601,103 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary" style={{ background: "#3b82f6" }}>{submitLabel}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EmployeeFormModal({ title, formData, setFormData, onSubmit, onClose, territories, shifts }: {
+  title: string;
+  formData: { name: string; email: string; department: string; phone: string; status: string; baseSalary: number; bonus: number; travelAllowanceRate: number; territoryId: string; shiftId: string; role: string; password?: string; };
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+  territories: any[];
+  shifts: any[];
+}) {
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box" style={{ maxWidth: 600 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b" }}>{title}</h2>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
+        </div>
+        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Full Name</label><input type="text" required className="input" value={formData.name} onChange={(e) => setFormData((p: any) => ({ ...p, name: e.target.value }))} /></div>
+            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Email</label><input type="email" required className="input" value={formData.email} onChange={(e) => setFormData((p: any) => ({ ...p, email: e.target.value }))} /></div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Department</label>
+              <select className="input" value={formData.department} onChange={(e) => setFormData((p: any) => ({ ...p, department: e.target.value }))}>
+                <option value="Sales">Sales</option>
+                <option value="Operations">Operations</option>
+                <option value="Delivery">Delivery</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Field Services">Field Services</option>
+                <option value="Support">Support</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p: any) => ({ ...p, phone: e.target.value }))} /></div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role</label>
+              <select className="input" value={formData.role} onChange={(e) => setFormData((p: any) => ({ ...p, role: e.target.value }))}>
+                <option value="FIELD_STAFF">Field Staff</option>
+                <option value="OFFICE_STAFF">Office Staff</option>
+                <option value="MANAGER">Manager</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Status</label>
+              <select className="input" value={formData.status} onChange={(e) => setFormData((p: any) => ({ ...p, status: e.target.value }))}>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="SUSPENDED">Suspended</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Territory</label>
+              <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p: any) => ({ ...p, territoryId: e.target.value }))}>
+                <option value="">-- No Territory --</option>
+                {territories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Shift</label>
+              <select className="input" value={formData.shiftId} onChange={(e) => setFormData((p: any) => ({ ...p, shiftId: e.target.value }))}>
+                <option value="">-- No Shift --</option>
+                {shifts.map(s => <option key={s.id} value={s.id}>{s.name} ({s.startTime} - {s.endTime})</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Base Salary (₹)</label>
+              <input type="number" className="input" value={formData.baseSalary} onChange={(e) => setFormData((p: any) => ({ ...p, baseSalary: e.target.value }))} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Bonus (₹)</label>
+              <input type="number" className="input" value={formData.bonus} onChange={(e) => setFormData((p: any) => ({ ...p, bonus: e.target.value }))} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Travel Allowance (₹/km)</label>
+              <input type="number" className="input" value={formData.travelAllowanceRate} onChange={(e) => setFormData((p: any) => ({ ...p, travelAllowanceRate: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>New Password (Optional)</label>
+            <input type="text" autoComplete="new-password" placeholder="Leave blank to keep current password" className="input" value={formData.password || ""} onChange={(e) => setFormData((p: any) => ({ ...p, password: e.target.value }))} />
+          </div>
+          
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="submit" className="btn-primary" style={{ background: "#3b82f6" }}>Save Details</button>
           </div>
         </form>
       </div>
