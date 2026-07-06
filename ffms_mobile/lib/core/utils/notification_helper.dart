@@ -65,4 +65,34 @@ class NotificationHelper {
       platformChannelSpecifics,
     );
   }
+
+  /// Shows a high-priority notification when an auto punch-out is triggered
+  /// (9-hour limit rule or midnight daily reset).
+  static Future<void> showAutoPunchOutNotification({
+    required String title,
+    required String body,
+  }) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'auto_punch_out_channel',
+      'Auto Punch-Out Alerts',
+      channelDescription: 'Alerts when the system automatically punches you out',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+      ticker: 'auto_punch_out',
+      // Makes it a heads-up notification (shows as a banner)
+      fullScreenIntent: false,
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidDetails);
+    await _notificationsPlugin.show(
+      99901, // Fixed ID so repeated triggers replace, not stack
+      title,
+      body,
+      platformChannelSpecifics,
+    );
+  }
 }
+

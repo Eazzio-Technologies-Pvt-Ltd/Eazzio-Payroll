@@ -24,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  bool _isLoggingOut = false;
 
   @override
   void initState() {
@@ -59,11 +60,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
+  void _handleLogout(BuildContext context) {
+    // Guard against multiple rapid taps
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
+    // logout() is now synchronous — clears local state instantly
+    authProvider.logout();
+
+    // Navigate immediately without waiting for any network call
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/role_selection', (route) => false);
     }
   }
 
@@ -655,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     'Log Out',
                     style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
-                  onPressed: () => _handleLogout(context),
+                  onPressed: _isLoggingOut ? null : () => _handleLogout(context),
                 ),
               ),
             ),

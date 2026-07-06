@@ -72,6 +72,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = false);
 
     if (success) {
+      final user = authProvider.currentUser;
+      final String selectedRole = (ModalRoute.of(context)?.settings.arguments as String?) ?? 'FIELD_STAFF';
+      
+      if (user != null && user.role != selectedRole) {
+        authProvider.logout();
+        if (mounted) {
+          String expectedPortal = 'Employee';
+          if (user.role == 'MANAGER') expectedPortal = 'Manager';
+          if (user.role == 'ADMIN') expectedPortal = 'Employer';
+          
+          String selectedPortal = 'Employee';
+          if (selectedRole == 'MANAGER') selectedPortal = 'Manager';
+          if (selectedRole == 'ADMIN') selectedPortal = 'Employer';
+
+          AppToast.showError(
+            context, 
+            'Access Denied: This account is registered for $expectedPortal Portal. You cannot login via $selectedPortal Portal.'
+          );
+        }
+        return;
+      }
+
       if (mounted) {
         AppToast.showSuccess(context, 'Login successful!');
         Navigator.pushReplacementNamed(context, '/home');
@@ -88,30 +110,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     // Uses Responsive helper — no hardcoded sizes
     final r = Responsive(context);
     final screenSize = MediaQuery.of(context).size;
+    final String selectedRole = (ModalRoute.of(context)?.settings.arguments as String?) ?? 'FIELD_STAFF';
+
+    // Role-specific theming
+    final _RoleTheme theme = _getRoleTheme(selectedRole);
     return Scaffold(
-      backgroundColor: AppColors.bgPage,
-      body: Stack(
-        children: [
-          // Top 40% Gradient Background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: screenSize.height * 0.40,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: AppTheme.headerGradient,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
-              ),
-            ),
-          ),
-          
-          // Scrollable Content
-          SafeArea(
-            child: SingleChildScrollView(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+          child: Stack(
+            children: [
+              // Scrollable Content
+              SafeArea(
+                child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Container(
                 constraints: BoxConstraints(
@@ -130,36 +142,46 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     // Top Section: Logo and Title
                     Column(
                       children: [
-                        SizedBox(height: r.spaceLG),
-
-                        // ── Logo container ──────────────────────────────────
-                         // Render the horizontal brand logo directly on the dark background
-                         // Uses 65% of screen width to ensure perfect readability
-                         SizedBox(
-                           width: r.width * 0.65,
-                           child: Image.asset(
-                             'assets/images/logo.png',
-                             fit: BoxFit.contain,
-                           ),
-                         ),
+                        // ── Back button + Logo ──────────────────────────────
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: theme.bgColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: theme.accentColor.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  size: 16,
+                                  color: theme.accentColor,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            SizedBox(
+                              width: r.width * 0.40,
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const Spacer(),
+                            // Spacer mirror for centering logo
+                            const SizedBox(width: 40),
+                          ],
+                        ),
 
                          SizedBox(height: screenSize.height * 0.024),
-
-                        // Subtitle — responsive font size
-                        Text(
-                          'Enter your credentials to access your account',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: r.fontMD, // ~14px, responsive
-                            color: Colors.white.withOpacity(0.85),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: r.spaceXL),
                       ],
                     ),
                     
-                    // Middle Section: Form Card with slide-up animation
+                    // Middle Section: Form Card with slide-up animation and 3D black glow effect
                     SlideTransition(
                       position: _slideAnimation,
                       child: FadeTransition(
@@ -177,29 +199,68 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               color: AppColors.border,
                               width: 1,
                             ),
-                            boxShadow: AppTheme.cardShadow,
+                            boxShadow: [
+                              // Deeper ambient glow
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 30,
+                                spreadRadius: 6,
+                                offset: const Offset(0, 15),
+                              ),
+                              // Sharp close 3D shadow
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                          child: Form(
+                           child: Form(
                             key: _formKey,
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome Back 👋',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textPrimary,
-                                    fontSize: r.fontXL, // responsive font size
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(height: r.spaceXS),
-                                Text(
-                                  'Sign in to continue',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textSecondary,
-                                    fontSize: r.fontMD, // responsive font size
-                                  ),
-                                ),
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 // Role badge
+                                 Container(
+                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                   decoration: BoxDecoration(
+                                     color: theme.bgColor,
+                                     borderRadius: BorderRadius.circular(20),
+                                   ),
+                                   child: Row(
+                                     mainAxisSize: MainAxisSize.min,
+                                     children: [
+                                       Icon(theme.icon, size: 13, color: theme.accentColor),
+                                       const SizedBox(width: 5),
+                                       Text(
+                                         theme.portalTag,
+                                         style: GoogleFonts.inter(
+                                           fontSize: 11,
+                                           fontWeight: FontWeight.w600,
+                                           color: theme.accentColor,
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                                 SizedBox(height: r.spaceSM),
+                                 Text(
+                                   theme.welcomeTitle,
+                                   style: GoogleFonts.inter(
+                                     color: AppColors.textPrimary,
+                                     fontSize: r.fontXL,
+                                     fontWeight: FontWeight.w700,
+                                   ),
+                                 ),
+                                 SizedBox(height: r.spaceXS),
+                                 Text(
+                                   theme.welcomeSubtitle,
+                                   style: GoogleFonts.inter(
+                                     color: AppColors.textSecondary,
+                                     fontSize: r.fontMD,
+                                   ),
+                                 ),
                                 SizedBox(height: r.spaceLG),
                                 CustomTextField(
                                   controller: _emailController,
@@ -283,6 +344,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
         ],
       ),
+    ),
+      ),
     );
   }
 
@@ -292,5 +355,56 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _passwordController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+}
+
+// ── Role-specific theming data ────────────────────────────────────────────────
+class _RoleTheme {
+  final String portalTag;
+  final String welcomeTitle;
+  final String welcomeSubtitle;
+  final Color accentColor;
+  final Color bgColor;
+  final IconData icon;
+
+  const _RoleTheme({
+    required this.portalTag,
+    required this.welcomeTitle,
+    required this.welcomeSubtitle,
+    required this.accentColor,
+    required this.bgColor,
+    required this.icon,
+  });
+}
+
+_RoleTheme _getRoleTheme(String role) {
+  switch (role) {
+    case 'MANAGER':
+      return const _RoleTheme(
+        portalTag: 'Manager Portal',
+        welcomeTitle: 'Welcome, Manager! 👥',
+        welcomeSubtitle: 'Sign in to manage your team and approvals',
+        accentColor: Color(0xFF7C3AED),
+        bgColor: Color(0xFFF5F3FF),
+        icon: Icons.groups_rounded,
+      );
+    case 'ADMIN':
+      return const _RoleTheme(
+        portalTag: 'Office Staff Portal',
+        welcomeTitle: 'Welcome, Office Staff! 🏢',
+        welcomeSubtitle: 'Sign in to access HR, payroll & admin tools',
+        accentColor: Color(0xFF059669),
+        bgColor: Color(0xFFECFDF5),
+        icon: Icons.business_center_rounded,
+      );
+    default: // FIELD_STAFF
+      return const _RoleTheme(
+        portalTag: 'Field Staff Portal',
+        welcomeTitle: 'Welcome Back! 👋',
+        welcomeSubtitle: 'Sign in to punch in and track your day',
+        accentColor: Color(0xFF2563EB),
+        bgColor: Color(0xFFEFF6FF),
+        icon: Icons.directions_walk_rounded,
+      );
   }
 }

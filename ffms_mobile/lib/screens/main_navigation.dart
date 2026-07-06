@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'tasks_screen.dart';
 import 'map_screen.dart';
 import 'attendance_screen.dart';
 import 'profile_screen.dart';
 import '../core/theme/app_theme.dart';
+import '../providers/attendance_provider.dart';
+import '../services/auto_punch_out_service.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -24,6 +27,27 @@ class _MainNavigationState extends State<MainNavigation> {
     const AttendanceScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the auto punch-out service once the user is authenticated
+    // and the home navigation is mounted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final attendanceProvider =
+          Provider.of<AttendanceProvider>(context, listen: false);
+      AutoPunchOutService.instance.start(attendanceProvider);
+      debugPrint('[MainNavigation] AutoPunchOutService started.');
+    });
+  }
+
+  @override
+  void dispose() {
+    // Stop the auto punch-out service when navigating away (e.g., logout)
+    AutoPunchOutService.instance.stop();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
