@@ -8,10 +8,10 @@ const router = express.Router();
 router.use(authenticate);
 router.use(checkOrgAccess);
 
-// Check-in and out (Field Staff)
-router.post('/check-in', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.checkIn);
-router.post('/check-out', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.checkOut);
-router.post('/status-photo', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanceController.uploadStatusPhoto);
+// Check-in and out (Field Staff, Office Staff, Manager)
+router.post('/check-in', authorize('FIELD_STAFF', 'OFFICE_STAFF', 'MANAGER'), attendanceController.checkIn);
+router.post('/check-out', authorize('FIELD_STAFF', 'OFFICE_STAFF', 'MANAGER'), attendanceController.checkOut);
+router.post('/status-photo', authorize('FIELD_STAFF', 'OFFICE_STAFF', 'MANAGER'), attendanceController.uploadStatusPhoto);
 
 // Live and aggregates (Manager+)
 router.get('/today', authorize('ADMIN', 'MANAGER'), attendanceController.getTodayAttendance);
