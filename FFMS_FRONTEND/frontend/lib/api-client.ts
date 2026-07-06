@@ -263,6 +263,22 @@ export const attendanceApi = {
     request<ApiAttendance>("POST", "/attendance/check-in", data),
   checkOut: (data: { latitude: number; longitude: number; notes?: string }) =>
     request<ApiAttendance>("POST", "/attendance/check-out", data),
+  generateReportPdf: (userId: string, month: string, companyName?: string) => {
+    const token = getAuthToken();
+    let url = `${BASE_URL}/attendance/report/${userId}?month=${encodeURIComponent(month)}`;
+    if (companyName) url += `&companyName=${encodeURIComponent(companyName)}`;
+    return fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+    });
+  },
+  emailReportPdf: (userId: string, month: string, companyName?: string) =>
+    request<any>(
+      "POST",
+      `/attendance/report/${userId}/email`,
+      undefined,
+      ({ month, ...(companyName ? { companyName } : {}) } as Record<string, string>)
+    )
 };
 
 // ─── Tasks ───────────────────────────────────────────

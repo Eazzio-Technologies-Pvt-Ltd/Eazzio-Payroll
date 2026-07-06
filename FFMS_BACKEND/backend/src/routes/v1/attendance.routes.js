@@ -17,9 +17,12 @@ router.post('/status-photo', authorize('FIELD_STAFF', 'OFFICE_STAFF'), attendanc
 router.get('/today', authorize('ADMIN', 'MANAGER'), attendanceController.getTodayAttendance);
 router.get('/summary', authorize('ADMIN', 'MANAGER'), attendanceController.getAttendanceSummary);
 
-// History and correction
-router.get('/', attendanceController.listAttendance); // Authenticate middleware handles role restriction inside service
-router.patch('/:id', authorize('ADMIN'), attendanceController.manualCorrection);
+// Reports — MUST be before /:id to avoid Express matching 'report' as an ID param
+router.get('/report/:userId', authorize('ADMIN', 'MANAGER'), attendanceController.generateAttendancePdf);
+router.post('/report/:userId/email', authorize('ADMIN', 'MANAGER'), attendanceController.emailAttendancePdf);
 
+// History and correction — generic /:id routes come AFTER named routes
+router.get('/', attendanceController.listAttendance);
+router.patch('/:id', authorize('ADMIN'), attendanceController.manualCorrection);
 
 module.exports = router;
