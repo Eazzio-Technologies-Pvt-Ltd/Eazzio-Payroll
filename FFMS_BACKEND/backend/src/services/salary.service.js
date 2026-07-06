@@ -1,25 +1,6 @@
 const prisma = require('../config/prisma');
+const { getISTDateBoundaries, getWorkingDaysInMonth } = require('../utils/salaryUtils');
 
-/**
- * Calculate total working days in a date range (excluding Sundays).
- * Mon-Sat are considered working days; Sundays are excluded.
- * 
- * @param {Date} startDate 
- * @param {Date} endDate 
- * @returns {number}
- */
-const getWorkingDaysInRange = (startDate, endDate) => {
-  let workingDays = 0;
-  const d = new Date(startDate);
-  const end = new Date(endDate);
-  while (d <= end) {
-    if (d.getDay() !== 0) { // 0 = Sunday
-      workingDays++;
-    }
-    d.setDate(d.getDate() + 1);
-  }
-  return workingDays;
-};
 
 /**
  * Fetch and calculate salary list for a month.
@@ -35,24 +16,28 @@ const getWorkingDaysInRange = (startDate, endDate) => {
  * @returns {Promise<Object>}
  */
 const getSalaryList = async (organizationId, monthStr) => {
-  // Determine the date range
-  let startDate, endDate;
+  // Determine IST-safe date boundaries
+  // Using explicit +05:30 offset so Prisma @db.Date comparisons work correctly
+  // regardless of the server's system timezone (UTC on most deployments).
+  let startDate, endDate, year, m;
+
   if (monthStr) {
-    const [year, m] = monthStr.split('-');
-    startDate = new Date(parseInt(year, 10), parseInt(m, 10) - 1, 1);
-    endDate = new Date(parseInt(year, 10), parseInt(m, 10), 0); // Last day of the month
+    const parts = monthStr.split('-');
+    year = parseInt(parts[0], 10);
+    m    = parseInt(parts[1], 10);
+    ({ startDate, endDate } = getISTDateBoundaries(monthStr));
   } else {
     const now = new Date();
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    year = now.getFullYear();
+    m    = now.getMonth() + 1; // 1-based
+    const mStr = String(m).padStart(2, '0');
+    ({ startDate, endDate } = getISTDateBoundaries(`${year}-${mStr}`));
   }
 
-  // Include the full day for endDate boundary
-  const endDateBoundary = new Date(endDate);
-  endDateBoundary.setHours(23, 59, 59, 999);
+  const endDateBoundary = endDate; // alias — endDate already includes 23:59:59.999 IST
 
-  // Exclude Sundays to get working days in month
-  const totalWorkingDays = getWorkingDaysInRange(startDate, endDateBoundary);
+  // Working days for this month (Mon-Sat, Sunday excluded)
+  const totalWorkingDays = getWorkingDaysInMonth(year, m);
 
   // Fetch all active users in the organization
   const users = await prisma.user.findMany({
@@ -254,7 +239,6 @@ const updateSalaryStructure = async (userId, organizationId, { baseSalary, bonus
 };
 
 module.exports = {
-  getWorkingDaysInRange,
   getSalaryList,
   updateSalaryStructure,
 };

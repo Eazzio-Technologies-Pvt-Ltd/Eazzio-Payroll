@@ -127,3 +127,11 @@ dist
 # Uploads / tmp files
 /uploads/
 /tmp/
+
+# Debug/scratch files
+check.js
+check_att.js
+*.check.js
+scratch/
+generate_mock_route.js
+patch-*.js

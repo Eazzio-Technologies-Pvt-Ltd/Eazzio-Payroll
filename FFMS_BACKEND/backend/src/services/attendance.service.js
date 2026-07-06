@@ -5,6 +5,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 const logger = require('../config/logger');
 const { getLocalDate, getLocalHoursAndMinutes } = require('../utils/timezone');
 const { closeAbandonedSessions } = require('../utils/sessionCleanup');
+const { getISTDateBoundaries } = require('../utils/salaryUtils');
 
 
 /**
@@ -359,10 +360,14 @@ const listAttendance = async ({
     dateFilters.lte = new Date(effectiveEndDate);
   }
   if (month || year) {
-    const y = year ? parseInt(year) : new Date().getFullYear();
-    const m = month ? parseInt(month) - 1 : 0;
-    dateFilters.gte = new Date(Date.UTC(y, m, 1));
-    dateFilters.lte = new Date(Date.UTC(y, m + (month ? 1 : 12), 0));
+    const y   = year  ? parseInt(year, 10)  : new Date().getFullYear();
+    const mon = month ? parseInt(month, 10) : new Date().getMonth() + 1;
+    const mStr = String(mon).padStart(2, '0');
+    // Use IST-safe boundaries — same approach as salary service — so attendance
+    // records stored with IST-based @db.Date are correctly matched.
+    const { startDate: istStart, endDate: istEnd } = getISTDateBoundaries(`${y}-${mStr}`);
+    dateFilters.gte = istStart;
+    dateFilters.lte = istEnd;
   }
 
   const where = {
