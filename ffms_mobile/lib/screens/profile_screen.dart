@@ -11,6 +11,8 @@ import 'expenses_screen.dart';
 import 'feedback_screen.dart';
 import 'permissions_screen.dart';
 import '../core/utils/salary_helper.dart';
+import '../providers/attendance_provider.dart';
+import 'package:intl/intl.dart';
 
 // Profile screen v2 — gradient header + modern stat cards + clean settings list
 class ProfileScreen extends StatefulWidget {
@@ -377,7 +379,47 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
     final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
     if (baseSalary > 0 && dynamicWorkingDays > 0) {
-      accruedSalary = (present / dynamicWorkingDays) * baseSalary;
+      final dailySalaryRate = baseSalary / dynamicWorkingDays;
+      final logs = Provider.of<AttendanceProvider>(context).attendanceHistory;
+
+      // Group sessions by date to prevent duplicate rows and sum/factor correctly
+      final Map<String, List<dynamic>> groupedByDate = {};
+      for (final log in logs) {
+        final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
+        groupedByDate.putIfAbsent(dateStr, () => []).add(log);
+      }
+
+      int getStatusRank(String status) {
+        final upper = status.toUpperCase();
+        if (upper == 'PRESENT' || upper == 'ON_DUTY') return 4;
+        if (upper == 'LATE') return 3;
+        if (upper == 'HALF_DAY') return 2;
+        if (upper == 'ABSENT') return 1;
+        return 0;
+      }
+
+      for (final dateLogs in groupedByDate.values) {
+        if (dateLogs.isEmpty) continue;
+        dynamic highestLog = dateLogs.first;
+        int highestRank = getStatusRank(highestLog.status);
+        for (final log in dateLogs) {
+          final rank = getStatusRank(log.status);
+          if (rank > highestRank) {
+            highestRank = rank;
+            highestLog = log;
+          }
+        }
+
+        final finalStatus = highestLog.status.toUpperCase();
+        double salaryFactor = 0.0;
+        if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
+          salaryFactor = 1.0;
+        } else if (finalStatus == 'HALF_DAY') {
+          salaryFactor = 0.5;
+        }
+
+        accruedSalary += dailySalaryRate * salaryFactor;
+      }
     }
 
     double attPct = totalWorkingDays > 0 ? (present / totalWorkingDays) * 100 : 100.0;
