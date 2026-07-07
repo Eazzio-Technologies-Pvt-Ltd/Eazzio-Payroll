@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       if (mounted) {
         AppToast.showSuccess(context, 'Login successful!');
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } else {
       if (mounted) {
