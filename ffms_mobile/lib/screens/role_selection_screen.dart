@@ -60,17 +60,17 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: r.spaceLG),
+                      SizedBox(height: r.spaceXL),
 
                       // Logo
                       SizedBox(
-                        width: r.width * 0.52,
+                        width: r.width * 0.65,
                         child: Image.asset(
                           'assets/images/logo.png',
                           fit: BoxFit.contain,
                         ),
                       ),
-                      SizedBox(height: r.spaceLG),
+                      SizedBox(height: r.spaceXL),
 
                       // Header
                       Text(
@@ -95,11 +95,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       ),
                       SizedBox(height: r.spaceXL),
 
-                      // Field Staff Card
+                      // Field & Office Staff Card
                       _RoleCard(
-                        title: 'Field Staff',
+                        title: 'Field & Office Staff',
                         welcomeTag: 'Employee Portal',
-                        subtitle: 'Punch in/out, track your routes, and view your payslips.',
+                        subtitle: 'Punch in/out, track your routes/tasks, and view your payslips.',
                         icon: Icons.directions_walk_rounded,
                         accentColor: const Color(0xFF2563EB),
                         bgColor: const Color(0xFFEFF6FF),

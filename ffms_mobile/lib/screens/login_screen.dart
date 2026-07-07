@@ -75,7 +75,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       final user = authProvider.currentUser;
       final String selectedRole = (ModalRoute.of(context)?.settings.arguments as String?) ?? 'FIELD_STAFF';
       
-      if (user != null && user.role != selectedRole) {
+      bool isAllowed = false;
+      if (selectedRole == 'FIELD_STAFF') {
+        isAllowed = user != null && (user.role == 'FIELD_STAFF' || user.role == 'OFFICE_STAFF' || user.role == 'EMPLOYEE');
+      } else {
+        isAllowed = user != null && user.role == selectedRole;
+      }
+
+      if (user != null && !isAllowed) {
         authProvider.logout();
         if (mounted) {
           String expectedPortal = 'Employee';
@@ -131,10 +138,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       - MediaQuery.of(context).padding.top
                       - MediaQuery.of(context).padding.bottom,
                 ),
-                padding: EdgeInsets.symmetric(
-                  // Responsive horizontal padding — scales on all screen widths
+                padding: EdgeInsets.only(
                   horizontal: r.screenPadding,
-                  vertical: r.spaceMD,
+                  top: r.spaceXL,
+                  bottom: r.spaceMD,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -165,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             ),
                             const Spacer(),
                             SizedBox(
-                              width: r.width * 0.40,
+                              width: r.width * 0.52,
                               child: Image.asset(
                                 'assets/images/logo.png',
                                 fit: BoxFit.contain,
@@ -177,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ],
                         ),
 
-                         SizedBox(height: screenSize.height * 0.024),
+                         SizedBox(height: screenSize.height * 0.04),
                       ],
                     ),
                     
@@ -399,9 +406,9 @@ _RoleTheme _getRoleTheme(String role) {
       );
     default: // FIELD_STAFF
       return const _RoleTheme(
-        portalTag: 'Field Staff Portal',
+        portalTag: 'Field & Office Staff Portal',
         welcomeTitle: 'Welcome Back! 👋',
-        welcomeSubtitle: 'Sign in to punch in and track your day',
+        welcomeSubtitle: 'Sign in to track your day and tasks',
         accentColor: Color(0xFF2563EB),
         bgColor: Color(0xFFEFF6FF),
         icon: Icons.directions_walk_rounded,
