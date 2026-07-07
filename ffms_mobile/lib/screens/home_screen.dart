@@ -406,8 +406,38 @@ class _HomeScreenState extends State<HomeScreen> {
               return false;
             }
           }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+          return false;
         }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return false;
       }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return false;
     }
 
     // ── Execute punch action ─────────────────────────────────────────────────
@@ -619,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               SizedBox(height: r.spaceMD),
-
+              if (authUser?.role != 'ADMIN') ...[
               // ─── Punch Action Button ─────────────────────────────────
               (() {
                 if (_isLoading) {
@@ -2064,6 +2094,73 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              ] else ...[
+                const SizedBox(height: 24),
+                AnimatedCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primarySoft,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: AppColors.primary,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              'Employer Control Panel',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'You are logged in as the Organization Administrator (Employer). On this panel, you can manage system tasks, review payroll metrics, and oversee the entire field workforce.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.onPrimary,
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  Navigator.pushNamed(context, '/tasks');
+                                },
+                                icon: const Icon(Icons.assignment),
+                                label: const Text('Manage Tasks'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             ],
           ),
         ),

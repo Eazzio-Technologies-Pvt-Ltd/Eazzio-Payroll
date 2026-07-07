@@ -4,46 +4,46 @@ import 'package:google_fonts/google_fonts.dart';
 // ============================================================
 // EAZZIO PAYROLL — DESIGN SYSTEM v2
 // Modern Employee Management App UI
-// Reference: Petpooja Payroll + 2025 Material Design trends
+// Reference: Eazzio brand colors (white/navy/mint-green)
 // ============================================================
 
 class AppColors {
-  // --- PRIMARY COLORS ---
-  static const Color primary = Color(0xFF0CD693);        // Teal/Green for all buttons
-  static const Color primaryLight = Color(0xFF33FFAA);   // Light Teal
-  static const Color primarySoft = Color(0xFFE6FFF5);    // Soft Teal bg
-  static const Color primaryDark = Color(0xFF079968);    // Dark Teal
+  // --- PRIMARY COLORS (Teal Green CTA) ---
+  static const Color primary = Color(0xFF008080);        // Teal green CTA
+  static const Color primaryLight = Color(0xFF339999);
+  static const Color primarySoft = Color(0x14008080);    // 8% opacity Teal Green for accents/highlights
+  static const Color primaryDark = Color(0xFF004D4D);    // Dark Teal
 
-  // --- ACCENT COLORS ---
-  static const Color accent = Color(0xFF0B093E);         // Solid Navy Blue accent from logo
-  static const Color accentSoft = Color(0xFFF0F1FA);     // Soft Navy Blue bg
+  // --- ACCENT COLORS (Black System) ---
+  static const Color accent = Color(0xFF000000);         // Solid Black
+  static const Color accentSoft = Color(0xFFF7F8FA);     // Soft faint off-white
 
   // --- SEMANTIC COLORS ---
-  static const Color success = Color(0xFF059669);        // Green — punch in
-  static const Color successSoft = Color(0xFFECFDF5);    // Soft green bg
-  static const Color warning = Color(0xFFD97706);        // Amber — pending
-  static const Color warningSoft = Color(0xFFFFFBEB);    // Soft amber bg
-  static const Color error = Color(0xFFDC2626);          // Red — punch out
-  static const Color errorSoft = Color(0xFFFEF2F2);      // Soft red bg
-  static const Color info = Color(0xFF0891B2);           // Cyan — info
+  static const Color success = Color(0xFF1FAE74);        // Deeper green success state
+  static const Color successSoft = Color(0x141FAE74);    // 8% success tint
+  static const Color warning = Color(0xFFD97706);        // Amber
+  static const Color warningSoft = Color(0xFFFFFBEB);
+  static const Color error = Color(0xFFE5484D);          // Red warning
+  static const Color errorSoft = Color(0xFFFEF2F2);
+  static const Color info = Color(0xFF0891B2);
 
   // --- NEUTRAL COLORS ---
   static const Color bgPage = Color(0xFFFFFFFF);         // Page background: WHITE
-  static const Color bgCard = Color(0xFFFFFFFF);         // Card background
-  static const Color bgInput = Color(0xFFF8FAFC);        // Input background
-  static const Color border = Color(0xFFE2E8F0);         // Border color
-  static const Color divider = Color(0xFFE2E8F0);        // Divider
+  static const Color bgCard = Color(0xFFF7F8FA);         // Card background: Faint off-white
+  static const Color bgInput = Color(0xFFFFFFFF);        // Input background: WHITE
+  static const Color border = Color(0xFFE4E4EC);         // Border color
+  static const Color divider = Color(0xFFE4E4EC);        // Divider
 
   // --- TEXT COLORS ---
-  static const Color textPrimary = Color(0xFF0F172A);    // Almost black for legibility
-  static const Color textSecondary = Color(0xFF475569);  // Slate grey
-  static const Color textTertiary = Color(0xFF94A3B8);   // Light grey
-  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White on buttons
+  static const Color textPrimary = Color(0xFF000000);    // Solid Black (100% opacity)
+  static const Color textSecondary = Color(0xCC000000);  // Black at 80% opacity
+  static const Color textTertiary = Color(0x99000000);   // Black at 60% opacity
+  static const Color textOnPrimary = Color(0xFFFFFFFF);  // White text on Teal Green primary buttons
 
   // Backward compatibility mappings
-  static const Color onPrimary = Colors.white;
+  static const Color onPrimary = textOnPrimary;
   static const Color primaryContainer = primarySoft;
-  static const Color onPrimaryContainer = primaryDark;
+  static const Color onPrimaryContainer = textPrimary;
   
   static const Color secondary = success;
   static const Color onSecondary = Colors.white;
@@ -71,22 +71,22 @@ class AppColors {
 class AppTheme {
   // --- GRADIENTS (Flat solid colors to meet no-gradient constraint) ---
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF0B093E), Color(0xFF0B093E)],
+    colors: [Color(0xFF008080), Color(0xFF008080)], // Teal Green
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient punchInGradient = LinearGradient(
-    colors: [Color(0xFF0CD693), Color(0xFF0CD693)],
+    colors: [Color(0xFF1FAE74), Color(0xFF1FAE74)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient punchOutGradient = LinearGradient(
-    colors: [Color(0xFFDC2626), Color(0xFFDC2626)],
+    colors: [Color(0xFFE5484D), Color(0xFFE5484D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static const LinearGradient salaryGradient = LinearGradient(
-    colors: [Color(0xFF0B093E), Color(0xFF0B093E)],
+    colors: [Color(0xFF008080), Color(0xFF008080)], // Teal Green
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -94,7 +94,7 @@ class AppTheme {
   // --- SHADOWS ---
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+      color: const Color(0xFF000000).withValues(alpha: 0.08), // Tinted black shadow
       blurRadius: 16,
       offset: const Offset(0, 4),
       spreadRadius: 0,
@@ -102,7 +102,7 @@ class AppTheme {
   ];
   static List<BoxShadow> buttonShadow = [
     BoxShadow(
-      color: AppColors.primary.withValues(alpha: 0.30),
+      color: const Color(0xFF008080).withValues(alpha: 0.30), // Teal shadow
       blurRadius: 12,
       offset: const Offset(0, 4),
       spreadRadius: 0,
@@ -281,7 +281,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.02),
+        shadowColor: const Color(0xFF000000).withValues(alpha: 0.04),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLarge),
           side: const BorderSide(color: AppColors.outlineVariant, width: 1),
@@ -290,7 +290,7 @@ class AppTheme {
       ),
       // Sleek Web-like AppBar
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.bgPage,
         foregroundColor: AppColors.onSurface,
         elevation: 0,
         centerTitle: false,
@@ -302,7 +302,7 @@ class AppTheme {
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.bgPage,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.outline,
         elevation: 10,

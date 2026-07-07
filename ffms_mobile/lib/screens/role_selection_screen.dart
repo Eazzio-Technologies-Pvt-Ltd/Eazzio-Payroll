@@ -121,18 +121,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       ),
                       SizedBox(height: r.spaceMD),
 
-                      // Office Staff Card
-                      _RoleCard(
-                        title: 'Office Staff',
-                        welcomeTag: 'Office Staff Portal',
-                        subtitle: 'Handle payroll, HR records, compliance, and admin tasks.',
-                        icon: Icons.business_center_rounded,
-                        accentColor: const Color(0xFF059669),
-                        bgColor: const Color(0xFFECFDF5),
-                        role: 'ADMIN',
-                        r: r,
-                      ),
-
                       SizedBox(height: r.spaceXL),
 
                       // Footer
