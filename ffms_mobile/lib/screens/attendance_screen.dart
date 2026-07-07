@@ -601,6 +601,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'My Attendance',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),

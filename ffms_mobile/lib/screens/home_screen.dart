@@ -562,6 +562,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Eazzio Payroll',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),

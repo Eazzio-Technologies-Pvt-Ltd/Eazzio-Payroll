@@ -123,6 +123,7 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'My Tasks',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),

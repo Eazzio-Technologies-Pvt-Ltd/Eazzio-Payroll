@@ -429,6 +429,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'My Profile',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
