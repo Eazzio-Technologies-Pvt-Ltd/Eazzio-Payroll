@@ -139,7 +139,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       - MediaQuery.of(context).padding.bottom,
                 ),
                 padding: EdgeInsets.only(
-                  horizontal: r.screenPadding,
+                  left: r.screenPadding,
+                  right: r.screenPadding,
                   top: r.spaceXL,
                   bottom: r.spaceMD,
                 ),
