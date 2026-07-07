@@ -150,6 +150,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     // Top Section: Logo and Title
                     Column(
                       children: [
+                        SizedBox(height: r.spaceLG),
                         // ── Back button + Logo ──────────────────────────────
                         Row(
                           children: [
@@ -173,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             ),
                             const Spacer(),
                             SizedBox(
-                              width: r.width * 0.52,
+                              width: r.width * 0.58,
                               child: Image.asset(
                                 'assets/images/logo.png',
                                 fit: BoxFit.contain,
@@ -185,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ],
                         ),
 
-                         SizedBox(height: screenSize.height * 0.04),
+                         SizedBox(height: screenSize.height * 0.06),
                       ],
                     ),
                     
