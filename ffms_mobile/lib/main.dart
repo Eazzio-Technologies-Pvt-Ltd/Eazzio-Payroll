@@ -94,7 +94,7 @@ class EazzioPayrollApp extends StatelessWidget {
         pageTransitionsTheme: PageTransitionsTheme(
           builders: {
             TargetPlatform.android: const _SlidePageTransition(),
-            TargetPlatform.iOS: const ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: const _SlidePageTransition(),
           },
         ),
       ),
