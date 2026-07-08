@@ -33,6 +33,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^9.0.1",
     "pdfkit": "^0.18.0",
+    "razorpay": "^2.9.6",
     "socket.io": "^4.7.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

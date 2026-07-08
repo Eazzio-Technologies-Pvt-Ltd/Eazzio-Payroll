@@ -79,7 +79,7 @@ interface SearchResult {
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const currentUser = useSelector((s: RootState) => s.auth.user);
 
   const info = { ...(pageTitles[pathname] || { title: "Field Force", subtitle: "" }) };
@@ -122,8 +122,8 @@ export default function Topbar() {
     if (!mounted) return "RK"; // Default server-side render
     const activeUser = currentUser || defaultUser;
     const firstInit = activeUser.firstName ? activeUser.firstName.charAt(0).toUpperCase() : "";
-    const lastInit = activeUser.lastName 
-      ? activeUser.lastName.charAt(0).toUpperCase() 
+    const lastInit = activeUser.lastName
+      ? activeUser.lastName.charAt(0).toUpperCase()
       : (activeUser.designation ? activeUser.designation.charAt(0).toUpperCase() : "");
     return `${firstInit}${lastInit}` || "RK";
   };
@@ -131,7 +131,7 @@ export default function Topbar() {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  
+
   // Dropdown & Modal States
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -371,96 +371,96 @@ export default function Topbar() {
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         {/* Search bar with dropdown — hidden on mobile */}
         {!isMobile && (
-        <div ref={searchRef} style={{ position: "relative" }}>
-          <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", zIndex: 1 }} />
-          <input
-            id="topbar-search"
-            placeholder="Search..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onKeyDown={handleSearchKeyDown}
-            style={{
-              background: "#f1f5f9", border: "none",
-              borderRadius: "9999px", padding: "10px 16px 10px 40px",
-              color: "var(--text-primary)", fontSize: "13px", outline: "none",
-              width: "320px", fontFamily: "Inter, sans-serif",
-              transition: "all 0.15s ease",
-              boxShadow: isFocused ? "0 0 0 2px #2563eb" : "none",
-            }}
-          />
+          <div ref={searchRef} style={{ position: "relative" }}>
+            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", zIndex: 1 }} />
+            <input
+              id="topbar-search"
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={handleSearchKeyDown}
+              style={{
+                background: "#f1f5f9", border: "none",
+                borderRadius: "9999px", padding: "10px 16px 10px 40px",
+                color: "var(--text-primary)", fontSize: "13px", outline: "none",
+                width: "320px", fontFamily: "Inter, sans-serif",
+                transition: "all 0.15s ease",
+                boxShadow: isFocused ? "0 0 0 2px #2563eb" : "none",
+              }}
+            />
 
-          {/* Search results dropdown */}
-          {showDropdown && (
-            <div style={{
-              position: "absolute",
-              top: "calc(100% + 6px)",
-              left: 0,
-              width: "320px",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-              zIndex: 999,
-              maxHeight: "360px",
-              overflowY: "auto",
-            }}>
-              {results.length > 0 ? (
-                <>
-                  {results.map((r, i) => (
-                    <div
-                      key={`${r.path}-${i}`}
-                      onClick={() => handleSelect(r)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "10px 14px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid var(--border)",
-                        transition: "background 0.1s ease",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      {/* Type badge */}
-                      <div style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        background: r.type === "page" ? "rgba(79,142,247,0.12)" : "rgba(34,211,165,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}>
-                        {r.type === "page" ? (
-                          <Search size={12} color="var(--accent-blue)" />
-                        ) : (
-                          <User size={12} color="#22d3a5" />
-                        )}
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {r.label}
+            {/* Search results dropdown */}
+            {showDropdown && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                left: 0,
+                width: "320px",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                zIndex: 999,
+                maxHeight: "360px",
+                overflowY: "auto",
+              }}>
+                {results.length > 0 ? (
+                  <>
+                    {results.map((r, i) => (
+                      <div
+                        key={`${r.path}-${i}`}
+                        onClick={() => handleSelect(r)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 14px",
+                          cursor: "pointer",
+                          borderBottom: "1px solid var(--border)",
+                          transition: "background 0.1s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        {/* Type badge */}
+                        <div style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "50%",
+                          background: r.type === "page" ? "rgba(79,142,247,0.12)" : "rgba(34,211,165,0.12)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                          {r.type === "page" ? (
+                            <Search size={12} color="var(--accent-blue)" />
+                          ) : (
+                            <User size={12} color="#22d3a5" />
+                          )}
                         </div>
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                          {r.sub}
-                        </div>
-                      </div>
 
-                      <ArrowRight size={14} color="var(--text-muted)" />
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
-                  No results for &quot;{query}&quot;
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {r.label}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                            {r.sub}
+                          </div>
+                        </div>
+
+                        <ArrowRight size={14} color="var(--text-muted)" />
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
+                    No results for &quot;{query}&quot;
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Notification bell — navigates to /notifications */}
@@ -518,24 +518,24 @@ export default function Topbar() {
               overflow: "hidden",
             }}>
               {(mounted && (currentUser || defaultUser).photoUrl) ? (
-                <img 
-                  src={(currentUser || defaultUser).photoUrl!} 
-                  alt="Profile" 
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                <img
+                  src={(currentUser || defaultUser).photoUrl!}
+                  alt="Profile"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
                 getInitials()
               )}
             </div>
             {!isMobile && (
-            <div style={{ display: "none" }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-                {!mounted ? "Admin" : (currentUser ? (currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName}` : currentUser.firstName) : "Admin")}
-              </span>
-              <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-jetbrains), monospace", textTransform: "uppercase" }}>
-                {!mounted ? "Global Ops" : (currentUser?.designation || "Global Ops")}
-              </span>
-            </div>
+              <div style={{ display: "none" }}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {!mounted ? "Admin" : (currentUser ? (currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName}` : currentUser.firstName) : "Admin")}
+                </span>
+                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--font-jetbrains), monospace", textTransform: "uppercase" }}>
+                  {!mounted ? "Global Ops" : (currentUser?.designation || "Global Ops")}
+                </span>
+              </div>
             )}
           </div>
 
@@ -554,9 +554,9 @@ export default function Topbar() {
               animation: "fadeIn 0.15s ease",
             }}>
               {/* Dropdown Header */}
-              <div style={{ 
-                padding: "12px 16px", 
-                borderBottom: "1px solid var(--border)", 
+              <div style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--border)",
                 background: "var(--bg-hover)",
                 display: "flex",
                 alignItems: "center",
@@ -575,10 +575,10 @@ export default function Topbar() {
                   flexShrink: 0,
                 }}>
                   {(currentUser || defaultUser).photoUrl ? (
-                    <img 
-                      src={(currentUser || defaultUser).photoUrl!} 
-                      alt="Profile" 
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                    <img
+                      src={(currentUser || defaultUser).photoUrl!}
+                      alt="Profile"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
                     <User size={18} color="var(--text-secondary)" />

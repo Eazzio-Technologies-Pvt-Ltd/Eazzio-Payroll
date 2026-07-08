@@ -156,16 +156,16 @@ export default function AdminSidebar() {
             overflow: "hidden",
             transition: "all 0.25s ease",
           }}>
-            <img 
-              src="/logo.png" 
-              alt="Eazzio Payroll" 
+            <img
+              src="/logo.png"
+              alt="Eazzio Payroll"
               style={{
                 height: "100%",
                 width: isExpanded ? "140px" : "35px",
                 objectFit: "contain",
                 objectPosition: isExpanded ? "left center" : "center",
                 transition: "all 0.25s ease",
-              }} 
+              }}
             />
           </div>
         </div>
