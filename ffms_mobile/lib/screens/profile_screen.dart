@@ -77,6 +77,161 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
+  void _showGenerateSalarySlipDialog(BuildContext context) {
+    String selectedMonth = DateFormat('MMMM').format(DateTime.now());
+    String selectedYear = DateFormat('yyyy').format(DateTime.now());
+
+    final List<String> months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    final List<String> years = [
+      '2026', '2025', '2024'
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
+                children: [
+                  const Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Salary Slip',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Month and Year to generate your salary slip.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Month',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedMonth,
+                        isExpanded: true,
+                        items: months.map((month) {
+                          return DropdownMenuItem<String>(
+                            value: month,
+                            child: Text(month, style: GoogleFonts.inter(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => selectedMonth = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Year',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedYear,
+                        isExpanded: true,
+                        items: years.map((year) {
+                          return DropdownMenuItem<String>(
+                            value: year,
+                            child: Text(year, style: GoogleFonts.inter(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => selectedYear = val);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Salary slip for $selectedMonth $selectedYear generated successfully!'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Generate',
+                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _uploadPhoto(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final authUser = authProvider.currentUser;
@@ -546,34 +701,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Stats row cards
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  _buildStatCard(
-                    Icons.calendar_today_outlined,
-                    '${attPct.toStringAsFixed(0)}%',
-                    'Attendance',
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    Icons.check_circle_outline,
-                    '$present Days',
-                    'Worked',
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    Icons.directions_car_outlined,
-                    '${totalDistance.toStringAsFixed(0)} KM',
-                    'Travelled',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // Profile Tile Details Container
             Padding(
@@ -662,6 +790,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         context,
                         MaterialPageRoute(builder: (context) => const ExpensesScreen()),
                       ),
+                    ),
+                    Divider(height: 1, color: AppColors.border),
+                    _buildNavigationRowItem(
+                      icon: Icons.picture_as_pdf_outlined,
+                      title: 'Generate Salary Slip',
+                      onTap: () => _showGenerateSalarySlipDialog(context),
                     ),
                     Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(

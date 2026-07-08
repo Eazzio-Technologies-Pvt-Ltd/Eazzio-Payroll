@@ -9,6 +9,8 @@ import '../widgets/status_badge.dart';
 import '../core/theme/app_theme.dart';
 import 'apply_leave_screen.dart';
 import '../widgets/staggered_list_item.dart';
+import '../providers/travel_provider.dart';
+import '../providers/auth_provider.dart';
 
 // Attendance history screen v2 — premium cards + customized action appbar
 class AttendanceScreen extends StatefulWidget {
@@ -47,7 +49,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
     ));
     _animController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AttendanceProvider>(context, listen: false).fetchHistory();
+      if (mounted) {
+        Provider.of<AttendanceProvider>(context, listen: false).fetchHistory();
+        final travelProv = Provider.of<TravelProvider>(context, listen: false);
+        travelProv.fetchMonthlySummary();
+        travelProv.fetchTravelHistory(limit: 30);
+      }
     });
   }
 
@@ -455,11 +462,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           : '--:--';
 
       if (selectedLogs.length > 1) {
+        // Sort ascending by punchInTime to get correct order
+        final sortedSelected = List<AttendanceModel>.from(selectedLogs);
+        sortedSelected.sort((a, b) => a.punchInTime != null && b.punchInTime != null
+            ? a.punchInTime!.compareTo(b.punchInTime!)
+            : a.sessionNumber.compareTo(b.sessionNumber));
+        final localIdx = sortedSelected.indexOf(log) + 1;
+
         list.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
             child: Text(
-              'Session ${log.sessionNumber}',
+              'Session $localIdx',
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
@@ -594,9 +608,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
     );
   }
 
+  Widget _buildStatCard(IconData icon, String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: AppTheme.cardDecoration,
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final attendanceProvider = Provider.of<AttendanceProvider>(context);
+    final travelProvider = Provider.of<TravelProvider>(context);
+
+    final present = travelProvider.monthlySummary?.present ?? 0;
+    final totalWorkingDays = travelProvider.monthlySummary?.totalWorkingDays ?? 0;
+    double attPct = totalWorkingDays > 0 ? (present / totalWorkingDays) * 100 : 100.0;
+    final totalDistance = travelProvider.history.fold<double>(0.0, (sum, log) => sum + log.totalDistanceKm);
 
     return Scaffold(
       backgroundColor: AppColors.bgPage,
@@ -639,190 +690,231 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         opacity: _fadeAnim,
         child: SlideTransition(
           position: _slideAnim,
-          child: _isCalendarView
-              ? Stack(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
                   children: [
-                    SingleChildScrollView(
-                      padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.24),
-                      child: Column(
-                        children: [
-                          _buildMonthSelector(),
-                          _buildWeekdaysHeader(),
-                          const SizedBox(height: 8),
-                          _buildCalendarGrid(attendanceProvider),
-                          const SizedBox(height: 12),
-                          _buildLegend(),
-                        ],
-                      ),
+                    _buildStatCard(
+                      Icons.calendar_today_outlined,
+                      '${attPct.toStringAsFixed(0)}%',
+                      'Attendance',
                     ),
-                    _buildDraggableDetailPanel(attendanceProvider),
+                    const SizedBox(width: 12),
+                    _buildStatCard(
+                      Icons.check_circle_outline,
+                      '$present Days',
+                      'Worked',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatCard(
+                      Icons.directions_car_outlined,
+                      '${totalDistance.toStringAsFixed(0)} KM',
+                      'Travelled',
+                    ),
                   ],
-                )
-              : RefreshIndicator(
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.surface,
-                  strokeWidth: 2.5,
-                  onRefresh: () async => attendanceProvider.fetchHistory(),
-                  child: attendanceProvider.isLoading ? const SkeletonList()
-                      : attendanceProvider.attendanceHistory.isEmpty
-                          ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: _isCalendarView
+                    ? Stack(
+                        children: [
+                          SingleChildScrollView(
+                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.24),
+                            child: Column(
                               children: [
-                                SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                                Center(
-                                  child: Text(
-                                    'No attendance logs recorded yet.',
-                                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
-                                  ),
-                                ),
+                                _buildMonthSelector(),
+                                _buildWeekdaysHeader(),
+                                const SizedBox(height: 8),
+                                _buildCalendarGrid(attendanceProvider),
+                                const SizedBox(height: 12),
+                                _buildLegend(),
                               ],
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: attendanceProvider.attendanceHistory.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final log = attendanceProvider.attendanceHistory[index];
-                                final dateStr = DateFormat('EEE, dd MMM yyyy').format(log.date);
-                                final punchInStr = log.punchInTime != null
-                                    ? DateFormat('hh:mm a').format(log.punchInTime!.toLocal())
-                                    : '--:--';
-                                final punchOutStr = log.punchOutTime != null
-                                    ? DateFormat('hh:mm a').format(log.punchOutTime!.toLocal())
-                                    : '--:--';
-
-                                return StaggeredListItem(
-                                  index: index,
-                                  child: Container(
-                                    decoration: AppTheme.cardDecoration,
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  dateStr,
-                                                  style: GoogleFonts.inter(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.primarySoft,
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: Text(
-                                                    'Session ${log.sessionNumber}',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: AppColors.primary,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            StatusBadge(status: log.status),
-                                          ],
+                            ),
+                          ),
+                          _buildDraggableDetailPanel(attendanceProvider),
+                        ],
+                      )
+                    : RefreshIndicator(
+                        color: AppColors.primary,
+                        backgroundColor: AppColors.surface,
+                        strokeWidth: 2.5,
+                        onRefresh: () async => attendanceProvider.fetchHistory(),
+                        child: attendanceProvider.isLoading ? const SkeletonList()
+                            : attendanceProvider.attendanceHistory.isEmpty
+                                ? ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                                      Center(
+                                        child: Text(
+                                          'No attendance logs recorded yet.',
+                                          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
                                         ),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                      ),
+                                    ],
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    itemCount: attendanceProvider.attendanceHistory.length,
+                                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final log = attendanceProvider.attendanceHistory[index];
+                                      final dateStr = DateFormat('EEE, dd MMM yyyy').format(log.date);
+                                      final punchInStr = log.punchInTime != null
+                                          ? DateFormat('hh:mm a').format(log.punchInTime!.toLocal())
+                                          : '--:--';
+                                      final punchOutStr = log.punchOutTime != null
+                                          ? DateFormat('hh:mm a').format(log.punchOutTime!.toLocal())
+                                          : '--:--';
+
+                                      return StaggeredListItem(
+                                        index: index,
+                                        child: Container(
+                                          decoration: AppTheme.cardDecoration,
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
-                                                  Text(
-                                                    'Punch In',
-                                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                                  Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                    children: [
+                                                      Text(
+                                                        dateStr,
+                                                        style: GoogleFonts.inter(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color: AppColors.textPrimary,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.primarySoft,
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: () {
+                                                          final dayLogs = attendanceProvider.attendanceHistory
+                                                              .where((l) => DateUtils.isSameDay(l.date, log.date))
+                                                              .toList();
+                                                          dayLogs.sort((a, b) => a.punchInTime != null && b.punchInTime != null
+                                                              ? a.punchInTime!.compareTo(b.punchInTime!)
+                                                              : a.sessionNumber.compareTo(b.sessionNumber));
+                                                          final sessionIdx = dayLogs.indexOf(log) + 1;
+                                                          return Text(
+                                                            'Session ${sessionIdx > 0 ? sessionIdx : log.sessionNumber}',
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 10,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: AppColors.primary,
+                                                            ),
+                                                          );
+                                                        }(),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    punchInStr,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.textPrimary,
-                                                    ),
-                                                  ),
+                                                  StatusBadge(status: log.status),
                                                 ],
                                               ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Container(
-                                              width: 1,
-                                              height: 30,
-                                              color: AppColors.border,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                              const SizedBox(height: 16),
+                                              Row(
                                                 children: [
-                                                  Text(
-                                                    'Punch Out',
-                                                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    punchOutStr,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.textPrimary,
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: [
+                                                        Text(
+                                                          'Punch In',
+                                                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Text(
+                                                          punchInStr,
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w600,
+                                                            color: AppColors.textPrimary,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                            if (log.totalWorkingHours != null) ...[
-                                              const SizedBox(width: 12),
-                                              Container(
-                                                width: 1,
-                                                height: 30,
-                                                color: AppColors.border,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      'Hours',
-                                                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                                  const SizedBox(width: 12),
+                                                  Container(
+                                                    width: 1,
+                                                    height: 30,
+                                                    color: AppColors.border,
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                                      children: [
+                                                        Text(
+                                                          'Punch Out',
+                                                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Text(
+                                                          punchOutStr,
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w600,
+                                                            color: AppColors.textPrimary,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      '${log.totalWorkingHours!.toStringAsFixed(1)}h',
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: 13,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: AppColors.primary,
+                                                  ),
+                                                  if (log.totalWorkingHours != null) ...[
+                                                    const SizedBox(width: 12),
+                                                    Container(
+                                                      width: 1,
+                                                      height: 30,
+                                                      color: AppColors.border,
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        children: [
+                                                          Text(
+                                                            'Hours',
+                                                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w500),
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            '${log.totalWorkingHours!.toStringAsFixed(1)}h',
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 13,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: AppColors.primary,
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ],
-                                                ),
+                                                ],
                                               ),
                                             ],
-                                          ],
+                                          ),
                                         ),
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

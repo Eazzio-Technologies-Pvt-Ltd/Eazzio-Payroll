@@ -97,7 +97,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
 
                       // Field & Office Staff Card
                       _RoleCard(
-                        title: 'Field & Office Staff',
+                        title: 'Employee Login',
                         welcomeTag: 'Employee Portal',
                         subtitle: 'Punch in/out, track your routes/tasks, and view your payslips.',
                         icon: Icons.directions_walk_rounded,
@@ -110,8 +110,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
 
                       // Manager Card
                       _RoleCard(
-                        title: 'Manager',
-                        welcomeTag: 'Manager Portal',
+                        title: 'Employer Login',
+                        welcomeTag: 'Employer Portal',
                         subtitle: 'Monitor your team, approve requests, and manage attendance.',
                         icon: Icons.groups_rounded,
                         accentColor: const Color(0xFF7C3AED),

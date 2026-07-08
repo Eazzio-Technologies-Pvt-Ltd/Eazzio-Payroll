@@ -57,10 +57,15 @@ class AuthProvider extends ChangeNotifier {
         SocketService.connect().catchError((_) {});
 
         // Fetch fresh profile in the background to update cached data without blocking app launch
-        _authService.getProfile().then((freshUser) {
+        _authService.getProfile().then((freshUser) async {
           if (freshUser != null) {
             _currentUser = freshUser;
             notifyListeners();
+          } else {
+            final token = await StorageHelper.getAccessToken();
+            if (token == null) {
+              logout();
+            }
           }
         }).catchError((_) {});
       } else if (cachedId != null && cachedName != null && cachedEmail != null && cachedRole != null) {
@@ -79,10 +84,15 @@ class AuthProvider extends ChangeNotifier {
         SocketService.connect().catchError((_) {});
 
         // Fetch fresh profile in the background to update cached data without blocking app launch
-        _authService.getProfile().then((freshUser) {
+        _authService.getProfile().then((freshUser) async {
           if (freshUser != null) {
             _currentUser = freshUser;
             notifyListeners();
+          } else {
+            final token = await StorageHelper.getAccessToken();
+            if (token == null) {
+              logout();
+            }
           }
         }).catchError((_) {});
       } else {

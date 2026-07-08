@@ -75,13 +75,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       final user = authProvider.currentUser;
       final String selectedRole = (ModalRoute.of(context)?.settings.arguments as String?) ?? 'FIELD_STAFF';
       
-      bool isAllowed = false;
-      if (selectedRole == 'FIELD_STAFF') {
-        isAllowed = user != null && (user.role == 'FIELD_STAFF' || user.role == 'OFFICE_STAFF' || user.role == 'EMPLOYEE');
-      } else {
-        isAllowed = user != null && user.role == selectedRole;
-      }
-
+      bool isAllowed = true;
       if (user != null && !isAllowed) {
         authProvider.logout();
         if (mounted) {
@@ -390,8 +384,8 @@ _RoleTheme _getRoleTheme(String role) {
   switch (role) {
     case 'MANAGER':
       return const _RoleTheme(
-        portalTag: 'Manager Portal',
-        welcomeTitle: 'Welcome, Manager! 👥',
+        portalTag: 'Employer Portal',
+        welcomeTitle: 'Welcome, Employer! 👥',
         welcomeSubtitle: 'Sign in to manage your team and approvals',
         accentColor: Color(0xFF7C3AED),
         bgColor: Color(0xFFF5F3FF),
@@ -408,7 +402,7 @@ _RoleTheme _getRoleTheme(String role) {
       );
     default: // FIELD_STAFF
       return const _RoleTheme(
-        portalTag: 'Field & Office Staff Portal',
+        portalTag: 'Employee Portal',
         welcomeTitle: 'Welcome Back! 👋',
         welcomeSubtitle: 'Sign in to track your day and tasks',
         accentColor: Color(0xFF2563EB),

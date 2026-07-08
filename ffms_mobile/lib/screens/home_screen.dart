@@ -20,6 +20,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/user_avatar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/storage_helper.dart';
+import '../core/utils/notification_helper.dart';
 import '../core/utils/constants.dart';
 import 'permissions_screen.dart';
 import 'request_advance_screen.dart';
@@ -343,101 +344,102 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     
-    // ── Geofence validation ──────────────────────────────────────────────────
-    final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
-    if (user != null && user.territory != null && user.territory!.polygon != null) {
-      final polyData = user.territory!.polygon!;
-      if (polyData['coordinates'] != null && polyData['coordinates'] is List && (polyData['coordinates'] as List).isNotEmpty) {
-        final coords = polyData['coordinates'][0] as List;
-        
-        bool isInside = false;
-        double sumLat = 0;
-        double sumLng = 0;
-        int count = 0;
-        
-        for (var coord in coords) {
-          if (coord is List && coord.length >= 2) {
-            double lng = (coord[0] as num).toDouble();
-            double lat = (coord[1] as num).toDouble();
-            sumLat += lat;
-            sumLng += lng;
-            count++;
-          }
-        }
-        
-        if (count > 0) {
-          double centroidLat = sumLat / count;
-          double centroidLng = sumLng / count;
-          
-          // Check inside using ray-casting
-          bool inside = false;
-          for (int i = 0, j = coords.length - 1; i < coords.length; j = i++) {
-            final xi = (coords[i][0] as num).toDouble(); // longitude
-            final yi = (coords[i][1] as num).toDouble(); // latitude
-            final xj = (coords[j][0] as num).toDouble();
-            final yj = (coords[j][1] as num).toDouble();
-            
-            final intersect = ((yi > position.latitude) != (yj > position.latitude)) &&
-                (position.longitude < (xj - xi) * (position.latitude - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-          }
-          
-          isInside = inside;
-          
-          if (!isInside) {
-            // Calculate distance to centroid
-            final double distance = Geolocator.distanceBetween(
-              position.latitude,
-              position.longitude,
-              centroidLat,
-              centroidLng,
-            );
-            
-            // If the geofence limit is set to 100m, any punch attempt beyond 100m is blocked
-            if (distance > 100.0) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("You are outside the permitted work location."),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-              }
-              return false;
-            }
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-          return false;
-        }
-      } else {
+    // ── Geofence validation (Only for Punch-In) ────────────────
+    if (!wasPunchedIn) {
+      final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+      if (user == null || user.territory == null || user.territory!.polygon == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
+              content: Text("You don't have an assigned territory. Please contact your employer to assign a territory."),
               backgroundColor: AppColors.error,
             ),
           );
         }
         return false;
       }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No assigned work location found. Punch-in is only allowed from your assigned location."),
-            backgroundColor: AppColors.error,
-          ),
-        );
+      
+      final polyData = user.territory!.polygon!;
+      if (polyData['coordinates'] == null || polyData['coordinates'] is! List || (polyData['coordinates'] as List).isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You don't have an assigned territory. Please contact your employer to assign a territory."),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return false;
       }
-      return false;
+      
+      final coords = polyData['coordinates'][0] as List;
+      bool isInside = false;
+      double sumLat = 0;
+      double sumLng = 0;
+      int count = 0;
+      
+      for (var coord in coords) {
+        if (coord is List && coord.length >= 2) {
+          double lng = (coord[0] as num).toDouble();
+          double lat = (coord[1] as num).toDouble();
+          sumLat += lat;
+          sumLng += lng;
+          count++;
+        }
+      }
+      
+      if (count > 0) {
+        double centroidLat = sumLat / count;
+        double centroidLng = sumLng / count;
+        
+        // Check inside using ray-casting
+        bool inside = false;
+        for (int i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+          final xi = (coords[i][0] as num).toDouble(); // longitude
+          final yi = (coords[i][1] as num).toDouble(); // latitude
+          final xj = (coords[j][0] as num).toDouble();
+          final yj = (coords[j][1] as num).toDouble();
+          
+          final intersect = ((yi > position.latitude) != (yj > position.latitude)) &&
+              (position.longitude < (xj - xi) * (position.latitude - yi) / (yj - yi) + xi);
+          if (intersect) inside = !inside;
+        }
+        
+        isInside = inside;
+        
+        if (!isInside) {
+          // Calculate distance to centroid
+          final double distance = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            centroidLat,
+            centroidLng,
+          );
+          
+          // If the geofence limit is set to 100m, any punch attempt beyond 100m is blocked
+          if (distance > 100.0) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("You are outside the permitted work location."),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+            return false;
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You don't have an assigned territory. Please contact your employer to assign a territory."),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return false;
+      }
     }
 
     // ── Execute punch action ─────────────────────────────────────────────────
@@ -459,6 +461,12 @@ class _HomeScreenState extends State<HomeScreen> {
       if (success) {
         await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
         await StorageHelper.clearPunchInState();
+        try {
+          await NotificationHelper.showNewNotification(
+            'Punch Out Successful',
+            'You punched out at ${DateFormat('hh:mm a').format(DateTime.now())}.',
+          );
+        } catch (_) {}
       }
       if (!mounted) return success;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -487,6 +495,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       if (result.success) {
+        try {
+          await NotificationHelper.showNewNotification(
+            'Punch In Successful',
+            'You punched in at ${DateFormat('hh:mm a').format(DateTime.now())}.',
+          );
+        } catch (_) {}
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Punched In Successfully!'),
