@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image/image.dart' as img;
 
 /// Image upload result containing base64 data and local path info.
 /// base64String always includes the `data:image/jpeg;base64,` prefix
@@ -29,6 +30,10 @@ class ImageUploadUtil {
     BuildContext context, {
     required bool cameraOnly,
     CameraDevice preferredCameraDevice = CameraDevice.rear,
+    double? latitude,
+    double? longitude,
+    String? employeeName,
+    String? employeeId,
   }) async {
     // 1. Request camera/gallery permissions before opening picker
     if (cameraOnly) {
@@ -96,14 +101,25 @@ class ImageUploadUtil {
     if (image == null) return null;
 
     if (!context.mounted) return null;
-    return processPickedImage(context, image);
+    return processPickedImage(
+      context,
+      image,
+      latitude: latitude,
+      longitude: longitude,
+      employeeName: employeeName,
+      employeeId: employeeId,
+    );
   }
 
   /// Helper to validate size, format and encode picked XFile to base64 with data URI header.
   static Future<ImageUploadResult?> processPickedImage(
     BuildContext context,
-    XFile image,
-  ) async {
+    XFile image, {
+    double? latitude,
+    double? longitude,
+    String? employeeName,
+    String? employeeId,
+  }) async {
     final pathLower = image.path.toLowerCase();
     final isValidFormat = pathLower.endsWith('.jpg') ||
                           pathLower.endsWith('.jpeg') ||
@@ -122,7 +138,53 @@ class ImageUploadUtil {
     }
 
     final File file = File(image.path);
-    final bytes = await file.readAsBytes();
+    var bytes = await file.readAsBytes();
+
+    // Apply Geo-Tag Watermark overlay if GPS coordinates are provided
+    if (latitude != null && longitude != null) {
+      try {
+        final decoded = img.decodeImage(bytes);
+        if (decoded != null) {
+          final nowStr = DateTime.now().toLocal().toString().substring(0, 19);
+          final nameText = employeeName ?? 'Unknown';
+          final idText = employeeId ?? 'N/A';
+          final text = 'Emp: $nameText ($idText)\nLoc: ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}\nTime: $nowStr';
+
+          // Semi-transparent dark strip at the bottom of the image for text contrast
+          final rectHeight = 85;
+          final rectY = decoded.height - rectHeight;
+          img.fillRect(
+            decoded,
+            x1: 0,
+            y1: rectY,
+            x2: decoded.width,
+            y2: decoded.height,
+            color: img.ColorRgba8(0, 0, 0, 160),
+          );
+
+          final lines = text.split('\n');
+          int currentY = rectY + 6;
+          for (var line in lines) {
+            img.drawString(
+              decoded,
+              line,
+              font: img.arial24,
+              x: 12,
+              y: currentY,
+              color: img.ColorRgba8(255, 255, 255, 255),
+            );
+            currentY += 24;
+          }
+
+          // Re-encode with 75% quality to keep file size under 500KB
+          bytes = img.encodeJpg(decoded, quality: 75);
+          await file.writeAsBytes(bytes);
+        }
+      } catch (e) {
+        debugPrint('[ImageUploadUtil] Geo-tag watermarking failed: $e');
+      }
+    }
+
     final double fileSizeMb = bytes.length / (1024 * 1024);
 
     if (fileSizeMb > 1.5) {
