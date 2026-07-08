@@ -3,6 +3,7 @@ import AdminTopbar from "@/components/admin/AdminTopbar";
 import { MobileSidebarProvider } from "@/components/layout/MobileSidebarContext";
 import AdminRoleGuard from "@/components/AdminRoleGuard";
 import DataInitializer from "@/components/DataInitializer";
+import SubscriptionGuard from "@/components/payment/SubscriptionGuard";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="dashboard-content"
               style={{ flex: 1, padding: "28px", animation: "fadeIn 0.4s ease", overflowY: "auto" }}
             >
-              {children}
+              <SubscriptionGuard>{children}</SubscriptionGuard>
             </main>
           </div>
         </div>
@@ -29,4 +30,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </MobileSidebarProvider>
   );
 }
+
 
