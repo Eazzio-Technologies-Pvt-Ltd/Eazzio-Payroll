@@ -194,6 +194,7 @@ model User {
   advances         Advance[]  @relation("UserAdvances")
   advancesApproved Advance[]  @relation("ApprovedAdvances")
   comments         Comment[]
+  subscriptions    Subscription[]
 
   @@unique([organizationId, employeeId])
   @@index([organizationId])
@@ -615,4 +616,17 @@ model Advance {
 
   @@index([userId])
   @@index([approvedById])
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  userId            String
+  plan              String   // "FREE" | "BASIC" | "PRO"
+  status            String   // "ACTIVE" | "EXPIRED" | "PENDING"
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  startsAt          DateTime
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id])
 }
