@@ -77,156 +77,137 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
-  void _showGenerateSalarySlipDialog(BuildContext context) {
-    String selectedMonth = DateFormat('MMMM').format(DateTime.now());
-    String selectedYear = DateFormat('yyyy').format(DateTime.now());
+  List<DateTime> _getAvailableSalarySlipMonths() {
+    final List<DateTime> list = [];
+    final now = DateTime.now();
+    
+    // Slips are generated on the 10th of the month for the previous month.
+    // If today is >= 10th, previous month (now.month - 1) is available.
+    // If today is < 10th, the month before previous month (now.month - 2) is available.
+    DateTime latestAvailableMonth;
+    if (now.day >= 10) {
+      latestAvailableMonth = DateTime(now.year, now.month - 1, 1);
+    } else {
+      latestAvailableMonth = DateTime(now.year, now.month - 2, 1);
+    }
 
-    final List<String> months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
+    for (int i = 0; i < 12; i++) {
+      final date = DateTime(latestAvailableMonth.year, latestAvailableMonth.month - i, 1);
+      if (date.year >= 2024) {
+        list.add(date);
+      }
+    }
+    return list;
+  }
 
-    final List<String> years = [
-      '2026', '2025', '2024'
-    ];
+  void _showSalarySlipsDialog(BuildContext context) {
+    final availableMonths = _getAvailableSalarySlipMonths();
 
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
+              const SizedBox(width: 10),
+              Text(
+                'My Salary Slips',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              title: Row(
-                children: [
-                  const Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Salary Slip',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Month and Year to generate your salary slip.',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Month',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedMonth,
-                        isExpanded: true,
-                        items: months.map((month) {
-                          return DropdownMenuItem<String>(
-                            value: month,
-                            child: Text(month, style: GoogleFonts.inter(fontSize: 14)),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => selectedMonth = val);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Year',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedYear,
-                        isExpanded: true,
-                        items: years.map((year) {
-                          return DropdownMenuItem<String>(
-                            value: year,
-                            child: Text(year, style: GoogleFonts.inter(fontSize: 14)),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => selectedYear = val);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel',
-                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Salary slips are automatically generated on the 10th of every month for the previous month. Download your available slips below.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 16),
+                if (availableMonths.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        'No salary slips available yet.',
+                        style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: availableMonths.length,
+                      separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.border),
+                      itemBuilder: (context, index) {
+                        final date = availableMonths[index];
+                        final monthStr = DateFormat('MMMM yyyy').format(date);
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+                          title: Text(
+                            monthStr,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Downloading salary slip for $monthStr...'),
+                                  backgroundColor: AppColors.primary,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 2), () {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Salary slip for $monthStr downloaded successfully!'),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Salary slip for $selectedMonth $selectedYear generated successfully!'),
-                        backgroundColor: AppColors.success,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Generate',
-                    style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
               ],
-            );
-          },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Close',
+                style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -794,8 +775,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
                       icon: Icons.picture_as_pdf_outlined,
-                      title: 'Generate Salary Slip',
-                      onTap: () => _showGenerateSalarySlipDialog(context),
+                      title: 'My Salary Slips',
+                      onTap: () => _showSalarySlipsDialog(context),
                     ),
                     Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
