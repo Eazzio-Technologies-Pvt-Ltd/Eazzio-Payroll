@@ -458,6 +458,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 7. Execute Punch Action
     if (wasPunchedIn) {
+      // Block punch-out if employee is outside assigned geofence
+      if (!isInside) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You are outside your assigned location. Please move inside your territory to punch out."),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return false;
+      }
+
       if (!mounted) return false;
       showDialog(
         context: context,
@@ -471,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return success;
       Navigator.pop(context);
-      
+
       if (success) {
         await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
         await StorageHelper.clearPunchInState();
@@ -482,15 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         } catch (_) {}
 
-        if (!isInside && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("You are outside your assigned location. Your selfie and location have been recorded."),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-            ),
-          );
-        } else if (mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Punched Out Successfully!'),
