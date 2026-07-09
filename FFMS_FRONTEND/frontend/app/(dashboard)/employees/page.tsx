@@ -10,27 +10,13 @@ import { geofenceApi, attendanceApi, tasksApi, travelApi, advanceApi, expensesAp
 import CloudinaryImage from "@/components/common/CloudinaryImage";
 
 const ROLES = ["FIELD_STAFF", "MANAGER", "ADMIN"];
-const DEFAULT_TERRITORIES = ["Mumbai North","Mumbai South","Thane","Pune","Navi Mumbai","Nashik"];
+const DEFAULT_TERRITORIES = ["Mumbai North", "Mumbai South", "Thane", "Pune", "Navi Mumbai", "Nashik"];
 
 
-function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, currentUser }: { emp: Partial<Employee> | null; onClose: () => void; onSave: (e: any) => void; territories: any[]; allEmployees: Employee[]; currentUser: any }) {
+function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, currentUser, shifts }: { emp: Partial<Employee> | null; onClose: () => void; onSave: (e: any) => void; territories: any[]; allEmployees: Employee[]; currentUser: any; shifts: any[] }) {
   const isEditing = Boolean(emp?.id);
-  
-  const [shifts, setShifts] = useState<any[]>([]);
 
-  useEffect(() => {
-    const loadShifts = async () => {
-      try {
-        const res = await shiftApi.list();
-        if (res && res.success) {
-          setShifts(res.data || []);
-        }
-      } catch (err) {
-        console.error("Failed to load shifts inside EmployeeModal:", err);
-      }
-    };
-    loadShifts();
-  }, []);
+  // shifts are passed as props from the parent page (fetched once on page load)
 
   const [geofenceEnabled, setGeofenceEnabled] = useState<boolean>(() => {
     if (emp?.id) {
@@ -38,7 +24,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
       if (saved) {
         try {
           return JSON.parse(saved).geofenceEnabled || false;
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return false;
@@ -50,7 +36,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
       if (saved) {
         try {
           return String(JSON.parse(saved).geofenceCenterLat ?? "");
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return "";
@@ -62,7 +48,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
       if (saved) {
         try {
           return String(JSON.parse(saved).geofenceCenterLng ?? "");
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return "";
@@ -74,7 +60,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
       if (saved) {
         try {
           return String(JSON.parse(saved).geofenceRadius ?? "100");
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return "100";
@@ -138,7 +124,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
     if (!defaultTerrId && territories.length > 0) {
       defaultTerrId = territories[0].id;
     }
-    return { name:"",email:"",phone:"",role:"FIELD_STAFF",territory:"",territoryId:defaultTerrId,status:"active", password: "", empPrefix: "EMP", empSuffix: nextSuffix, managerId: currentUser?.role === "MANAGER" ? currentUser.id : null, shiftId: null };
+    return { name: "", email: "", phone: "", role: "FIELD_STAFF", territory: "", territoryId: defaultTerrId, status: "active", password: "", empPrefix: "EMP", empSuffix: nextSuffix, managerId: currentUser?.role === "MANAGER" ? currentUser.id : null, shiftId: null };
   });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -150,37 +136,37 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px" }}>
-          <h2 style={{ fontWeight:700,fontSize:"18px" }}>{emp?.id ? "Edit Employee" : "Add Employee"}</h2>
-          <button onClick={onClose} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)" }}><X size={20}/></button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h2 style={{ fontWeight: 700, fontSize: "18px" }}>{emp?.id ? "Edit Employee" : "Add Employee"}</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
         </div>
-        <div style={{ display:"flex",flexDirection:"column",gap:"14px" }}>
-          {(["name","email","phone"] as const).map(k => (
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {(["name", "email", "phone"] as const).map(k => (
             <div key={k}>
-              <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px",textTransform:"capitalize" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px", textTransform: "capitalize" }}>
                 {k}
               </label>
-              <input className="input" value={form[k]||""} onChange={e=>handleFieldChange(k,e.target.value)} placeholder={k} />
+              <input className="input" value={form[k] || ""} onChange={e => handleFieldChange(k, e.target.value)} placeholder={k} />
             </div>
           ))}
 
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Employee ID</label>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Employee ID</label>
             <div style={{ display: "flex", gap: "8px" }}>
-              <input 
-                className="input" 
-                style={{ width: "80px", textAlign: "center" }} 
-                placeholder="EMP" 
+              <input
+                className="input"
+                style={{ width: "80px", textAlign: "center" }}
+                placeholder="EMP"
                 value={form.empPrefix || ""}
                 onChange={e => {
                   handleFieldChange("empPrefix", e.target.value.toUpperCase());
                 }}
               />
               <span style={{ display: "flex", alignItems: "center", color: "var(--text-muted)" }}>-</span>
-              <input 
-                className="input" 
-                style={{ flex: 1 }} 
-                placeholder="101" 
+              <input
+                className="input"
+                style={{ flex: 1 }}
+                placeholder="101"
                 type="number"
                 value={form.empSuffix || ""}
                 onChange={e => {
@@ -189,25 +175,25 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
               />
             </div>
           </div>
-          
+
           {/* Password */}
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
               Password
-              {isEditing && <span style={{ fontSize:"10px",fontWeight:400,color:"var(--text-muted)",marginLeft:"6px" }}>Leave blank to keep current password</span>}
+              {isEditing && <span style={{ fontSize: "10px", fontWeight: 400, color: "var(--text-muted)", marginLeft: "6px" }}>Leave blank to keep current password</span>}
             </label>
-            <input 
-              type="text" 
-              className="input" 
-              value={form.password || ""} 
+            <input
+              type="text"
+              className="input"
+              value={form.password || ""}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
               placeholder={isEditing ? "Enter new password to change" : "Enter password"}
             />
           </div>
 
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Role</label>
-            <select className="input" value={form.role||"FIELD_STAFF"} onChange={e=>handleFieldChange("role",e.target.value)}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Role</label>
+            <select className="input" value={form.role || "FIELD_STAFF"} onChange={e => handleFieldChange("role", e.target.value)}>
               {currentUser?.role === "MANAGER" ? (
                 <>
                   <option value="FIELD_STAFF">Field Staff</option>
@@ -224,10 +210,10 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
             </select>
           </div>
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Territory</label>
-            <select 
-              className="input" 
-              value={form.territoryId || ""} 
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Territory</label>
+            <select
+              className="input"
+              value={form.territoryId || ""}
               onChange={e => {
                 const val = e.target.value;
                 set("territoryId", val);
@@ -256,15 +242,15 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
             )}
           </div>
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Status</label>
-            <select className="input" value={form.status||"active"} onChange={e=>set("status",e.target.value)}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Status</label>
+            <select className="input" value={form.status || "active"} onChange={e => set("status", e.target.value)}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
           </div>
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Employment Type</label>
-            <select className="input" value={employmentType} onChange={e=>setEmploymentType(e.target.value)}>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Employment Type</label>
+            <select className="input" value={employmentType} onChange={e => setEmploymentType(e.target.value)}>
               <option value="Full Time">Full Time</option>
               <option value="Part Time">Part Time</option>
               <option value="Intern">Intern</option>
@@ -273,30 +259,30 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
             <div style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", padding: "10px", marginTop: "8px", fontSize: "12px", borderRadius: "0px" }}>
               {employmentType === "Full Time" && (
                 <div style={{ color: "var(--text-secondary)" }}>
-                  <strong>⏱️ Expected:</strong> 9 hours/day <br/>
+                  <strong>⏱️ Expected:</strong> 9 hours/day <br />
                   <strong>📅 Leave Entitlement:</strong> Full leave policy (28 days)
                 </div>
               )}
               {employmentType === "Part Time" && (
                 <div style={{ color: "var(--text-secondary)" }}>
-                  <strong>⏱️ Expected:</strong> 4-5 hours/day <br/>
+                  <strong>⏱️ Expected:</strong> 4-5 hours/day <br />
                   <strong>📅 Leave Entitlement:</strong> 50% leave entitlement (14 days)
                 </div>
               )}
               {employmentType === "Intern" && (
                 <div style={{ color: "var(--text-secondary)" }}>
-                  <strong>⏱️ Expected:</strong> 6 hours/day <br/>
+                  <strong>⏱️ Expected:</strong> 6 hours/day <br />
                   <strong>📅 Leave Entitlement:</strong> No paid leave (0 days)
                 </div>
               )}
             </div>
           </div>
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Reports To (Manager)</label>
-            <select 
-              className="input" 
-              value={form.managerId || ""} 
-              onChange={e=>set("managerId",e.target.value || "")}
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Reports To (Manager)</label>
+            <select
+              className="input"
+              value={form.managerId || ""}
+              onChange={e => set("managerId", e.target.value || "")}
               disabled={currentUser?.role === "MANAGER"}
             >
               {currentUser?.role === "MANAGER" ? (
@@ -312,11 +298,11 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
             </select>
           </div>
           <div>
-            <label style={{ fontSize:"12px",fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:"6px" }}>Work Shift</label>
-            <select 
-              className="input" 
-              value={form.shiftId || ""} 
-              onChange={e=>set("shiftId", e.target.value || "")}
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Work Shift</label>
+            <select
+              className="input"
+              value={form.shiftId || ""}
+              onChange={e => setForm(f => ({ ...f, shiftId: e.target.value || null }))}
             >
               <option value="">-- Use Company Default --</option>
               {shifts.map((s: any) => (
@@ -329,9 +315,9 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
           <div style={{ border: "1px solid var(--border)", padding: "12px", display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Enable Geofence for this Employee</span>
-              <input 
-                type="checkbox" 
-                checked={geofenceEnabled} 
+              <input
+                type="checkbox"
+                checked={geofenceEnabled}
                 onChange={e => {
                   const checked = e.target.checked;
                   setGeofenceEnabled(checked);
@@ -342,7 +328,7 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
                       setGeofenceCenterLng(center.lng.toFixed(6));
                     }
                   }
-                }} 
+                }}
                 style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
             </div>
@@ -351,46 +337,46 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   <div>
                     <label style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>Center Latitude</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="any"
-                      placeholder="e.g. 19.0760" 
-                      className="input" 
+                      placeholder="e.g. 19.0760"
+                      className="input"
                       style={{ padding: "6px 10px", fontSize: "12px" }}
-                      value={geofenceCenterLat} 
-                      onChange={e => setGeofenceCenterLat(e.target.value)} 
+                      value={geofenceCenterLat}
+                      onChange={e => setGeofenceCenterLat(e.target.value)}
                     />
                   </div>
                   <div>
                     <label style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>Center Longitude</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="any"
-                      placeholder="e.g. 72.8777" 
-                      className="input" 
+                      placeholder="e.g. 72.8777"
+                      className="input"
                       style={{ padding: "6px 10px", fontSize: "12px" }}
-                      value={geofenceCenterLng} 
-                      onChange={e => setGeofenceCenterLng(e.target.value)} 
+                      value={geofenceCenterLng}
+                      onChange={e => setGeofenceCenterLng(e.target.value)}
                     />
                   </div>
                 </div>
                 <div>
                   <label style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>Radius (meters)</label>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 150" 
-                    className="input" 
+                  <input
+                    type="number"
+                    placeholder="e.g. 150"
+                    className="input"
                     style={{ padding: "6px 10px", fontSize: "12px" }}
-                    value={geofenceRadius} 
-                    onChange={e => setGeofenceRadius(e.target.value)} 
+                    value={geofenceRadius}
+                    onChange={e => setGeofenceRadius(e.target.value)}
                   />
                 </div>
               </div>
             )}
           </div>
 
-          <button className="btn-primary" style={{ width:"100%",justifyContent:"center",marginTop:"6px" }}
-            onClick={()=>{
+          <button className="btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "6px" }}
+            onClick={() => {
               // Require password for new employees
               if (!isEditing && !form.password?.trim()) {
                 alert("Password is required for new employees. Please enter a password or click Generate.");
@@ -401,10 +387,10 @@ function EmployeeModal({ emp, onClose, onSave, territories, allEmployees, curren
                 alert("Employee ID is required.");
                 return;
               }
-              const avatarStr = (form.name||"XX").split(" ").map((w:string)=>w[0]).join("").toUpperCase().slice(0,2);
+              const avatarStr = (form.name || "XX").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
               const payload: any = {
                 id: emp?.id,
-                name: (form.name||"").trim(), email: (form.email||"").trim(), phone: (form.phone||"").trim(),
+                name: (form.name || "").trim(), email: (form.email || "").trim(), phone: (form.phone || "").trim(),
                 role: form.role || "FIELD_STAFF",
                 territoryId: form.territoryId || null,
                 shiftId: form.shiftId || null,
@@ -452,15 +438,15 @@ const getBaseSalary = (role: string) => BASE_SALARIES[role] || 30000;
 function numberToWords(num: number): string {
   const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-  
+
   if (num <= 0) return 'Zero Rupees';
-  
+
   const g = (n: number): string => {
     if (n < 20) return a[n];
     const digit = n % 10;
     return b[Math.floor(n / 10)] + (digit ? ' ' + a[digit] : '');
   };
-  
+
   const h = (n: number): string => {
     if (n >= 100) {
       const rem = n % 100;
@@ -468,10 +454,10 @@ function numberToWords(num: number): string {
     }
     return g(n);
   };
-  
+
   let temp = num;
   let result = '';
-  
+
   if (temp >= 100000) {
     result += h(Math.floor(temp / 100000)) + ' Lakh ';
     temp %= 100000;
@@ -494,11 +480,12 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [selectedManager, setSelectedManager] = useState("all");
   const [activeTab, setActiveTab] = useState<"roster" | "payroll">("roster");
-  const [modal, setModal] = useState<{ open: boolean; emp: Partial<Employee>|null }>({ open:false, emp:null });
-  const [deleteId, setDeleteId] = useState<string|null>(null);
+  const [modal, setModal] = useState<{ open: boolean; emp: Partial<Employee> | null }>({ open: false, emp: null });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [payslipEmpId, setPayslipEmpId] = useState<string | null>(null);
   const [dbTerritories, setDbTerritories] = useState<any[]>([]);
-  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [pageShifts, setPageShifts] = useState<any[]>([]);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({}); 
   const [statsMap, setStatsMap] = useState<Record<string, { checkIn: string; hours: string; tasks: number; distance: string; status: string }>>({});
 
   const toggleExpanded = (id: string) => {
@@ -524,40 +511,54 @@ export default function EmployeesPage() {
   }, []);
 
   useEffect(() => {
+    const fetchPageShifts = async () => {
+      try {
+        const res = await shiftApi.list();
+        if (res && res.success) {
+          setPageShifts(res.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch shifts:", err);
+      }
+    };
+    fetchPageShifts();
+  }, []);
+
+  useEffect(() => {
     const fetchLiveStats = async () => {
       try {
         const [attRes, tasksRes] = await Promise.all([
           attendanceApi.today(),
           tasksApi.list({ limit: 1000 })
         ]);
-        
+
         const attendances = (attRes as any)?.data || attRes || [];
         const tasks = (tasksRes as any)?.data || tasksRes || [];
 
         const newStats: Record<string, any> = {};
-        
+
         attendances.forEach((a: any) => {
           if (!newStats[a.userId]) newStats[a.userId] = { tasks: 0, distance: "0 km" };
-          newStats[a.userId].checkIn = a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-          
+          newStats[a.userId].checkIn = a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-";
+
           if (a.workingMinutes) {
             const hrs = Math.floor(a.workingMinutes / 60);
             const mins = a.workingMinutes % 60;
             newStats[a.userId].hours = `${hrs}h ${mins}m`;
           } else if (a.checkInTime && a.checkOutTime) {
-             const diff = new Date(a.checkOutTime).getTime() - new Date(a.checkInTime).getTime();
-             const hrs = Math.floor(diff / 3600000);
-             const mins = Math.floor((diff % 3600000) / 60000);
-             newStats[a.userId].hours = `${hrs}h ${mins}m`;
+            const diff = new Date(a.checkOutTime).getTime() - new Date(a.checkInTime).getTime();
+            const hrs = Math.floor(diff / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            newStats[a.userId].hours = `${hrs}h ${mins}m`;
           } else {
-             newStats[a.userId].hours = a.checkInTime ? "Active" : "0:00 hrs";
+            newStats[a.userId].hours = a.checkInTime ? "Active" : "0:00 hrs";
           }
           if (a.checkOutTime) {
-              newStats[a.userId].status = "Punched Out";
+            newStats[a.userId].status = "Punched Out";
           } else if (a.checkInTime) {
-              newStats[a.userId].status = "Punched In";
+            newStats[a.userId].status = "Punched In";
           } else {
-              newStats[a.userId].status = "Not Punched In";
+            newStats[a.userId].status = "Not Punched In";
           }
         });
 
@@ -571,7 +572,7 @@ export default function EmployeesPage() {
             });
           }
         });
-        
+
         setStatsMap(newStats);
       } catch (err) {
         console.error("Failed to fetch live stats", err);
@@ -627,12 +628,12 @@ export default function EmployeesPage() {
   const calculateSalary = (empId: string, role: string) => {
     const data = payrollData[empId] || { leaves: 0, tasks: 0, bonus: 0, baseSalary: getBaseSalary(role) };
     const base = data.baseSalary !== undefined ? data.baseSalary : getBaseSalary(role);
-    
+
     const dailyRate = Math.round(base / 26);
     const lop = data.leaves * dailyRate;
     const taskIncentive = data.tasks * 250; // ₹250 per task incentive
     const gross = base + taskIncentive + data.bonus;
-    
+
     const pf = Math.round(base * 0.12); // 12% PF contribution
     const pt = base > 15000 ? 200 : 0;  // Flat ₹200 PT
     const totalDeductions = lop + pf + pt;
@@ -659,9 +660,9 @@ export default function EmployeesPage() {
     if (e.status !== "active") return false;
 
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.role.toLowerCase().includes(search.toLowerCase()) ||
-    e.territory.toLowerCase().includes(search.toLowerCase());
-    
+      e.role.toLowerCase().includes(search.toLowerCase()) ||
+      e.territory.toLowerCase().includes(search.toLowerCase());
+
     let matchManager = true;
     if (user?.role === "MANAGER") {
       matchManager = e.managerId === user.id;
@@ -766,22 +767,22 @@ export default function EmployeesPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
           <div className="page-title">{activeTab === "roster" ? "Employees" : "Payroll System"}</div>
           <div className="page-subtitle">
-            {activeTab === "roster" 
+            {activeTab === "roster"
               ? `${employees.length} total field workers registered`
               : `₹${totalPayrollCost.toLocaleString()} active payroll burden for Mumbai Sector`
             }
           </div>
         </div>
-        
+
         {activeTab === "roster" ? (
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             {isAdmin && (
-              <select 
-                className="input" 
+              <select
+                className="input"
                 style={{ width: 180, height: 36, padding: "0 12px" }}
                 value={selectedManager}
                 onChange={(e) => setSelectedManager(e.target.value)}
@@ -792,8 +793,8 @@ export default function EmployeesPage() {
                 ))}
               </select>
             )}
-            <button className="btn-primary" onClick={()=>setModal({open:true,emp:null})}>
-              <Plus size={16}/> Add Employee
+            <button className="btn-primary" onClick={() => setModal({ open: true, emp: null })}>
+              <Plus size={16} /> Add Employee
             </button>
           </div>
         ) : (
@@ -878,7 +879,7 @@ export default function EmployeesPage() {
               <span style={{ fontSize: "11px", color: "var(--accent-red)", fontWeight: 700 }}>Inc. LOP, 12% PF & PT</span>
             </div>
           </div>
-          
+
           {/* Automated Policy Violations Panel */}
           <div className="card" style={{ padding: "16px", marginBottom: "24px", border: "1px solid rgba(244, 63, 94, 0.2)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -888,7 +889,7 @@ export default function EmployeesPage() {
               </div>
               <span className="badge badge-red" style={{ fontSize: "11px" }}>Auto-Deductions Active</span>
             </div>
-            
+
             <div className="table-wrapper" style={{ margin: 0, boxShadow: "none", border: "1px solid var(--border)" }}>
               <table style={{ margin: 0 }}>
                 <thead style={{ background: "var(--bg-hover)" }}>
@@ -998,11 +999,11 @@ export default function EmployeesPage() {
                             <div style={{ width: "14px" }} />
                           )}
                           {emp.avatar?.startsWith("http") ? (
-                            <CloudinaryImage 
-                              url={emp.avatar} 
-                              alt={emp.name} 
-                              width="32px" 
-                              height="32px" 
+                            <CloudinaryImage
+                              url={emp.avatar}
+                              alt={emp.name}
+                              width="32px"
+                              height="32px"
                               className="rounded-full"
                             />
                           ) : (
@@ -1034,10 +1035,10 @@ export default function EmployeesPage() {
                         <td style={{ padding: "16px 12px", textAlign: "right" }}>
                           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
                             <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }} onClick={() => setModal({ open: true, emp })}>
-                              <Pencil size={12}/> Edit
+                              <Pencil size={12} /> Edit
                             </button>
-                            <button onClick={()=>setDeleteId(emp.id)} style={{ background:"rgba(244,63,94,0.1)",border:"1px solid rgba(244,63,94,0.2)",color:"var(--accent-red)",padding:"4px 8px",borderRadius: "0",fontSize:"11px",cursor:"pointer",display:"flex",alignItems:"center",gap:"4px" }}>
-                              <Trash2 size={12}/> Delete
+                            <button onClick={() => setDeleteId(emp.id)} style={{ background: "rgba(244,63,94,0.1)", border: "1px solid rgba(244,63,94,0.2)", color: "var(--accent-red)", padding: "4px 8px", borderRadius: "0", fontSize: "11px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                              <Trash2 size={12} /> Delete
                             </button>
                           </div>
                         </td>
@@ -1064,7 +1065,7 @@ export default function EmployeesPage() {
 
                 // Group the roots by Location (Territory)
                 const locations = Array.from(new Set(filtered.map((e: Employee) => e.territory || "Unassigned"))) as string[];
-                
+
                 return locations.map((loc: string) => {
                   const locRoots = roots.filter((r: Employee) => (r.territory || "Unassigned") === loc);
                   if (locRoots.length === 0) return null;
@@ -1144,25 +1145,25 @@ export default function EmployeesPage() {
                 const isInactive = emp.status === "inactive";
                 const calc = calculateSalary(emp.id, emp.role);
                 const empData = payrollData[emp.id] || { leaves: 0, tasks: 0, bonus: 0 };
-                
+
                 return (
                   <tr key={emp.id} style={{ opacity: isInactive ? 0.6 : 1, background: isInactive ? "var(--bg-hover)" : "none" }}>
                     <td>
-                      <div style={{ display:"flex",alignItems:"center",gap:"10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         {emp.avatar?.startsWith("http") ? (
-                          <CloudinaryImage 
-                            url={emp.avatar} 
-                            alt={emp.name} 
-                            width="36px" 
-                            height="36px" 
+                          <CloudinaryImage
+                            url={emp.avatar}
+                            alt={emp.name}
+                            width="36px"
+                            height="36px"
                             className="rounded-full"
                           />
                         ) : (
-                          <div style={{ width:"36px",height:"36px",borderRadius: "0",background: isInactive ? "var(--text-muted)" : "var(--accent-blue)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:"12px",color:"white",flexShrink:0 }}>{emp.avatar}</div>
+                          <div style={{ width: "36px", height: "36px", borderRadius: "0", background: isInactive ? "var(--text-muted)" : "var(--accent-blue)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "12px", color: "white", flexShrink: 0 }}>{emp.avatar}</div>
                         )}
                         <div>
-                          <div style={{ fontWeight:600,fontSize:"14px" }}>{emp.name}</div>
-                          <div style={{ fontSize:"11px",color:"var(--text-muted)",fontWeight:600 }}>{emp.role}</div>
+                          <div style={{ fontWeight: 600, fontSize: "14px" }}>{emp.name}</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>{emp.role}</div>
                         </div>
                       </div>
                     </td>
@@ -1179,7 +1180,7 @@ export default function EmployeesPage() {
                         }}
                       />
                     </td>
-                    
+
                     {/* Live inputs for leaves */}
                     <td style={{ textAlign: "center" }}>
                       <input
@@ -1194,7 +1195,7 @@ export default function EmployeesPage() {
                         }}
                       />
                     </td>
-                    
+
                     {/* Live inputs for tasks */}
                     <td style={{ textAlign: "center" }}>
                       <input
@@ -1228,7 +1229,7 @@ export default function EmployeesPage() {
                     <td style={{ textAlign: "right", fontSize: "13px", fontWeight: 600, color: "var(--accent-red)" }}>
                       ₹{calc.totalDeductions.toLocaleString()}
                     </td>
-                    
+
                     <td style={{ textAlign: "right", fontSize: "14px", fontWeight: 800, color: isInactive ? "var(--text-muted)" : "var(--accent-green)" }}>
                       ₹{isInactive ? "0" : calc.netPay.toLocaleString()}
                     </td>
@@ -1248,14 +1249,14 @@ export default function EmployeesPage() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div style={{ padding:"40px",textAlign:"center",color:"var(--text-muted)",fontSize:"14px" }}>No active payroll files found.</div>
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "14px" }}>No active payroll files found.</div>
           )}
         </div>
       ) : null}
 
       {/* Add/Edit Modal */}
       {modal.open && (
-        <EmployeeModal emp={modal.emp} onClose={()=>setModal({open:false,emp:null})} territories={dbTerritories} allEmployees={employees} currentUser={user}
+        <EmployeeModal emp={modal.emp} onClose={() => setModal({ open: false, emp: null })} territories={dbTerritories} allEmployees={employees} currentUser={user} shifts={pageShifts}
           onSave={emp => {
             if (modal.emp?.id) {
               // Build update payload — only include password if provided
@@ -1287,8 +1288,8 @@ export default function EmployeesPage() {
               }))
                 .unwrap()
                 .then(() => {
-                  dispatch(fetchEmployees());
-                  setModal({open:false,emp:null});
+                  // Redux store is already updated by updateEmployeeThunk.fulfilled — no refetch needed
+                  setModal({ open: false, emp: null });
                 })
                 .catch((err) => {
                   alert(err || "Failed to update employee");
@@ -1315,8 +1316,8 @@ export default function EmployeesPage() {
                   if (emp.employmentType && newEmp?.id) {
                     localStorage.setItem(`employment_type_${newEmp.id}`, emp.employmentType);
                   }
-                  dispatch(fetchEmployees());
-                  setModal({open:false,emp:null});
+                  // Redux store is already updated by createEmployee.fulfilled — no refetch needed
+                  setModal({ open: false, emp: null });
                 })
                 .catch((err) => {
                   alert(err || "Failed to create employee");
@@ -1327,14 +1328,14 @@ export default function EmployeesPage() {
 
       {/* Delete confirm */}
       {deleteId && (
-        <div className="modal-overlay" onClick={()=>setDeleteId(null)}>
-          <div className="modal-box" style={{ maxWidth:"380px" }} onClick={e=>e.stopPropagation()}>
-            <h2 style={{ fontWeight:700,fontSize:"18px",marginBottom:"10px" }}>Delete Employee?</h2>
-            <p style={{ fontSize:"14px",color:"var(--text-secondary)",marginBottom:"20px" }}>This action cannot be undone.</p>
-            <div style={{ display:"flex",gap:"10px" }}>
-              <button className="btn-secondary" style={{ flex:1,justifyContent:"center" }} onClick={()=>setDeleteId(null)}>Cancel</button>
-              <button style={{ flex:1,background:"rgba(244,63,94,0.15)",border:"1px solid rgba(244,63,94,0.3)",color:"var(--accent-red)",borderRadius: "0",fontWeight:600,cursor:"pointer",padding:"10px" }}
-                onClick={()=>{ dispatch(removeEmployee(deleteId)); setDeleteId(null); }}>Delete</button>
+        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
+          <div className="modal-box" style={{ maxWidth: "380px" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontWeight: 700, fontSize: "18px", marginBottom: "10px" }}>Delete Employee?</h2>
+            <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "20px" }}>This action cannot be undone.</p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button className="btn-secondary" style={{ flex: 1, justifyContent: "center" }} onClick={() => setDeleteId(null)}>Cancel</button>
+              <button style={{ flex: 1, background: "rgba(244,63,94,0.15)", border: "1px solid rgba(244,63,94,0.3)", color: "var(--accent-red)", borderRadius: "0", fontWeight: 600, cursor: "pointer", padding: "10px" }}
+                onClick={() => { dispatch(removeEmployee(deleteId)); setDeleteId(null); }}>Delete</button>
             </div>
           </div>
         </div>
@@ -1344,7 +1345,7 @@ export default function EmployeesPage() {
       {payslipEmpId && payslipEmp && payslipCalc && (
         <div className="modal-overlay" onClick={() => setPayslipEmpId(null)}>
           <div className="modal-box" style={{ maxWidth: "660px", padding: "30px", borderRadius: "0px", background: "#ffffff", border: "1.5px solid var(--accent-blue)", position: "relative" }} onClick={e => e.stopPropagation()}>
-            
+
             {/* Configurable Sections - admin toggle panel */}
             <div className="no-print" style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", padding: "14px", marginBottom: "20px" }}>
               <div style={{ fontSize: "11px", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
@@ -1403,7 +1404,7 @@ export default function EmployeesPage() {
 
             {/* Earnings & Deductions Comparison */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px", marginBottom: "24px" }}>
-              
+
               {/* Earnings Table */}
               <div>
                 <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--accent-green)", borderBottom: "1.5px solid var(--border)", paddingBottom: "6px", marginBottom: "10px" }}>EARNINGS</div>
@@ -1436,10 +1437,10 @@ export default function EmployeesPage() {
                       <span style={{ fontWeight: 700 }}>₹{payslipDataFetched.expenses.toLocaleString()}</span>
                     </div>
                   )}
-                  
+
                   {/* Space filler */}
                   <div style={{ height: "10px" }} />
-                  
+
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1.5px solid var(--border)", paddingTop: "8px", fontSize: "13px", fontWeight: 800, color: "var(--text-primary)" }}>
                     <span>Gross Earnings</span>
                     <span>₹{((visibleSections.basicSalary ? payslipCalc.gross : 0) + travelVal + expenseVal).toLocaleString()}</span>
@@ -1473,7 +1474,7 @@ export default function EmployeesPage() {
                       <span style={{ fontWeight: 700 }}>- ₹{payslipDataFetched.advances.toLocaleString()}</span>
                     </div>
                   )}
-                  
+
                   {/* Space filler */}
                   <div style={{ height: "10px" }} />
 
@@ -1523,7 +1524,7 @@ export default function EmployeesPage() {
                 <Printer size={14} /> Print / Save PDF
               </button>
             </div>
-            
+
           </div>
         </div>
       )}
@@ -1532,3 +1533,5 @@ export default function EmployeesPage() {
   );
 }
 
+
+// Trigger rebuild

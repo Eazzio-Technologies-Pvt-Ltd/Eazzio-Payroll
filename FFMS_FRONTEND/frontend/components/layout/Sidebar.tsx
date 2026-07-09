@@ -848,6 +848,19 @@ export default function Sidebar() {
                       ➔ Account Settings
                     </span>
                   </Link>
+                  <Link href={`${basePath}/settings/subscription`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <span
+                      style={{
+                        fontSize: "12.5px",
+                        color: pathname === `${basePath}/settings/subscription` ? "var(--accent-blue)" : "var(--sidebar-text-inactive)",
+                        fontWeight: pathname === `${basePath}/settings/subscription` ? 700 : 400,
+                        display: "block",
+                        padding: "4px 8px",
+                      }}
+                    >
+                      ➔ Subscription
+                    </span>
+                  </Link>
                 </div>
               )}
             </div>

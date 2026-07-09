@@ -413,6 +413,7 @@ export default function SalaryPage() {
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase" }}>Base Salary</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase" }}>Bonus/Deduct</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Working Days</th>
+                <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Present Days</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Leaves</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase" }}>Net Salary</th>
                 <th style={{ padding: "14px 20px", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>Payslip</th>
@@ -422,9 +423,9 @@ export default function SalaryPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Loading data...</td></tr>
+                <tr><td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Loading data...</td></tr>
               ) : currentData.length === 0 ? (
-                <tr><td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No records found.</td></tr>
+                <tr><td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No records found.</td></tr>
               ) : currentData.map(user => (
                 <tr key={user.id} style={{ borderBottom: "1px solid var(--border)", transition: "background 0.2s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "var(--bg-secondary)"}
@@ -446,6 +447,9 @@ export default function SalaryPage() {
 
                   {/* Working Days */}
                   <td style={{ padding: "14px 20px", textAlign: "center", fontWeight: 600 }}>{user.workingDays}</td>
+
+                  {/* Present Days */}
+                  <td style={{ padding: "14px 20px", textAlign: "center", fontWeight: 600, color: "var(--accent-green)" }}>{user.daysPresent ?? 0}</td>
 
                   {/* Leaves */}
                   <td style={{ padding: "14px 20px", textAlign: "center", fontWeight: 600, color: user.totalLeaves > 0 ? "var(--accent-red)" : "inherit" }}>{user.totalLeaves}</td>

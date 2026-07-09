@@ -510,7 +510,7 @@ export default function AdminManagersPage() {
   );
 }
 
-function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers, territories }: {
+function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers, territories, shifts }: {
   title: string;
   formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; };
   setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; }>>;
@@ -524,38 +524,63 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
   const isAdd = title.includes("Add");
   return (
     <div className="modal-overlay">
-      <div className="modal-box" style={{ maxWidth: 520 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b" }}>{title}</h2>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
-        </div>
-        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Full Name *</label><input type="text" required className="input" value={formData.name} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Ravi Kumar" /></div>
-            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Email *</label><input type="email" required autoComplete="off" className="input" value={formData.email} onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))} placeholder="manager@company.com" /></div>
+      <div className="modal-box" style={{ maxWidth: 600, width: "100%" }}>
+
+        {/* ── Header ── */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", margin: 0 }}>{title}</h2>
+            <p style={{ fontSize: 12, color: "#94a3b8", margin: "4px 0 0" }}>
+              {isAdd ? "Fill in the details to create a new user." : "Update the manager details below."}
+            </p>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Department *</label>
+          <button type="button" onClick={onClose} style={{ background: "#f1f5f9", border: "none", cursor: "pointer", color: "#64748b", borderRadius: 8, padding: "6px 8px", display: "flex", alignItems: "center" }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Row 1: Full Name + Email */}
+          <div style={{ display: "flex", gap: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Full Name *</label>
+              <input type="text" required className="input" value={formData.name} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Ravi Kumar" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Email *</label>
+              <input type="email" required autoComplete="off" className="input" value={formData.email} onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))} placeholder="user@company.com" />
+            </div>
+          </div>
+
+          {/* Row 2: Department + Phone */}
+          <div style={{ display: "flex", gap: 14 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Department *</label>
               <select className="input" value={formData.department} onChange={(e) => setFormData((p) => ({ ...p, department: e.target.value }))} required>
                 {departments.slice(1).map((d) => <option key={d}>{d}</option>)}
               </select>
             </div>
-            <div style={{ flex: 1 }}><label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phone</label><input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" /></div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Phone</label>
+              <input type="text" className="input" value={formData.phone} onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))} placeholder="+91 98765 00001" />
+            </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          {/* Row 3: Employee ID (add only) + Status */}
+          <div style={{ display: "flex", gap: 14 }}>
             {isAdd && (
               <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Employee ID *</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input className="input" style={{ width: 80, textAlign: "center" }} value={formData.empPrefix} onChange={(e) => setFormData(p => ({ ...p, empPrefix: e.target.value.toUpperCase() }))} placeholder="EMP" required />
-                  <span style={{ display: "flex", alignItems: "center", color: "#94a3b8" }}>-</span>
-                  <input type="number" className="input" style={{ flex: 1 }} value={formData.empSuffix} onChange={(e) => setFormData(p => ({ ...p, empSuffix: e.target.value }))} placeholder="Auto-generated if empty" />
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Employee ID *</label>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input className="input" style={{ width: 72, textAlign: "center" }} value={formData.empPrefix} onChange={(e) => setFormData(p => ({ ...p, empPrefix: e.target.value.toUpperCase() }))} placeholder="EMP" required />
+                  <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: 16 }}>—</span>
+                  <input type="number" className="input" style={{ flex: 1 }} value={formData.empSuffix} onChange={(e) => setFormData(p => ({ ...p, empSuffix: e.target.value }))} placeholder="Auto-generated" />
                 </div>
               </div>
             )}
             <div style={{ flex: 1 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Status *</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Status *</label>
               <select className="input" value={formData.status} onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))} required>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
@@ -563,73 +588,120 @@ function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, sub
             </div>
           </div>
 
-          {isAdd && (
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Role *</label>
-                <select className="input" value={formData.role} onChange={(e) => {
-                  const role = e.target.value;
-                  setFormData((p) => ({ ...p, role, empPrefix: role === "MANAGER" ? "MGR" : "EMP" }));
-                }} required>
-                  <option value="MANAGER">Manager</option>
-                  <option value="FIELD_STAFF">Field Staff</option>
-                  <option value="OFFICE_STAFF">Office Staff</option>
-                </select>
-              </div>
-              <div style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Territory</label>
-                  <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
-                    <option value="">-- No Territory --</option>
-                    {territories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Shift</label>
-                  <select className="input" value={formData.shiftId} onChange={(e) => setFormData((p) => ({ ...p, shiftId: e.target.value }))}>
-                    <option value="">-- No Shift --</option>
-                    {shifts.map(s => <option key={s.id} value={s.id}>{s.name} ({s.startTime} - {s.endTime})</option>)}
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Base Salary (₹)</label>
-                  <input type="number" className="input" value={formData.baseSalary} onChange={(e) => setFormData((p) => ({ ...p, baseSalary: Number(e.target.value) }))} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Bonus (₹)</label>
-                  <input type="number" className="input" value={formData.bonus} onChange={(e) => setFormData((p) => ({ ...p, bonus: Number(e.target.value) }))} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Travel Allowance (₹/km)</label>
-                  <input type="number" className="input" value={formData.travelAllowanceRate} onChange={(e) => setFormData((p) => ({ ...p, travelAllowanceRate: Number(e.target.value) }))} />
-                </div>
-              </div>
-            </div>
-          )}
+          {/* ── Add-only fields ── */}
+          {isAdd && (<>
 
-          {(!isAdd || formData.role !== "MANAGER") && (
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Territory</label>
-                <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
-                  <option value="">-- Select Territory --</option>
-                  {territories.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+            {/* Row 4: Role (full width) */}
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Role *</label>
+              <select className="input" value={formData.role} onChange={(e) => {
+                const role = e.target.value;
+                setFormData((p) => ({
+                  ...p,
+                  role,
+                  empPrefix: role === "MANAGER" ? "MGR" : "EMP",
+                  managerId: role === "MANAGER" ? "" : p.managerId,
+                }));
+              }} required>
+                <option value="MANAGER">Manager</option>
+                <option value="FIELD_STAFF">Field Staff</option>
+                <option value="OFFICE_STAFF">Office Staff</option>
+              </select>
+            </div>
+
+            {/* Row 4b: Assign to Manager — only for non-Manager roles */}
+            {formData.role !== "MANAGER" && (
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                  Assign to Manager *
+                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400, marginLeft: 6 }}>
+                    (required so staff appears in manager's team)
+                  </span>
+                </label>
+                <select
+                  className="input"
+                  value={formData.managerId}
+                  onChange={(e) => setFormData((p) => ({ ...p, managerId: e.target.value }))}
+                  required
+                >
+                  <option value="">— Select a Manager —</option>
+                  {managers.filter(m => m.status === "active").map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.department})
+                    </option>
                   ))}
                 </select>
               </div>
+            )}
+
+            {/* Row 5: Territory + Shift */}
+            <div style={{ display: "flex", gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Territory</label>
+                <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
+                  <option value="">— No Territory —</option>
+                  {territories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Shift</label>
+                <select className="input" value={formData.shiftId} onChange={(e) => setFormData((p) => ({ ...p, shiftId: e.target.value }))}>
+                  <option value="">— No Shift —</option>
+                  {shifts.map(s => <option key={s.id} value={s.id}>{s.name} ({s.startTime} – {s.endTime})</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Section divider: Compensation */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "2px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.8px" }}>Compensation</span>
+              <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+            </div>
+
+            {/* Row 6: Base Salary + Bonus + Travel Allowance */}
+            <div style={{ display: "flex", gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Base Salary (₹)</label>
+                <input type="number" className="input" value={formData.baseSalary} onChange={(e) => setFormData((p) => ({ ...p, baseSalary: Number(e.target.value) }))} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Bonus (₹)</label>
+                <input type="number" className="input" value={formData.bonus} onChange={(e) => setFormData((p) => ({ ...p, bonus: Number(e.target.value) }))} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Travel Allow. (₹/km)</label>
+                <input type="number" className="input" value={formData.travelAllowanceRate} onChange={(e) => setFormData((p) => ({ ...p, travelAllowanceRate: Number(e.target.value) }))} />
+              </div>
+            </div>
+
+          </>)}
+
+          {/* Territory for Edit mode */}
+          {!isAdd && (
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Territory</label>
+              <select className="input" value={formData.territoryId} onChange={(e) => setFormData((p) => ({ ...p, territoryId: e.target.value }))}>
+                <option value="">— Select Territory —</option>
+                {territories.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
             </div>
           )}
+
+          {/* Password */}
           <div>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>{isAdd ? "Password *" : "New Password (Optional)"}</label>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+              {isAdd ? "Password *" : "New Password (Optional)"}
+            </label>
             <input type="text" required={isAdd} autoComplete="new-password" className="input" value={formData.password || ""} onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))} placeholder={isAdd ? "Enter a secure password" : "Leave blank to keep current password"} />
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+
+          {/* Footer */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary" style={{ background: "#3b82f6" }}>{submitLabel}</button>
           </div>
+
         </form>
       </div>
     </div>
