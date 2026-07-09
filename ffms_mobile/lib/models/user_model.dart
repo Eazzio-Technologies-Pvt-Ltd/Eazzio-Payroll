@@ -60,10 +60,10 @@ class Shift {
 
   factory Shift.fromJson(Map<String, dynamic> json) {
     return Shift(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      startTime: json['startTime'] as String,
-      endTime: json['endTime'] as String,
+      id: (json['id'] ?? '') as String,
+      name: (json['name'] ?? '') as String,
+      startTime: (json['startTime'] ?? '') as String,
+      endTime: (json['endTime'] ?? '') as String,
       gracePeriod: json['gracePeriod'] as int? ?? 15,
       halfDayThreshold: (json['halfDayThreshold'] as num?)?.toDouble() ?? 4.5,
       breakDuration: json['breakDuration'] as int? ?? 30,
@@ -125,14 +125,14 @@ class UserModel {
       status: (json['status'] ?? 'ACTIVE') as String,
       employeeId: json['employeeId'] as String?,
       managerId: json['managerId'] as String?,
-      organization: json['organization'] != null
-          ? Organization.fromJson(json['organization'] as Map<String, dynamic>)
+      organization: (json['organization'] != null && json['organization'] is Map)
+          ? Organization.fromJson(Map<String, dynamic>.from(json['organization'] as Map))
           : null,
-      territory: json['territory'] != null
-          ? Territory.fromJson(json['territory'] as Map<String, dynamic>)
+      territory: (json['territory'] != null && json['territory'] is Map)
+          ? Territory.fromJson(Map<String, dynamic>.from(json['territory'] as Map))
           : null,
-      shift: json['shift'] != null
-          ? Shift.fromJson(json['shift'] as Map<String, dynamic>)
+      shift: (json['shift'] != null && json['shift'] is Map)
+          ? Shift.fromJson(Map<String, dynamic>.from(json['shift'] as Map))
           : null,
       deviceToken: json['deviceToken'] as String?,
       profileImage: json['profileImage'] as String?,

@@ -170,11 +170,7 @@ class _TravelMeterScreenState extends State<TravelMeterScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppTheme.headerGradient,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(

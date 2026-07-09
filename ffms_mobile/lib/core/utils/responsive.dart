@@ -15,10 +15,13 @@ class Responsive {
   late final double width;
   late final double height;
   late final double pixelRatio;
+  late final double rawWidth;
 
   Responsive(this.context) {
     final media = MediaQuery.of(context);
-    width = media.size.width;
+    rawWidth = media.size.width;
+    // Clamp the layout width to 325.0 - 480.0 range to preserve optimal proportions on extreme screen sizes
+    width = rawWidth.clamp(325.0, 480.0);
     height = media.size.height;
     pixelRatio = media.devicePixelRatio;
   }
@@ -55,6 +58,8 @@ class Responsive {
   bool get isSmall  => width < 380;  // e.g. 360px phones
   bool get isMedium => width < 410;  // e.g. 390px phones
   bool get isLarge  => width >= 410; // e.g. 430px phones
+  bool get isTablet => rawWidth >= 600; // Tablet detection based on actual screen size
+  double get maxContentWidth => 480.0; // Ideal maximum container width to hold mobile design centered on tablets
 
   // ── Safe horizontal padding ───────────────────────────────────────
   EdgeInsets get horizontalPadding => EdgeInsets.symmetric(

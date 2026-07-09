@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/theme/app_theme.dart';
 
 class SwipeToPunch extends StatefulWidget {
   final String text;
@@ -66,18 +67,8 @@ class _SwipeToPunchState extends State<SwipeToPunch> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.isPunchOut ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
-    final gradient = widget.isPunchOut
-        ? const LinearGradient(
-            colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          )
-        : const LinearGradient(
-            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          );
+    final themeColor = widget.isPunchOut ? AppColors.error : AppColors.primary;
+    final gradient = widget.isPunchOut ? AppTheme.punchOutGradient : AppTheme.punchInGradient;
 
     return LayoutBuilder(
       builder: (context, constraints) {

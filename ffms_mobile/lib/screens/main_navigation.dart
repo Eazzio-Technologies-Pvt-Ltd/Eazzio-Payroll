@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'tasks_screen.dart';
 import 'map_screen.dart';
 import 'attendance_screen.dart';
 import 'profile_screen.dart';
 import '../core/theme/app_theme.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../providers/attendance_provider.dart';
+import '../services/auto_punch_out_service.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -25,6 +27,27 @@ class _MainNavigationState extends State<MainNavigation> {
     const AttendanceScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the auto punch-out service once the user is authenticated
+    // and the home navigation is mounted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final attendanceProvider =
+          Provider.of<AttendanceProvider>(context, listen: false);
+      AutoPunchOutService.instance.start(attendanceProvider);
+      debugPrint('[MainNavigation] AutoPunchOutService started.');
+    });
+  }
+
+  @override
+  void dispose() {
+    // Stop the auto punch-out service when navigating away (e.g., logout)
+    AutoPunchOutService.instance.stop();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -70,23 +93,28 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.checkSquare),
+              icon: Icon(Icons.check_box_outlined),
+              activeIcon: Icon(Icons.check_box),
               label: 'Tasks',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.map),
+              icon: Icon(Icons.map_outlined),
+              activeIcon: Icon(Icons.map),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.calendar),
+              icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
               label: 'Attendance',
             ),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.user),
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
               label: 'Profile',
             ),
           ],

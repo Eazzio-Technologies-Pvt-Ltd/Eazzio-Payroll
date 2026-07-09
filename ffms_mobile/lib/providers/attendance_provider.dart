@@ -47,15 +47,9 @@ class AttendanceProvider extends ChangeNotifier {
       return true;
     }
     if (_todaySessions.isNotEmpty) {
-      final lastSession = _todaySessions.last;
-      return lastSession.punchInTime != null && lastSession.punchOutTime == null;
+      return _todaySessions.any((s) => s.punchInTime != null && s.punchOutTime == null);
     }
     return false;
-
-    // Add comment:
-    // // isCurrentlyPunchedIn checks API data first, confirmed local state second
-    // // Local state only written AFTER server confirmation
-    // // This means: local state = server-confirmed, safe to use as fallback
   }
 
   bool get isPunchedIn => isCurrentlyPunchedIn;
@@ -103,6 +97,13 @@ class AttendanceProvider extends ChangeNotifier {
   ///   3. On server error → return success: false, button resets, no state change.
   ///   4. On server success → save confirmed local state → update UI → return success: true.
   Future<PunchResult> punchIn(Position position, {String? selfieBase64}) async {
+    if (isCurrentlyPunchedIn) {
+      return PunchResult(
+        success: false,
+        message: 'You are already punched in.',
+      );
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -228,6 +229,7 @@ class AttendanceProvider extends ChangeNotifier {
             data: {
               'latitude': punch['latitude'],
               'longitude': punch['longitude'],
+              if (punch['selfieBase64'] != null) 'selfieBase64': punch['selfieBase64'],
             },
             options: Options(
               sendTimeout: const Duration(seconds: 90),
@@ -262,8 +264,7 @@ class AttendanceProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────────
   // PUNCH OUT (kept synchronous — no selfie, fast operation)
   // ─────────────────────────────────────────────────────────────────────────────
-  // Punch Out handler (renamed from checkOut as per v2 spec)
-  Future<bool> punchOut(Position position) async {
+  Future<bool> punchOut(Position position, {String? selfieBase64}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -274,6 +275,7 @@ class AttendanceProvider extends ChangeNotifier {
         data: {
           'latitude': position.latitude,
           'longitude': position.longitude,
+          'selfieBase64': selfieBase64,
         },
       );
 
@@ -311,8 +313,13 @@ class AttendanceProvider extends ChangeNotifier {
         final list = response.data['data'] as List? ?? [];
         final localNow = DateTime.now();
         
+        final currentUserId = StorageHelper.getUserId();
+        
         // Find if punch exists for today using robust local time comparison
         final todayLogs = list.where((item) {
+          if (currentUserId != null && item['userId'] != currentUserId) {
+            return false;
+          }
           final dateStr = item['date'] as String;
           try {
             final parsedDate = DateTime.parse(dateStr).toLocal();
@@ -373,7 +380,9 @@ class AttendanceProvider extends ChangeNotifier {
       final response = await ApiService.client.get('/attendance');
       if (response.data['success'] == true) {
         final list = response.data['data'] as List? ?? [];
+        final currentUserId = StorageHelper.getUserId();
         final fetched = list
+            .where((item) => currentUserId == null || item['userId'] == currentUserId)
             .map((item) => AttendanceModel.fromJson(item as Map<String, dynamic>))
             .toList();
         

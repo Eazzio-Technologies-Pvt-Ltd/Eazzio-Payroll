@@ -57,10 +57,15 @@ class AuthProvider extends ChangeNotifier {
         SocketService.connect().catchError((_) {});
 
         // Fetch fresh profile in the background to update cached data without blocking app launch
-        _authService.getProfile().then((freshUser) {
+        _authService.getProfile().then((freshUser) async {
           if (freshUser != null) {
             _currentUser = freshUser;
             notifyListeners();
+          } else {
+            final token = await StorageHelper.getAccessToken();
+            if (token == null) {
+              logout();
+            }
           }
         }).catchError((_) {});
       } else if (cachedId != null && cachedName != null && cachedEmail != null && cachedRole != null) {
@@ -79,10 +84,15 @@ class AuthProvider extends ChangeNotifier {
         SocketService.connect().catchError((_) {});
 
         // Fetch fresh profile in the background to update cached data without blocking app launch
-        _authService.getProfile().then((freshUser) {
+        _authService.getProfile().then((freshUser) async {
           if (freshUser != null) {
             _currentUser = freshUser;
             notifyListeners();
+          } else {
+            final token = await StorageHelper.getAccessToken();
+            if (token == null) {
+              logout();
+            }
           }
         }).catchError((_) {});
       } else {
@@ -124,15 +134,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Handle Logout
-  Future<void> logout() async {
-    _state = AuthState.loading;
-    notifyListeners();
-
-    await _authService.logout();
-    SocketService.disconnect();
+  // Clears local state immediately (instant UX) and fires the server
+  // logout API in the background so the user is never blocked on network.
+  void logout() {
+    // 1. Immediately update local state so UI can navigate away at once
     _currentUser = null;
     _state = AuthState.unauthenticated;
     notifyListeners();
+
+    // 2. Disconnect socket right away
+    SocketService.disconnect();
+
+    // 3. Clear stored tokens + notify server in background (non-blocking)
+    _authService.logout().catchError((_) {});
   }
 
   // Upload Profile Image

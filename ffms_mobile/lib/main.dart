@@ -19,6 +19,7 @@ import 'screens/notifications_screen.dart';
 import 'screens/leave_status_screen.dart';
 import 'screens/leave_details_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/role_selection_screen.dart';
 import 'core/utils/notification_helper.dart';
 import 'core/utils/storage_helper.dart';
 
@@ -90,10 +91,10 @@ class EazzioPayrollApp extends StatelessWidget {
       title: 'Eazzio Payroll',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme.copyWith(
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: _SlidePageTransition(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: const _SlidePageTransition(),
+            TargetPlatform.iOS: const _SlidePageTransition(),
           },
         ),
       ),
@@ -101,6 +102,7 @@ class EazzioPayrollApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/role_selection': (context) => const RoleSelectionScreen(),
         '/home': (context) => const MainNavigation(),
         '/notifications': (context) => const NotificationsScreen(),
         '/leave-status': (context) => const LeaveStatusScreen(),
