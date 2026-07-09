@@ -1269,6 +1269,7 @@ export default function EmployeesPage() {
                 territoryId: emp.territoryId,
                 employeeId: emp.employeeId,
                 managerId: emp.managerId,
+                shiftId: emp.shiftId,
               };
               if (emp.password) {
                 updateData.password = emp.password;
@@ -1305,6 +1306,7 @@ export default function EmployeesPage() {
                 employeeId: emp.employeeId,
                 territoryId: emp.territoryId,
                 managerId: emp.managerId,
+                shiftId: emp.shiftId,
               }))
                 .unwrap()
                 .then((newEmp: any) => {
