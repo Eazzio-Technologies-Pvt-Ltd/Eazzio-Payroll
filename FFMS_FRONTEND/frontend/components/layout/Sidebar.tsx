@@ -696,23 +696,7 @@ export default function Sidebar() {
             </div>
           </Link>
 
-          {/* Billing */}
-          {isAdmin && (
-            <Link href="/admin/billing" style={{ textDecoration: "none" }} title="Billing">
-              <div style={getLinkStyle(pathname === "/admin/billing")} className="sidebar-link">
-                {renderIcon(CreditCard, pathname === "/admin/billing")}
-                <span style={{
-                  fontSize: "13.5px",
-                  fontWeight: pathname === "/admin/billing" ? 700 : 500,
-                  opacity: isExpanded ? 1 : 0,
-                  width: isExpanded ? "auto" : 0,
-                  overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  transition: "opacity 0.2s ease 0.05s",
-                }}>Billing</span>
-              </div>
-            </Link>
-          )}
+
 
           {mounted && isAdmin && (<>
             {/* 10. Settings Accordion */}
@@ -848,19 +832,7 @@ export default function Sidebar() {
                       ➔ Account Settings
                     </span>
                   </Link>
-                  <Link href={`${basePath}/settings/subscription`} style={{ textDecoration: "none", color: "inherit" }}>
-                    <span
-                      style={{
-                        fontSize: "12.5px",
-                        color: pathname === `${basePath}/settings/subscription` ? "var(--accent-blue)" : "var(--sidebar-text-inactive)",
-                        fontWeight: pathname === `${basePath}/settings/subscription` ? 700 : 400,
-                        display: "block",
-                        padding: "4px 8px",
-                      }}
-                    >
-                      ➔ Subscription
-                    </span>
-                  </Link>
+
                 </div>
               )}
             </div>

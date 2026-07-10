@@ -3,13 +3,18 @@ const crypto = require('crypto');
 const prisma = require('../config/prisma');
 const { BadRequestError } = require('../utils/errors');
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
 
 const createOrder = async (req, res, next) => {
   try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error('Razorpay keys are not configured in environment variables.');
+    }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+
     const { plan } = req.body;
     const userId = req.user.id;
 
@@ -62,6 +67,7 @@ const createOrder = async (req, res, next) => {
       currency: order.currency
     });
   } catch (err) {
+    console.error("Razorpay Create Order Error:", err);
     next(err);
   }
 };
@@ -74,7 +80,11 @@ const verifyPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Missing payment details' });
     }
 
-    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '');
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error('Razorpay key secret is not configured in environment variables.');
+    }
+
+    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
     shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
     const generated_signature = shasum.digest('hex');
 
@@ -100,6 +110,7 @@ const verifyPayment = async (req, res, next) => {
 
     return res.json({ success: true });
   } catch (err) {
+    console.error("Razorpay Verify Payment Error:", err);
     next(err);
   }
 };
