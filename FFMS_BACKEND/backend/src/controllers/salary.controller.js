@@ -6,7 +6,7 @@ const salaryService = require('../services/salary.service');
 const { getISTDateBoundaries, getWorkingDaysInMonth } = require('../utils/salaryUtils');
 
 // ─── Shared helper: draw payslip PDF onto a PDFDocument ──────────────────────
-const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effectiveWorkingDays, baseSalary, bonus, perDaySalary, unpaidLeaveDeduction, advancesDeduction, netSalary, presentDays, lateDays, halfDays, absentDays }) => {
+const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effectiveWorkingDays, baseSalary, bonus, perDaySalary, unpaidLeaveDeduction, advancesDeduction, netSalary, presentDays, lateDays, halfDays, absentDays, daysAbsent }) => {
   // ── Company Header ──
   doc.fontSize(22).font('Helvetica-Bold').text(companyName, { align: 'center' });
   doc.moveDown(0.3);
@@ -55,7 +55,7 @@ const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effe
 
   const summaryY3 = doc.y;
   doc.text(`Days Absent / Missed:`, col1, summaryY3);
-  doc.font('Helvetica-Bold').text(`${Math.max(0, totalWorkingDays - effectiveWorkingDays)}`, col2, summaryY3);
+  doc.font('Helvetica-Bold').text(`${daysAbsent}`, col2, summaryY3);
   doc.font('Helvetica').text(`Absent:`, col3, summaryY3);
   doc.font('Helvetica-Bold').text(`${absentDays}`, col4, summaryY3);
   doc.font('Helvetica');
@@ -130,73 +130,6 @@ const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effe
   doc.fillColor('black');
 };
 
-// ─── Shared helper: gather payslip data ──────────────────────────────────────
-const gatherPayslipData = async (userId, organizationId, month) => {
-  const [year, m] = month.split('-').map(Number);
-
-  // IST-safe boundaries — aligns with @db.Date records stored in IST
-  const { startDate, endDate: endDateBoundary } = getISTDateBoundaries(month);
-
-  const totalWorkingDays = getWorkingDaysInMonth(year, m);
-
-  const user = await prisma.user.findFirst({ where: { id: userId, organizationId } });
-  if (!user) return null;
-
-  const attendances = await prisma.attendance.findMany({
-    where: { userId, date: { gte: startDate, lte: endDateBoundary } }
-  });
-
-  let presentDays = 0, lateDays = 0, absentDays = 0, halfDays = 0;
-  attendances.forEach(a => {
-    if (a.status === 'PRESENT') presentDays++;
-    else if (a.status === 'LATE') lateDays++;
-    else if (a.status === 'ABSENT') absentDays++;
-    else if (a.status === 'HALF_DAY') halfDays++;
-  });
-
-  const presentCredit = presentDays + lateDays + (halfDays * 0.5);
-  const effectiveWorkingDays = Math.min(presentCredit, totalWorkingDays);
-
-  const baseSalary = user.baseSalary || 0;
-  const bonus = user.bonus || 0;
-  const perDaySalary = totalWorkingDays > 0 ? baseSalary / totalWorkingDays : 0;
-
-  let unpaidLeaveDeduction = 0;
-  if (effectiveWorkingDays < totalWorkingDays) {
-    unpaidLeaveDeduction = (totalWorkingDays - effectiveWorkingDays) * perDaySalary;
-  }
-
-  // Fetch approved advances for the month
-  const advances = await prisma.advance.findMany({
-    where: {
-      userId,
-      status: 'APPROVED',
-      dateApproved: { gte: startDate, lte: endDateBoundary }
-    },
-    select: { amount: true }
-  });
-  const advancesDeduction = advances.reduce((sum, a) => sum + (a.amount || 0), 0);
-
-  const netSalary = Math.max(0, (baseSalary - unpaidLeaveDeduction) + bonus - advancesDeduction);
-
-  return {
-    user,
-    month,
-    totalWorkingDays,
-    effectiveWorkingDays,
-    baseSalary,
-    bonus,
-    perDaySalary,
-    unpaidLeaveDeduction,
-    advancesDeduction,
-    netSalary,
-    presentDays,
-    lateDays,
-    halfDays,
-    absentDays
-  };
-};
-
 // ─── Controllers ─────────────────────────────────────────────────────────────
 
 exports.getSalaryList = async (req, res) => {
@@ -237,7 +170,7 @@ exports.generateSlip = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Month is required' });
     }
 
-    const data = await gatherPayslipData(userId, organizationId, month);
+    const data = await salaryService.gatherPayslipData(userId, organizationId, month);
     if (!data) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -270,7 +203,7 @@ exports.emailSlip = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Month is required' });
     }
 
-    const data = await gatherPayslipData(userId, organizationId, month);
+    const data = await salaryService.gatherPayslipData(userId, organizationId, month);
     if (!data) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -316,7 +249,7 @@ exports.emailSlip = async (req, res) => {
           filename: `Salary_Slip_${data.user.name.replace(/\s+/g, '_')}_${month}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf'
-        }
+         }
       ]
     });
 
