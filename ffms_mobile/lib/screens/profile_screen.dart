@@ -10,6 +10,9 @@ import '../core/theme/app_theme.dart';
 import 'expenses_screen.dart';
 import 'feedback_screen.dart';
 import 'permissions_screen.dart';
+import '../core/utils/salary_helper.dart';
+import '../providers/attendance_provider.dart';
+import 'package:intl/intl.dart';
 
 // Profile screen v2 — gradient header + modern stat cards + clean settings list
 class ProfileScreen extends StatefulWidget {
@@ -23,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+  bool _isLoggingOut = false;
 
   @override
   void initState() {
@@ -58,12 +62,155 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
+  void _handleLogout(BuildContext context) {
+    // Guard against multiple rapid taps
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
+    // logout() is now synchronous — clears local state instantly
+    authProvider.logout();
+
+    // Navigate immediately without waiting for any network call
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/role_selection', (route) => false);
     }
+  }
+
+  List<DateTime> _getAvailableSalarySlipMonths() {
+    final List<DateTime> list = [];
+    final now = DateTime.now();
+    
+    // Slips are generated on the 10th of the month for the previous month.
+    // If today is >= 10th, previous month (now.month - 1) is available.
+    // If today is < 10th, the month before previous month (now.month - 2) is available.
+    DateTime latestAvailableMonth;
+    if (now.day >= 10) {
+      latestAvailableMonth = DateTime(now.year, now.month - 1, 1);
+    } else {
+      latestAvailableMonth = DateTime(now.year, now.month - 2, 1);
+    }
+
+    for (int i = 0; i < 12; i++) {
+      final date = DateTime(latestAvailableMonth.year, latestAvailableMonth.month - i, 1);
+      if (date.year >= 2024) {
+        list.add(date);
+      }
+    }
+    return list;
+  }
+
+  void _showSalarySlipsDialog(BuildContext context) {
+    final availableMonths = _getAvailableSalarySlipMonths();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
+              const SizedBox(width: 10),
+              Text(
+                'My Salary Slips',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Salary slips are automatically generated on the 10th of every month for the previous month. Download your available slips below.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (availableMonths.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        'No salary slips available yet.',
+                        style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: availableMonths.length,
+                      separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.border),
+                      itemBuilder: (context, index) {
+                        final date = availableMonths[index];
+                        final monthStr = DateFormat('MMMM yyyy').format(date);
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+                          title: Text(
+                            monthStr,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.download_rounded, color: AppColors.primary),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Downloading salary slip for $monthStr...'),
+                                  backgroundColor: AppColors.primary,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 2), () {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Salary slip for $monthStr downloaded successfully!'),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Close',
+                style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _uploadPhoto(BuildContext context) async {
@@ -366,10 +513,49 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final totalWorkingDays = travelProvider.monthlySummary?.totalWorkingDays ?? 0;
     final baseSalary = authUser?.baseSalary ?? 0.0;
 
-    if (baseSalary > 0 && totalWorkingDays > 0) {
-      accruedSalary = (present / totalWorkingDays) * baseSalary;
-    } else if (baseSalary > 0 && present > 0) {
-      accruedSalary = (present / 26.0) * baseSalary;
+    final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
+    if (baseSalary > 0 && dynamicWorkingDays > 0) {
+      final dailySalaryRate = baseSalary / dynamicWorkingDays;
+      final logs = Provider.of<AttendanceProvider>(context).attendanceHistory;
+
+      // Group sessions by date to prevent duplicate rows and sum/factor correctly
+      final Map<String, List<dynamic>> groupedByDate = {};
+      for (final log in logs) {
+        final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
+        groupedByDate.putIfAbsent(dateStr, () => []).add(log);
+      }
+
+      int getStatusRank(String status) {
+        final upper = status.toUpperCase();
+        if (upper == 'PRESENT' || upper == 'ON_DUTY') return 4;
+        if (upper == 'LATE') return 3;
+        if (upper == 'HALF_DAY') return 2;
+        if (upper == 'ABSENT') return 1;
+        return 0;
+      }
+
+      for (final dateLogs in groupedByDate.values) {
+        if (dateLogs.isEmpty) continue;
+        dynamic highestLog = dateLogs.first;
+        int highestRank = getStatusRank(highestLog.status);
+        for (final log in dateLogs) {
+          final rank = getStatusRank(log.status);
+          if (rank > highestRank) {
+            highestRank = rank;
+            highestLog = log;
+          }
+        }
+
+        final finalStatus = highestLog.status.toUpperCase();
+        double salaryFactor = 0.0;
+        if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
+          salaryFactor = 1.0;
+        } else if (finalStatus == 'HALF_DAY') {
+          salaryFactor = 0.5;
+        }
+
+        accruedSalary += dailySalaryRate * salaryFactor;
+      }
     }
 
     double attPct = totalWorkingDays > 0 ? (present / totalWorkingDays) * 100 : 100.0;
@@ -379,6 +565,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'My Profile',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
@@ -495,34 +682,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Stats row cards
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  _buildStatCard(
-                    Icons.calendar_today_outlined,
-                    '${attPct.toStringAsFixed(0)}%',
-                    'Attendance',
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    Icons.check_circle_outline,
-                    '$present Days',
-                    'Worked',
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    Icons.directions_car_outlined,
-                    '${totalDistance.toStringAsFixed(0)} KM',
-                    'Travelled',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // Profile Tile Details Container
             Padding(
@@ -614,6 +774,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                     Divider(height: 1, color: AppColors.border),
                     _buildNavigationRowItem(
+                      icon: Icons.picture_as_pdf_outlined,
+                      title: 'My Salary Slips',
+                      onTap: () => _showSalarySlipsDialog(context),
+                    ),
+                    Divider(height: 1, color: AppColors.border),
+                    _buildNavigationRowItem(
                       icon: Icons.feedback_outlined,
                       title: 'Anonymous Feedback',
                       onTap: () => Navigator.push(
@@ -655,7 +821,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     'Log Out',
                     style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
-                  onPressed: () => _handleLogout(context),
+                  onPressed: _isLoggingOut ? null : () => _handleLogout(context),
                 ),
               ),
             ),

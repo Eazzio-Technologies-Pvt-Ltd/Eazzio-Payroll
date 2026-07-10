@@ -10,6 +10,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/storage_helper.dart';
+import '../core/utils/responsive.dart';
 
 class PermissionStep {
   final String title;
@@ -69,20 +70,37 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   /// Verifies current status of all permissions
   Future<void> _checkPermissions({bool isInit = false}) async {
     try {
-      final locStatusAlways = await Permission.locationAlways.isGranted;
-      final locStatusInUse = await Permission.location.isGranted;
-      final cameraStatus = await Permission.camera.isGranted;
-      final photosStatus = await Permission.photos.isGranted || await Permission.storage.isGranted;
+      bool locStatusAlways = false;
+      bool locStatusInUse = false;
+      bool cameraStatus = false;
+      bool photosStatus = false;
+      bool notificationsStatus = false;
+
+      if (!kIsWeb) {
+        locStatusAlways = await Permission.locationAlways.isGranted;
+        locStatusInUse = await Permission.location.isGranted;
+        cameraStatus = await Permission.camera.isGranted;
+        photosStatus = await Permission.photos.isGranted || await Permission.storage.isGranted;
+        notificationsStatus = await Permission.notification.isGranted;
+      } else {
+        locStatusAlways = true;
+        locStatusInUse = true;
+        cameraStatus = true;
+        photosStatus = true;
+        notificationsStatus = true;
+      }
       
       bool bluetoothStatus = false;
-      try {
-        bluetoothStatus = await Permission.bluetooth.isGranted;
-      } catch (_) {
+      if (!kIsWeb) {
+        try {
+          bluetoothStatus = await Permission.bluetooth.isGranted;
+        } catch (_) {
+          bluetoothStatus = true;
+        }
+      } else {
         bluetoothStatus = true;
       }
       
-      final notificationsStatus = await Permission.notification.isGranted;
-
       bool activityStatus = false;
       if (!kIsWeb) {
         if (Platform.isAndroid) {
@@ -148,6 +166,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   /// Location: Always / When in Use
   Future<void> _grantLocation() async {
+    if (kIsWeb) {
+      await _checkPermissions();
+      return;
+    }
     var status = await Permission.location.request();
     if (status.isGranted) {
       await Permission.locationAlways.request();
@@ -157,12 +179,20 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   /// Camera Access
   Future<void> _grantCamera() async {
+    if (kIsWeb) {
+      await _checkPermissions();
+      return;
+    }
     await Permission.camera.request();
     await _checkPermissions();
   }
 
   /// Photo Library / Storage
   Future<void> _grantPhotos() async {
+    if (kIsWeb) {
+      await _checkPermissions();
+      return;
+    }
     await Permission.photos.request();
     await Permission.storage.request();
     await _checkPermissions();
@@ -170,6 +200,13 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   /// Bluetooth Connectivity
   Future<void> _grantBluetooth() async {
+    if (kIsWeb) {
+      setState(() {
+        _bluetoothGranted = true;
+      });
+      await _checkPermissions();
+      return;
+    }
     try {
       final status = await Permission.bluetooth.request();
       if (status.isRestricted || status.isPermanentlyDenied) {
@@ -187,6 +224,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
   /// Push Notifications
   Future<void> _grantNotifications() async {
+    if (kIsWeb) {
+      await _checkPermissions();
+      return;
+    }
     await Permission.notification.request();
     await _checkPermissions();
   }
@@ -424,10 +465,15 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
 
     final currentStep = _currentStepIndex;
 
+    final r = Responsive(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+          child: Stack(
+            children: [
           // Decorative top-right gradient blob
           Positioned(
             top: -100,
@@ -598,6 +644,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
             ),
           ),
         ],
+      ),
+    ),
       ),
     );
   }

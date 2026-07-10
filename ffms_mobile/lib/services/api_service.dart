@@ -96,8 +96,19 @@ class ApiService {
                   return handler.resolve(response);
                 }
               } catch (e) {
-                // Refresh failed: Logout and clear
-                await StorageHelper.clearAll();
+                // Only clear tokens and force logout if it's an explicit 400/401/403 validation failure from the server,
+                // not for network issues/timeouts.
+                bool shouldLogout = true;
+                if (e is DioException) {
+                  final status = e.response?.statusCode;
+                  if (status == null || (status != 400 && status != 401 && status != 403)) {
+                    // Keep the tokens so user can retry when network/server is restored
+                    shouldLogout = false;
+                  }
+                }
+                if (shouldLogout) {
+                  await StorageHelper.clearAll();
+                }
               }
             }
           }

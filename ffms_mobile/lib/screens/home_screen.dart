@@ -20,6 +20,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/user_avatar.dart';
 import '../core/theme/app_theme.dart';
 import '../core/utils/storage_helper.dart';
+import '../core/utils/notification_helper.dart';
 import '../core/utils/constants.dart';
 import 'permissions_screen.dart';
 import 'request_advance_screen.dart';
@@ -27,6 +28,7 @@ import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded si
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_card.dart';
 import '../widgets/swipe_to_punch.dart';
+import '../core/utils/salary_helper.dart';
 import '../models/attendance_model.dart';
 
 // Home screen v2 — premium card layouts + modern gradients
@@ -242,8 +244,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _handleAttendanceAction() async {
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
 
-    final permission = await GeolocatorPlatform.instance.checkPermission();
+    // 1. Verify location services are enabled
+    final bool gpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!gpsEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("GPS is disabled. Please enable location services to proceed."),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return false;
+    }
+
+    // 2. Verify and request location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
     if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       if (mounted) {
         Navigator.push(
@@ -262,56 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final bool wasPunchedIn = attendanceProvider.isPunchedIn;
-    String? base64Selfie;
 
-    // ── Selfie capture (punch-in only) ───────────────────────────────────────
-    try {
-      if (!wasPunchedIn) {
-        final battery = Battery();
-        final batteryLevel = await battery.batteryLevel;
-        if (batteryLevel < 40) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Battery must be 40%+ to Punch In. Current: $batteryLevel%'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-          return false;
-        }
-
-        // Reusable image upload utility: checks camera permission, formats/sizes selfie under 1MB
-        await StorageHelper.savePendingAction('PUNCH_IN');
-        if (!mounted) return false;
-        final result = await ImageUploadUtil.pickAndCompressImage(
-          context,
-          cameraOnly: true,
-          preferredCameraDevice: CameraDevice.front,
-        );
-        await StorageHelper.savePendingAction(null);
-        if (result == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Selfie photo is required to Punch In.')),
-            );
-          }
-          return false;
-        }
-
-        base64Selfie = result.base64String;
-      }
-    } catch (e) {
-      await StorageHelper.savePendingAction(null);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selfie capture failed: $e'), backgroundColor: AppColors.error),
-        );
-      }
-      return false;
-    }
-
-    // ── GPS resolution (15s timeout with fallback) ───────────────────────────
+    // 3. Fetch current location BEFORE selfie (fail if GPS signal is weak)
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Getting your location...'), duration: Duration(seconds: 2)),
@@ -326,11 +300,59 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } catch (e) {
       position = await Geolocator.getLastKnownPosition();
-      if (position == null) {
+    }
+
+    if (position == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('GPS signal is too weak. Please ensure location services are enabled and try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return false;
+    }
+
+    // 4. Territory Check (Only for Punch-In)
+    if (!wasPunchedIn) {
+      if (user == null || user.territory == null || user.territory!.polygon == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('GPS signal is too weak. Please ensure location services are enabled and try again.'),
+              content: Text("You don't have an assigned territory. Please contact your employer to get a territory assigned."),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return false;
+      }
+      
+      final polyData = user.territory!.polygon!;
+      if (polyData['coordinates'] == null || polyData['coordinates'] is! List || (polyData['coordinates'] as List).isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You don't have an assigned territory. Please contact your employer to get a territory assigned."),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return false;
+      }
+    }
+
+    // Check battery level for Punch-In
+    if (!wasPunchedIn) {
+      final battery = Battery();
+      final batteryLevel = await battery.batteryLevel;
+      if (batteryLevel < 40) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Battery must be 40%+ to Punch In. Current: $batteryLevel%'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -339,9 +361,117 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // ── Execute punch action ─────────────────────────────────────────────────
+    // 5. Selfie Capture with Geo-Tag Watermark (Mandatory)
+    String? base64Selfie;
+    try {
+      final String actionName = wasPunchedIn ? 'PUNCH_OUT' : 'PUNCH_IN';
+      final String actionLabel = wasPunchedIn ? 'Punch Out' : 'Punch In';
+
+      await StorageHelper.savePendingAction(actionName);
+      if (!mounted) return false;
+      
+      final result = await ImageUploadUtil.pickAndCompressImage(
+        context,
+        cameraOnly: true,
+        preferredCameraDevice: CameraDevice.front,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        employeeName: user?.name,
+        employeeId: user?.employeeId,
+      );
+      
+      await StorageHelper.savePendingAction(null);
+      
+      if (result == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Selfie photo is required to $actionLabel.')),
+          );
+        }
+        return false;
+      }
+
+      base64Selfie = result.base64String;
+    } catch (e) {
+      await StorageHelper.savePendingAction(null);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Selfie capture failed: $e'), backgroundColor: AppColors.error),
+        );
+      }
+      return false;
+    }
+
+    // 6. Geofence Boundary Check (To determine Inside/Outside status warning)
+    bool isInside = true;
+    if (user != null && user.territory != null && user.territory!.polygon != null) {
+      final polyData = user.territory!.polygon!;
+      if (polyData['coordinates'] != null && polyData['coordinates'] is List && (polyData['coordinates'] as List).isNotEmpty) {
+        final coords = polyData['coordinates'][0] as List;
+        double sumLat = 0;
+        double sumLng = 0;
+        int count = 0;
+        
+        for (var coord in coords) {
+          if (coord is List && coord.length >= 2) {
+            double lng = (coord[0] as num).toDouble();
+            double lat = (coord[1] as num).toDouble();
+            sumLat += lat;
+            sumLng += lng;
+            count++;
+          }
+        }
+        
+        if (count > 0) {
+          double centroidLat = sumLat / count;
+          double centroidLng = sumLng / count;
+          
+          bool inside = false;
+          for (int i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+            final xi = (coords[i][0] as num).toDouble();
+            final yi = (coords[i][1] as num).toDouble();
+            final xj = (coords[j][0] as num).toDouble();
+            final yj = (coords[j][1] as num).toDouble();
+            
+            final intersect = ((yi > position.latitude) != (yj > position.latitude)) &&
+                (position.longitude < (xj - xi) * (position.latitude - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+          }
+          
+          isInside = inside;
+          if (!isInside) {
+            final double distance = Geolocator.distanceBetween(
+              position.latitude,
+              position.longitude,
+              centroidLat,
+              centroidLng,
+            );
+            if (distance > 100.0) {
+              isInside = false;
+            } else {
+              isInside = true;
+            }
+          }
+        }
+      }
+    }
+
+    // 7. Execute Punch Action
     if (wasPunchedIn) {
-      // Punch-out is synchronous (no selfie, fast operation)
+      // Block punch-out if employee is outside assigned geofence
+      if (!isInside) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You are outside your assigned location. Please move inside your territory to punch out."),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return false;
+      }
+
       if (!mounted) return false;
       showDialog(
         context: context,
@@ -351,26 +481,39 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
 
-      final success = await attendanceProvider.punchOut(position);
+      final success = await attendanceProvider.punchOut(position, selfieBase64: base64Selfie);
 
       if (!mounted) return success;
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
+
       if (success) {
         await StorageHelper.savePunchOutTime(DateTime.now().toIso8601String());
         await StorageHelper.clearPunchInState();
+        try {
+          await NotificationHelper.showNewNotification(
+            'Punch Out Successful',
+            'You punched out at ${DateFormat('hh:mm a').format(DateTime.now())}.',
+          );
+        } catch (_) {}
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Punched Out Successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(attendanceProvider.errorMessage ?? 'Punch Out failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
-      if (!mounted) return success;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success
-              ? 'Punched Out Successfully!'
-              : (attendanceProvider.errorMessage ?? 'Punch Out failed')),
-          backgroundColor: success ? AppColors.success : AppColors.error,
-        ),
-      );
       return success;
     } else {
-      // Punch-in is Server-Confirm-First
       if (!mounted) return false;
 
       setState(() {
@@ -386,21 +529,38 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       if (result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Punched In Successfully!'),
-            backgroundColor: AppColors.success,
-            duration: Duration(seconds: 3),
-          ),
-        );
-        // Wait 2 seconds and fetch fresh today state in background
+        try {
+          await NotificationHelper.showNewNotification(
+            'Punch In Successful',
+            'You punched in at ${DateFormat('hh:mm a').format(DateTime.now())}.',
+          );
+        } catch (_) {}
+
+        if (!isInside && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("You are outside your assigned location. Your selfie and location have been recorded."),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Punched In Successfully!'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             attendanceProvider.fetchTodayState();
             attendanceProvider.fetchHistory();
           }
         });
-      } else {
+      } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.message),
@@ -461,6 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Eazzio Payroll',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),
@@ -548,7 +709,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               SizedBox(height: r.spaceMD),
-
+              if (authUser?.role != 'ADMIN') ...[
               // ─── Punch Action Button ─────────────────────────────────
               (() {
                 if (_isLoading) {
@@ -876,15 +1037,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20.0),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: AppTheme.headerGradient,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -920,7 +1077,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       return Theme(
                                         data: Theme.of(context).copyWith(
                                           colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF2563EB),
+                                            primary: AppColors.primary,
                                             onPrimary: Colors.white,
                                             onSurface: Colors.black,
                                           ),
@@ -1811,8 +1968,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
 
-                      // Calculate daily salary components (standard 26 working days)
-                      final dailySalaryRate = baseSalary / 26.0;
+                      // Calculate daily salary components using dynamic monthly working days (excluding Sundays)
+                      final dynamicWorkingDays = getWorkingDaysInMonth(DateTime.now());
+                      final dailySalaryRate = baseSalary / dynamicWorkingDays;
 
                       // Group sessions by date to prevent duplicate rows
                       // LATE status treated as full day pay per business rules
@@ -1996,6 +2154,73 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              ] else ...[
+                const SizedBox(height: 24),
+                AnimatedCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primarySoft,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: AppColors.primary,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              'Employer Control Panel',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'You are logged in as the Organization Administrator (Employer). On this panel, you can manage system tasks, review payroll metrics, and oversee the entire field workforce.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.onPrimary,
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  Navigator.pushNamed(context, '/tasks');
+                                },
+                                icon: const Icon(Icons.assignment),
+                                label: const Text('Manage Tasks'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             ],
           ),
         ),

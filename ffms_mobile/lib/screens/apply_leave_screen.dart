@@ -60,9 +60,10 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> with SingleTickerPr
     });
   }
 
-  Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
       context: context,
+      initialDate: _startDate ?? DateTime.now(),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -81,8 +82,37 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> with SingleTickerPr
 
     if (picked != null) {
       setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
+        _startDate = picked;
+        if (_endDate == null || _endDate!.isBefore(picked)) {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate ?? DateTime.now(),
+      firstDate: _startDate ?? DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endDate = picked;
       });
     }
   }
@@ -238,46 +268,109 @@ class _ApplyLeaveScreenState extends State<ApplyLeaveScreen> with SingleTickerPr
                     ),
                     const SizedBox(height: 20),
 
-                    // Date range selector
-                    Text(
-                      'Leave Duration',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: _selectDateRange,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgInput,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _startDate == null
-                                    ? 'Select start and end dates'
-                                    : '${DateFormat('dd MMM yyyy').format(_startDate!)}  →  ${DateFormat('dd MMM yyyy').format(_endDate!)}',
+                    // Date range selectors (Start & End)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start Date',
                                 style: GoogleFonts.inter(
-                                  color: _startDate == null ? AppColors.textTertiary : AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: _startDate == null ? FontWeight.normal : FontWeight.w600,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                            ),
-                            const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-                          ],
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: _selectStartDate,
+                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bgInput,
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 16),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _startDate == null
+                                              ? 'Select'
+                                              : DateFormat('dd MMM yyyy').format(_startDate!),
+                                          style: GoogleFonts.inter(
+                                            color: _startDate == null ? AppColors.textTertiary : AppColors.textPrimary,
+                                            fontSize: 13,
+                                            fontWeight: _startDate == null ? FontWeight.normal : FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'End Date',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: _startDate == null ? null : _selectEndDate,
+                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: _startDate == null ? AppColors.bgPage : AppColors.bgInput,
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded, 
+                                        color: _startDate == null ? AppColors.textTertiary : AppColors.primary, 
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _endDate == null
+                                              ? 'Select'
+                                              : DateFormat('dd MMM yyyy').format(_endDate!),
+                                          style: GoogleFonts.inter(
+                                            color: _endDate == null ? AppColors.textTertiary : AppColors.textPrimary,
+                                            fontSize: 13,
+                                            fontWeight: _endDate == null ? FontWeight.normal : FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
 

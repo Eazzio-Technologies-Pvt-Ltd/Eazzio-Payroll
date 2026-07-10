@@ -33,30 +33,41 @@ class StorageHelper {
     return _prefs?.getString(_pendingActionKey);
   }
 
+  static String? _cachedAccessToken;
+  static String? _cachedRefreshToken;
+
   static Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
   // Tokens (Secure)
   static Future<void> saveAccessToken(String token) async {
+    _cachedAccessToken = token;
     await _secureStorage.write(key: _accessTokenKey, value: token);
   }
 
   static Future<String?> getAccessToken() async {
+    if (_cachedAccessToken != null) return _cachedAccessToken;
     try {
-      return await _secureStorage.read(key: _accessTokenKey);
+      final token = await _secureStorage.read(key: _accessTokenKey);
+      _cachedAccessToken = token;
+      return token;
     } catch (e) {
       return null;
     }
   }
 
   static Future<void> saveRefreshToken(String token) async {
+    _cachedRefreshToken = token;
     await _secureStorage.write(key: _refreshTokenKey, value: token);
   }
 
   static Future<String?> getRefreshToken() async {
+    if (_cachedRefreshToken != null) return _cachedRefreshToken;
     try {
-      return await _secureStorage.read(key: _refreshTokenKey);
+      final token = await _secureStorage.read(key: _refreshTokenKey);
+      _cachedRefreshToken = token;
+      return token;
     } catch (e) {
       return null;
     }
@@ -214,6 +225,8 @@ class StorageHelper {
 
   // Clear Storage
   static Future<void> clearAll() async {
+    _cachedAccessToken = null;
+    _cachedRefreshToken = null;
     try {
       await _secureStorage.deleteAll();
     } catch (e) {
