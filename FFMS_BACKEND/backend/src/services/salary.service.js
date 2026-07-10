@@ -1,6 +1,47 @@
 const prisma = require('../config/prisma');
 const { getISTDateBoundaries, getWorkingDaysInMonth } = require('../utils/salaryUtils');
 
+/**
+ * Helper to get the current date components in IST (Asia/Kolkata).
+ * Useful to avoid server-timezone discrepancies.
+ * 
+ * @returns {{ year: number, month: number, day: number }}
+ */
+const getISTCurrentDateComponents = () => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  });
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+  const month = parseInt(parts.find(p => p.type === 'month').value, 10); // 1-based
+  const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+  return { year, month, day };
+};
+
+/**
+ * Counts working days (excluding Sundays only) from day 1 up to upToDay of the given month.
+ *
+ * @param {number} year   Full year, e.g. 2026
+ * @param {number} month  1-based month, e.g. 7 for July
+ * @param {number} upToDay Day of the month, e.g. 9
+ * @returns {number}
+ */
+const getElapsedWorkingDays = (year, month, upToDay) => {
+  const mStr = String(month).padStart(2, '0');
+  let count = 0;
+  for (let day = 1; day <= upToDay; day++) {
+    const dStr = String(day).padStart(2, '0');
+    const d = new Date(`${year}-${mStr}-${dStr}T00:00:00+05:30`);
+    if (d.getDay() !== 0) { // 0 = Sunday
+      count++;
+    }
+  }
+  return count;
+};
 
 /**
  * Fetch and calculate salary list for a month.
@@ -124,6 +165,9 @@ const getSalaryList = async (organizationId, monthStr) => {
     },
   });
 
+  const { year: currentYear, month: currentMonth, day: currentDay } = getISTCurrentDateComponents();
+  const isCurrentMonth = (year === currentYear && m === currentMonth);
+
   const userStats = users.map(user => {
     // 1. Calculate days present
     const userAttendances = attendances.filter(a => a.userId === user.id);
@@ -155,11 +199,16 @@ const getSalaryList = async (organizationId, monthStr) => {
     const bonus = user.bonus || 0;
     const perDaySalary = totalWorkingDays > 0 ? (baseSalary / totalWorkingDays) : (baseSalary / 26.0);
 
-    // 4. Calculate gross salary
+    // 4. Calculate gross salary (Do NOT change grossSalary calculation - remains prorated against full month working days)
     let grossSalary = 0;
     if (baseSalary > 0) {
       grossSalary = (cappedDaysPresent * perDaySalary) + bonus;
     }
+
+    // Calculate daysAbsent and unpaidLeaveDeduction
+    const denominator = isCurrentMonth ? getElapsedWorkingDays(year, m, currentDay) : totalWorkingDays;
+    const daysAbsent = Math.max(0, denominator - daysPresent);
+    const unpaidLeaveDeduction = daysAbsent * perDaySalary;
 
     // 5. Calculate deductions (e.g. late arrival streak penalty)
     const userDeductions = deductions.filter(d => d.userId === user.id);
@@ -171,7 +220,7 @@ const getSalaryList = async (organizationId, monthStr) => {
     const totalAdvancesAmount = userAdvances.reduce((sum, ad) => sum + (ad.amount || 0), 0);
 
     // 7. Calculate net salary
-    let netSalary = grossSalary - deductionsAmount - totalAdvancesAmount;
+    let netSalary = baseSalary - unpaidLeaveDeduction + bonus - deductionsAmount - totalAdvancesAmount;
     netSalary = Math.max(0, netSalary); // Net salary cannot be negative
 
     return {
@@ -192,6 +241,8 @@ const getSalaryList = async (organizationId, monthStr) => {
       grossSalary: Math.round(grossSalary * 100) / 100,
       netSalary: Math.round(netSalary * 100) / 100,
       computedSalary: Math.round(netSalary * 100) / 100, // Keep backward compatible naming for computed salary
+      daysAbsent,
+      unpaidLeaveDeduction: Math.round(unpaidLeaveDeduction * 100) / 100,
     };
   });
 
@@ -201,6 +252,83 @@ const getSalaryList = async (organizationId, monthStr) => {
   return {
     managers,
     employees,
+  };
+};
+
+/**
+ * Gather all payslip details for a user.
+ * 
+ * @param {string} userId 
+ * @param {string} organizationId 
+ * @param {string} month  Format: "YYYY-MM"
+ * @returns {Promise<Object|null>}
+ */
+const gatherPayslipData = async (userId, organizationId, month) => {
+  const [year, m] = month.split('-').map(Number);
+
+  // IST-safe boundaries — aligns with @db.Date records stored in IST
+  const { startDate, endDate: endDateBoundary } = getISTDateBoundaries(month);
+
+  const totalWorkingDays = getWorkingDaysInMonth(year, m);
+
+  const user = await prisma.user.findFirst({ where: { id: userId, organizationId } });
+  if (!user) return null;
+
+  const attendances = await prisma.attendance.findMany({
+    where: { userId, date: { gte: startDate, lte: endDateBoundary } }
+  });
+
+  let presentDays = 0, lateDays = 0, absentDays = 0, halfDays = 0;
+  attendances.forEach(a => {
+    if (a.status === 'PRESENT') presentDays++;
+    else if (a.status === 'LATE') lateDays++;
+    else if (a.status === 'ABSENT') absentDays++;
+    else if (a.status === 'HALF_DAY') halfDays++;
+  });
+
+  const presentCredit = presentDays + lateDays + (halfDays * 0.5);
+  const effectiveWorkingDays = Math.min(presentCredit, totalWorkingDays);
+
+  const baseSalary = user.baseSalary || 0;
+  const bonus = user.bonus || 0;
+  const perDaySalary = totalWorkingDays > 0 ? baseSalary / totalWorkingDays : 0;
+
+  const { year: currentYear, month: currentMonth, day: currentDay } = getISTCurrentDateComponents();
+  const isCurrentMonth = (year === currentYear && m === currentMonth);
+
+  const denominator = isCurrentMonth ? getElapsedWorkingDays(year, m, currentDay) : totalWorkingDays;
+  const daysAbsent = Math.max(0, denominator - effectiveWorkingDays);
+  const unpaidLeaveDeduction = daysAbsent * perDaySalary;
+
+  // Fetch approved advances for the month
+  const advances = await prisma.advance.findMany({
+    where: {
+      userId,
+      status: 'APPROVED',
+      dateApproved: { gte: startDate, lte: endDateBoundary }
+    },
+    select: { amount: true }
+  });
+  const advancesDeduction = advances.reduce((sum, a) => sum + (a.amount || 0), 0);
+
+  const netSalary = Math.max(0, (baseSalary - unpaidLeaveDeduction) + bonus - advancesDeduction);
+
+  return {
+    user,
+    month,
+    totalWorkingDays,
+    effectiveWorkingDays,
+    baseSalary,
+    bonus,
+    perDaySalary,
+    unpaidLeaveDeduction,
+    advancesDeduction,
+    netSalary,
+    presentDays,
+    lateDays,
+    halfDays,
+    absentDays,
+    daysAbsent
   };
 };
 
@@ -241,4 +369,5 @@ const updateSalaryStructure = async (userId, organizationId, { baseSalary, bonus
 module.exports = {
   getSalaryList,
   updateSalaryStructure,
+  gatherPayslipData,
 };
