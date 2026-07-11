@@ -207,7 +207,7 @@ const getSalaryList = async (organizationId, monthStr) => {
 
     // Calculate daysAbsent and unpaidLeaveDeduction
     const denominator = isCurrentMonth ? getElapsedWorkingDays(year, m, currentDay) : totalWorkingDays;
-    const daysAbsent = Math.max(0, denominator - daysPresent);
+    const daysAbsent = Math.max(0, denominator - cappedDaysPresent);
     const unpaidLeaveDeduction = daysAbsent * perDaySalary;
 
     // 5. Calculate deductions (e.g. late arrival streak penalty)
@@ -219,8 +219,8 @@ const getSalaryList = async (organizationId, monthStr) => {
     const userAdvances = advances.filter(ad => ad.userId === user.id);
     const totalAdvancesAmount = userAdvances.reduce((sum, ad) => sum + (ad.amount || 0), 0);
 
-    // 7. Calculate net salary
-    let netSalary = baseSalary - unpaidLeaveDeduction + bonus - deductionsAmount - totalAdvancesAmount;
+    // 7. Calculate net salary (matches gatherPayslipData: base - absence deduction + bonus - advances)
+    let netSalary = baseSalary > 0 ? (baseSalary - unpaidLeaveDeduction + bonus - totalAdvancesAmount) : 0;
     netSalary = Math.max(0, netSalary); // Net salary cannot be negative
 
     return {
