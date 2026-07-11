@@ -464,28 +464,30 @@ export default function Topbar() {
         )}
 
         {/* Upgrade Button */}
-        <button
-          onClick={() => router.push("/admin/billing")}
-          style={{
-            background: "var(--accent-blue)",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            transition: "background 0.15s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#1d4ed8")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-blue)")}
-        >
-          Upgrade
-        </button>
+        {currentUser?.role?.toUpperCase() === "ADMIN" && (
+          <button
+            onClick={() => router.push("/admin/billing")}
+            style={{
+              background: "var(--accent-blue)",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              transition: "background 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#1d4ed8")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-blue)")}
+          >
+            Upgrade
+          </button>
+        )}
 
         {/* Notification bell — navigates to /notifications */}
         <div

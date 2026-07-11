@@ -250,6 +250,7 @@ export interface ApiAttendance {
   isLate: boolean;
   notes: string | null;
   selfieUrl: string | null;
+  punchOutSelfieUrl: string | null;
 }
 
 export const attendanceApi = {

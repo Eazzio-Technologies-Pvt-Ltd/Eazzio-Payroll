@@ -139,13 +139,20 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
 
   if (hasPunchedIn) {
     if (hasPunchedOut) {
-      if (workingMinutes < 480) { // Less than 8 hours -> Half Day
+      const shiftMins = employee.shiftMins || 480;
+      if (workingMinutes < 240) { // Less than 4 hours -> Absent
+        cardBorderColor = "#ef4444"; // Red
+        statusBg = "#fee2e2";
+        statusText = "#dc2626";
+        statusTooltip = "Absent";
+        progressColor = "#ef4444";
+      } else if (workingMinutes < shiftMins) { // More than 4 hours but less than shift -> Half Day
         cardBorderColor = "#f97316"; // Orange
         statusBg = "#ffedd5";
         statusText = "#c2410c";
         statusTooltip = "Half Day";
         progressColor = "#f97316";
-      } else {
+      } else { // Full shift -> Completed
         cardBorderColor = "#10b981"; // Green
         statusBg = "#d1fae5";
         statusText = "#059669";

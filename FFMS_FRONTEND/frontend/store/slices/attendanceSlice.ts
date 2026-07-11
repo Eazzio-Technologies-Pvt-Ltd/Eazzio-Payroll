@@ -12,6 +12,7 @@ export interface AttendanceRecord {
   status: string;
   location: string;
   selfieUrl?: string;
+  punchOutSelfieUrl?: string;
 }
 
 interface AttendanceState {
@@ -67,6 +68,7 @@ function mapApiToRecord(a: ApiAttendance | any): AttendanceRecord {
     status: a.status?.toLowerCase() || (isTodayFormat && !a.checkedIn ? "absent" : "present"),
     location: "",
     selfieUrl: a.selfieUrl || "",
+    punchOutSelfieUrl: a.punchOutSelfieUrl || "",
   };
 }
 

@@ -149,6 +149,19 @@ export default function LiveFeedWidget({
         const totalMinutes = userAttendances.reduce((acc: number, att: any) => acc + (att.workingMinutes || 0), 0);
         const workingHoursStr = `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
         
+        let shiftMins = 480; // default 8 hours
+        if (user.shift?.startTime && user.shift?.endTime) {
+          const parseHHMM = (timeStr: string) => {
+             const [h, m] = timeStr.split(':').map(Number);
+             return (h || 0) * 60 + (m || 0);
+          };
+          const s = parseHHMM(user.shift.startTime);
+          const e = parseHHMM(user.shift.endTime);
+          let diff = e - s;
+          if (diff < 0) diff += 24 * 60;
+          shiftMins = diff;
+        }
+        
         // Distance
         const distanceStr = liveLoc?.totalDistanceToday !== undefined ? `${liveLoc.totalDistanceToday.toFixed(1)} km` : "0.0 km";
 
@@ -182,7 +195,8 @@ export default function LiveFeedWidget({
           speed: liveLoc?.speed !== undefined ? liveLoc.speed : 0,
           accuracy: liveLoc?.accuracy !== undefined ? liveLoc.accuracy : 15,
           distance: distanceStr,
-          workingHours: workingHoursStr
+          workingHours: workingHoursStr,
+          shiftMins
         };
       });
 
