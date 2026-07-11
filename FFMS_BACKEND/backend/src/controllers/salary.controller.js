@@ -6,7 +6,7 @@ const salaryService = require('../services/salary.service');
 const { getISTDateBoundaries, getWorkingDaysInMonth } = require('../utils/salaryUtils');
 
 // ─── Shared helper: draw payslip PDF onto a PDFDocument ──────────────────────
-const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effectiveWorkingDays, baseSalary, bonus, perDaySalary, unpaidLeaveDeduction, advancesDeduction, netSalary, presentDays, lateDays, halfDays, absentDays, daysAbsent }) => {
+const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effectiveWorkingDays, baseSalary, bonus, perDaySalary, unpaidLeaveDeduction, advancesDeduction, netSalary, presentDays, lateDays, halfDays, absentDays, daysAbsent, periodStart, periodEnd }) => {
   // ── Company Header ──
   doc.fontSize(22).font('Helvetica-Bold').text(companyName, { align: 'center' });
   doc.moveDown(0.3);
@@ -14,7 +14,7 @@ const buildPayslipDoc = (doc, { companyName, user, month, totalWorkingDays, effe
   doc.strokeColor('black').lineWidth(1);
   doc.moveDown(0.5);
   doc.fontSize(16).font('Helvetica-Bold').text('SALARY PAYSLIP', { align: 'center', underline: true });
-  doc.fontSize(12).font('Helvetica').text(`For the Month of: ${month}`, { align: 'center' });
+  doc.fontSize(12).font('Helvetica').text(`Salary Period: ${periodStart} \u2013 ${periodEnd}`, { align: 'center' });
   doc.moveDown(1.5);
 
   // ── Employee Details ──
