@@ -439,8 +439,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       itemBuilder: (_, index) {
                         final date = availableMonths[index];
                         final monthStr = DateFormat('MMMM yyyy').format(date);
-                        final periodStart = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month - 1, 10));
-                        final periodEnd = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month, 10));
+                        final periodStart = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month, 1));
+                        final periodEnd = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month + 1, 0));
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.description_outlined, color: AppColors.primary),
