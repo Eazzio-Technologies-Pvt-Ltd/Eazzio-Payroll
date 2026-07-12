@@ -135,9 +135,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       // 2. Resolve save directory
       Directory? directory;
       if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
-          directory = await getExternalStorageDirectory();
+        directory = await getExternalStorageDirectory();
+        if (directory == null || !await directory.exists()) {
+          directory = await getApplicationDocumentsDirectory();
         }
       } else {
         directory = await getApplicationDocumentsDirectory();
@@ -148,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       final empNameClean = (currentUser?.name ?? 'Employee').replaceAll(' ', '_');
       final empIdClean = (currentUser?.employeeId ?? 'ID').replaceAll(' ', '_');
       final String fileName = '${empNameClean}_${empIdClean}_${monthName}_$yearStr.pdf';
-      final String filePath = '${directory!.path}/$fileName';
+      final String filePath = '${directory.path}/$fileName';
 
       // 3. Download PDF bytes — 30 second timeout
       final response = await ApiService.client.get(
@@ -165,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       final file = File(filePath);
       await file.writeAsBytes(response.data as List<int>);
 
-      successMessage = 'Saved to Downloads/$fileName ✓';
+      successMessage = 'Salary slip downloaded and opened successfully ✓';
 
       // 5. Auto-open PDF file on screen
       try {
