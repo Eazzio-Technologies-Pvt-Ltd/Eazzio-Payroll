@@ -162,12 +162,17 @@ exports.updateSalaryStructure = async (req, res) => {
 
 exports.generateSlip = async (req, res) => {
   try {
-    const { organizationId } = req.user;
+    const { organizationId, id: reqUserId, role: reqUserRole } = req.user;
     const { userId } = req.params;
     const { month, companyName } = req.query;
 
     if (!month) {
       return res.status(400).json({ success: false, message: 'Month is required' });
+    }
+
+    // Access control: Only ADMINs or the employee themselves can generate/download the slip
+    if (reqUserRole !== 'ADMIN' && reqUserId !== userId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const data = await salaryService.gatherPayslipData(userId, organizationId, month);
