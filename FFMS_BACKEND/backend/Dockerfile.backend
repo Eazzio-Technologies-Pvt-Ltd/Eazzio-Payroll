@@ -1,0 +1,37 @@
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+
+# Install OpenSSL for Prisma engine compatibility
+RUN apk add --no-cache openssl
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy project files
+COPY . .
+
+# Generate Prisma client if prisma exists
+RUN npx prisma generate || true
+
+# Stage 2: Production Runner
+FROM node:20-alpine
+
+# Install OpenSSL for Prisma engine compatibility
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Copy everything from builder
+COPY --from=builder /app ./
+
+# Expose backend port
+EXPOSE 5000
+
+# Start application
+CMD ["npm", "start"]
