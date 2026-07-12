@@ -38,14 +38,7 @@ class MainActivity : FlutterActivity() {
                     val success = openBatteryOptimizationSettings()
                     result.success(success)
                 }
-                "isDeveloperModeEnabled" -> {
-                    val enabled = isDeveloperModeEnabled()
-                    result.success(enabled)
-                }
-                "openDeveloperSettings" -> {
-                    val success = openDeveloperSettings()
-                    result.success(success)
-                }
+
                 else -> {
                     result.notImplemented()
                 }
@@ -299,30 +292,6 @@ class MainActivity : FlutterActivity() {
             try {
                 val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.fromParts("package", packageName, null)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(fallbackIntent)
-                return true
-            } catch (ex: Exception) {
-                return false
-            }
-        }
-    }
-
-    private fun isDeveloperModeEnabled(): Boolean {
-        return Settings.Global.getInt(contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) != 0
-    }
-
-    private fun openDeveloperSettings(): Boolean {
-        try {
-            val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            return true
-        } catch (e: Exception) {
-            try {
-                val fallbackIntent = Intent(Settings.ACTION_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 startActivity(fallbackIntent)
