@@ -79,7 +79,7 @@ class AutoPunchOutService {
           'Hours elapsed: $hoursElapsed. Executing auto punch-out...');
       await _executePunchOut(
         reason: '9-hour limit reached',
-        notificationTitle: '⏰ Auto Punch-Out',
+        notificationTitle: 'Auto Punch-Out',
         notificationBody:
             'You have been automatically punched out after $_maxShiftHours hours. '
             'Please verify your attendance.',
@@ -117,7 +117,7 @@ class AutoPunchOutService {
       debugPrint('[AutoPunchOut] Midnight: active session detected — forcing punch-out.');
       await _executePunchOut(
         reason: 'midnight reset',
-        notificationTitle: '🌙 Midnight Auto Punch-Out',
+        notificationTitle: 'Midnight Auto Punch-Out',
         notificationBody:
             'A new work day has started. Your previous session has been '
             'automatically closed. Please punch in when you start today.',
@@ -177,6 +177,7 @@ class AutoPunchOutService {
       final success = await provider.punchOut(
         resolvedPosition,
         selfieBase64: null, // Auto punch-out skips selfie
+        triggerType: 'AUTO',
       );
 
       if (success) {

@@ -7,6 +7,7 @@ import 'attendance_screen.dart';
 import 'profile_screen.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/auto_punch_out_service.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -63,6 +64,20 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    if (authProvider.state == AuthState.unauthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamedAndRemoveUntil(context, '/role_selection', (route) => false);
+      });
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,

@@ -313,12 +313,12 @@ const gatherPayslipData = async (userId, organizationId, month) => {
 
   const netSalary = Math.max(0, (baseSalary - unpaidLeaveDeduction) + bonus - advancesDeduction);
 
-  // Salary period: 10th of previous month → 10th of current month
-  const periodEndDate = new Date(year, m - 1, 10); // 10th of the payslip month (m is 1-based, Date month is 0-based)
-  const periodStartDate = new Date(year, m - 2, 10); // 10th of the previous month
+  // Salary period: 1st of month → end of month (30th/31st)
+  const periodStartDate = new Date(year, m - 1, 1);
+  const periodEndDate = new Date(year, m, 0); // Last day of month m
   const dateFormatOptions = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' };
-  const periodStart = periodStartDate.toLocaleDateString('en-GB', dateFormatOptions); // e.g. "10 Jun 2026"
-  const periodEnd = periodEndDate.toLocaleDateString('en-GB', dateFormatOptions);     // e.g. "10 Jul 2026"
+  const periodStart = periodStartDate.toLocaleDateString('en-GB', dateFormatOptions); // e.g. "1 Jun 2026"
+  const periodEnd = periodEndDate.toLocaleDateString('en-GB', dateFormatOptions);     // e.g. "30 Jun 2026"
 
   return {
     user,

@@ -162,12 +162,17 @@ exports.updateSalaryStructure = async (req, res) => {
 
 exports.generateSlip = async (req, res) => {
   try {
-    const { organizationId } = req.user;
+    const { organizationId, id: reqUserId, role: reqUserRole } = req.user;
     const { userId } = req.params;
     const { month, companyName } = req.query;
 
     if (!month) {
       return res.status(400).json({ success: false, message: 'Month is required' });
+    }
+
+    // Access control: Only ADMINs or the employee themselves can generate/download the slip
+    if (reqUserRole !== 'ADMIN' && reqUserId !== userId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const data = await salaryService.gatherPayslipData(userId, organizationId, month);
@@ -177,8 +182,24 @@ exports.generateSlip = async (req, res) => {
 
     const customCompanyName = companyName || 'Eazzio Technologies Pvt Ltd';
 
+    let monthName = month;
+    let year = '';
+    if (month && month.includes('-')) {
+      const [y, mNum] = month.split('-');
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      monthName = monthNames[parseInt(mNum, 10) - 1] || mNum;
+      year = y;
+    }
+
+    const empNameClean = data.user.name.replace(/\s+/g, '_');
+    const empIdClean = (data.user.employeeId || '').replace(/\s+/g, '_');
+    const finalFilename = `${empNameClean}_${empIdClean}_${monthName}${year ? '_' + year : ''}.pdf`;
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Salary_Slip_${data.user.name.replace(/\s+/g, '_')}_${month}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=${finalFilename}`);
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
@@ -260,73 +281,5 @@ exports.emailSlip = async (req, res) => {
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: error.message || 'Server error sending payslip email' });
     }
-  }
-};
-
-// ─── Employee self-service: view own salary slip ─────────────────────────────
-exports.getMySlip = async (req, res) => {
-  try {
-    const { id: userId, organizationId, isSalarySlipEnabled } = req.user;
-
-    if (!isSalarySlipEnabled) {
-      return res.status(403).json({
-        success: false,
-        message: 'Salary slip access is not enabled for your account. Contact your admin.'
-      });
-    }
-
-    // Default month to current IST month if not provided
-    let month = req.query.month;
-    if (!month) {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Kolkata',
-        year: 'numeric',
-        month: '2-digit'
-      });
-      const parts = formatter.formatToParts(now);
-      const y = parts.find(p => p.type === 'year').value;
-      const m = parts.find(p => p.type === 'month').value;
-      month = `${y}-${m}`;
-    }
-
-    const data = await salaryService.gatherPayslipData(userId, organizationId, month);
-    if (!data) {
-      return res.status(404).json({ success: false, message: 'Salary data not found' });
-    }
-
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error('[salary.controller] getMySlip Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch salary slip' });
-  }
-};
-
-// ─── Admin: toggle salary-slip access for an employee ────────────────────────
-exports.toggleSlipAccess = async (req, res) => {
-  try {
-    const { organizationId } = req.user;
-    const { userId } = req.params;
-
-    // Verify user belongs to the same org
-    const user = await prisma.user.findFirst({
-      where: { id: userId, organizationId },
-      select: { id: true, isSalarySlipEnabled: true }
-    });
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found in your organization' });
-    }
-
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { isSalarySlipEnabled: !user.isSalarySlipEnabled },
-      select: { id: true, name: true, isSalarySlipEnabled: true }
-    });
-
-    res.json({ success: true, data: updated });
-  } catch (error) {
-    console.error('[salary.controller] toggleSlipAccess Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to toggle salary slip access' });
   }
 };

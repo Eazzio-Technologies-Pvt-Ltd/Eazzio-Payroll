@@ -74,7 +74,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
 
                       // Header
                       Text(
-                        'Welcome Back 👋',
+                        'Welcome Back',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: r.fontXXL,
@@ -95,37 +95,37 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       ),
                       SizedBox(height: r.spaceXL),
 
-                      // Field & Office Staff Card
-                      _RoleCard(
-                        title: 'Employee Login',
-                        welcomeTag: 'Employee Portal',
-                        subtitle: 'Punch in/out, track your routes/tasks, and view your payslips.',
-                        icon: Icons.directions_walk_rounded,
-                        accentColor: const Color(0xFF2563EB),
-                        bgColor: const Color(0xFFEFF6FF),
-                        role: 'FIELD_STAFF',
-                        r: r,
+                      // Role Selection Cards side-by-side
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _RoleCard(
+                              title: 'Employee\nLogin',
+                              icon: Icons.directions_walk_rounded,
+                              accentColor: const Color(0xFF2563EB),
+                              bgColor: const Color(0xFFEFF6FF),
+                              role: 'FIELD_STAFF',
+                              r: r,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _RoleCard(
+                              title: 'Employer\nLogin',
+                              icon: Icons.groups_rounded,
+                              accentColor: const Color(0xFF7C3AED),
+                              bgColor: const Color(0xFFF5F3FF),
+                              role: 'MANAGER',
+                              r: r,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: r.spaceMD),
-
-                      // Manager Card
-                      _RoleCard(
-                        title: 'Employer Login',
-                        welcomeTag: 'Employer Portal',
-                        subtitle: 'Monitor your team, approve requests, and manage attendance.',
-                        icon: Icons.groups_rounded,
-                        accentColor: const Color(0xFF7C3AED),
-                        bgColor: const Color(0xFFF5F3FF),
-                        role: 'MANAGER',
-                        r: r,
-                      ),
-                      SizedBox(height: r.spaceMD),
-
                       SizedBox(height: r.spaceXL),
 
                       // Footer
                       Text(
-                        'v1.0.1 · Eazzio Technologies',
+                        'v1.0.2 · Powered by Eazzio Technologies Pvt Ltd',
                         style: GoogleFonts.inter(
                           fontSize: r.fontSM,
                           color: AppColors.textTertiary,
@@ -147,8 +147,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
 
 class _RoleCard extends StatefulWidget {
   final String title;
-  final String welcomeTag;
-  final String subtitle;
   final IconData icon;
   final Color accentColor;
   final Color bgColor;
@@ -157,8 +155,6 @@ class _RoleCard extends StatefulWidget {
 
   const _RoleCard({
     required this.title,
-    required this.welcomeTag,
-    required this.subtitle,
     required this.icon,
     required this.accentColor,
     required this.bgColor,
@@ -183,11 +179,11 @@ class _RoleCardState extends State<_RoleCard> {
       },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 120),
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeOut,
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
@@ -199,85 +195,43 @@ class _RoleCardState extends State<_RoleCard> {
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.accentColor.withValues(alpha: _pressed ? 0.12 : 0.06),
-                blurRadius: _pressed ? 24 : 16,
+                color: widget.accentColor.withValues(alpha: _pressed ? 0.12 : 0.04),
+                blurRadius: _pressed ? 20 : 12,
                 spreadRadius: 0,
-                offset: const Offset(0, 6),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Icon bubble
               Container(
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: widget.bgColor,
-                  borderRadius: BorderRadius.circular(14),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   widget.icon,
                   color: widget.accentColor,
-                  size: 26,
+                  size: 28,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(height: 16),
 
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: GoogleFonts.inter(
-                            fontSize: widget.r.fontLG,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: widget.bgColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            widget.welcomeTag,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: widget.accentColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      widget.subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: widget.r.fontSM,
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+              // Title
+              Text(
+                widget.title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: widget.r.fontMD + 1,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  height: 1.25,
                 ),
-              ),
-              const SizedBox(width: 8),
-
-              // Arrow
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: AppColors.textTertiary,
               ),
             ],
           ),

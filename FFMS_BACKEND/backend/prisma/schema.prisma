@@ -170,7 +170,7 @@ model User {
   bonus                 Float?   @default(0) // fixed bonus or deduction
   travelAllowanceRate   Float?   @default(4) // ₹ per KM, default ₹4
   profileImageLockedAt  DateTime? // null = not yet uploaded; non-null = locked
-  isSalarySlipEnabled   Boolean   @default(false) // employee self-service salary slip access
+  isSalarySlipEnabled   Boolean   @default(true) // employee self-service salary slip access
 
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt

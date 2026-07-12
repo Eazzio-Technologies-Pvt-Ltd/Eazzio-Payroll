@@ -62,7 +62,6 @@ const authenticate = async (req, res, next) => {
       travelAllowanceRate: user.travelAllowanceRate,
       profileImage: user.profileImage,
       profileImageLockedAt: user.profileImageLockedAt,
-      isSalarySlipEnabled: user.isSalarySlipEnabled,
       organization: user.organization,
       territory: user.territory,
       shift: user.shift
