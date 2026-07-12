@@ -19,6 +19,7 @@ import '../core/utils/salary_helper.dart';
 import '../providers/attendance_provider.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 
 
 // Profile screen v2 — gradient header + modern stat cards + clean settings list
@@ -165,6 +166,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       await file.writeAsBytes(response.data as List<int>);
 
       successMessage = 'Saved to Downloads/$fileName ✓';
+
+      // 5. Auto-open PDF file on screen
+      try {
+        await OpenFilex.open(filePath);
+      } catch (openErr) {
+        debugPrint('Error opening downloaded file: $openErr');
+      }
 
     } on DioException catch (dioErr) {
       final statusCode = dioErr.response?.statusCode;
