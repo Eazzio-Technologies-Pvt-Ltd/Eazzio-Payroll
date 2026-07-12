@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/theme/app_theme.dart';
+import '../services/location_service.dart';
 import 'permissions_screen.dart';
-import '../core/utils/developer_mode_check.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,20 +14,50 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
+    _animController.forward();
     _checkAuth();
   }
 
-  Future<void> _checkAuth() async {
-    final isBlocked = await DeveloperModeCheck.checkAndShowDialog(context);
-    if (isBlocked) return;
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
-    // 1-second delay for checking authentication
-    await Future.delayed(const Duration(seconds: 1));
-    
+  Future<void> _checkAuth() async {
+    // Minimum splash display time for branding
+    await Future.delayed(const Duration(milliseconds: 1800));
+
+    if (!mounted) return;
+
+    // Restore background tracking service if user was punched in before app kill
+    // This is done HERE (after widget tree is ready) — NOT in main() —
+    // to prevent permission dialogs from showing before Flutter initializes.
+    try {
+      final token = await StorageHelper.getAccessToken();
+      if (token != null && StorageHelper.isTrackingActive()) {
+        final isRunning = await FlutterForegroundTask.isRunningService;
+        if (!isRunning) {
+          debugPrint('[SplashScreen] Restoring background tracking service...');
+          await LocationService().startTracking(shiftStatus: 'Restored Active');
+        }
+      }
+    } catch (e) {
+      debugPrint('[SplashScreen] Tracking restoration failed (non-fatal): $e');
+    }
+
     if (!mounted) return;
 
     final bool hasGrantedAllPermissions = StorageHelper.hasPermissionsBeenGranted();
@@ -56,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> {
       );
       return;
     }
-    
+
     final navigator = Navigator.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
@@ -64,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e) {
       debugPrint('Auth check failed: $e');
     }
-    
+
     if (!mounted) return;
 
     if (authProvider.isAuthenticated) {
@@ -76,14 +107,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: CircularProgressIndicator(
-            strokeWidth: 3.0,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: const CircularProgressIndicator(
+            strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ),

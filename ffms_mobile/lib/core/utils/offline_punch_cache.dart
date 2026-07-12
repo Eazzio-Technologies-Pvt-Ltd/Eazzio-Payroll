@@ -57,6 +57,8 @@ class OfflinePunchCache {
     required double latitude,
     required double longitude,
     required String timestamp,
+    String? selfieBase64,
+    String triggerType = 'MANUAL',
   }) async {
     try {
       final file = await _getFile();
@@ -67,6 +69,8 @@ class OfflinePunchCache {
         'latitude': latitude,
         'longitude': longitude,
         'timestamp': timestamp,
+        'selfieBase64': selfieBase64,
+        'triggerType': triggerType,
         'retryCount': 0,
         'createdAt': timestamp,
       });

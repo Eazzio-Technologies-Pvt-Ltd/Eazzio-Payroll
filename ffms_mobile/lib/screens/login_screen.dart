@@ -330,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       children: [
                         SizedBox(height: r.spaceXL),
                         Text(
-                          'v1.0.1 · Eazzio Technologies',
+                          'v1.0.2 · Powered by Eazzio Technologies Pvt Ltd',
                           style: GoogleFonts.inter(
                             fontSize: r.fontSM, // responsive font size
                             color: AppColors.textTertiary,
@@ -385,7 +385,7 @@ _RoleTheme _getRoleTheme(String role) {
     case 'MANAGER':
       return const _RoleTheme(
         portalTag: 'Employer Portal',
-        welcomeTitle: 'Welcome, Employer! 👥',
+        welcomeTitle: 'Welcome, Employer!',
         welcomeSubtitle: 'Sign in to manage your team and approvals',
         accentColor: Color(0xFF7C3AED),
         bgColor: Color(0xFFF5F3FF),
@@ -394,7 +394,7 @@ _RoleTheme _getRoleTheme(String role) {
     case 'ADMIN':
       return const _RoleTheme(
         portalTag: 'Office Staff Portal',
-        welcomeTitle: 'Welcome, Office Staff! 🏢',
+        welcomeTitle: 'Welcome, Office Staff!',
         welcomeSubtitle: 'Sign in to access HR, payroll & admin tools',
         accentColor: Color(0xFF059669),
         bgColor: Color(0xFFECFDF5),
@@ -403,7 +403,7 @@ _RoleTheme _getRoleTheme(String role) {
     default: // FIELD_STAFF
       return const _RoleTheme(
         portalTag: 'Employee Portal',
-        welcomeTitle: 'Welcome Back! 👋',
+        welcomeTitle: 'Welcome Back!',
         welcomeSubtitle: 'Sign in to track your day and tasks',
         accentColor: Color(0xFF2563EB),
         bgColor: Color(0xFFEFF6FF),

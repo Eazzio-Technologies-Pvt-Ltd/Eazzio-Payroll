@@ -8,6 +8,7 @@ import '../models/attendance_model.dart';
 import '../models/user_model.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/utils/offline_punch_cache.dart';
+import '../services/alarm_service.dart';
 
 class PunchResult {
   final bool success;
@@ -144,6 +145,9 @@ class AttendanceProvider extends ChangeNotifier {
         final sessionNum = attendance.sessionNumber;
         await LocationService().startTracking(shiftStatus: 'Session $sessionNum Active');
 
+        // Stop active alarm since user has successfully checked in
+        await AlarmService.stopActiveAlarm();
+
         _isLoading = false;
         notifyListeners();
 
@@ -230,6 +234,7 @@ class AttendanceProvider extends ChangeNotifier {
               'latitude': punch['latitude'],
               'longitude': punch['longitude'],
               if (punch['selfieBase64'] != null) 'selfieBase64': punch['selfieBase64'],
+              'triggerType': punch['triggerType'] ?? 'MANUAL',
             },
             options: Options(
               sendTimeout: const Duration(seconds: 90),
@@ -264,7 +269,7 @@ class AttendanceProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────────────────────────────────────
   // PUNCH OUT (kept synchronous — no selfie, fast operation)
   // ─────────────────────────────────────────────────────────────────────────────
-  Future<bool> punchOut(Position position, {String? selfieBase64}) async {
+  Future<bool> punchOut(Position position, {String? selfieBase64, String triggerType = 'MANUAL'}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -276,6 +281,7 @@ class AttendanceProvider extends ChangeNotifier {
           'latitude': position.latitude,
           'longitude': position.longitude,
           'selfieBase64': selfieBase64,
+          'triggerType': triggerType,
         },
       );
 
@@ -291,6 +297,9 @@ class AttendanceProvider extends ChangeNotifier {
         // Stop location tracking upon punch-out
         await StorageHelper.setTrackingActive(false);
         await LocationService().stopTracking();
+
+        // Stop active alarm since user has successfully checked out
+        await AlarmService.stopActiveAlarm();
         
         return true;
       }

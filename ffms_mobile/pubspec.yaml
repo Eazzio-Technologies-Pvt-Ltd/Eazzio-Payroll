@@ -4,7 +4,7 @@ publish_to: 'none'
 # Version format: major.minor.patch+buildNumber
 # Bumped for Task 10 release build — AndroidManifest cleanup + APK
 # Date: 2026-06-10 | Antigravity Dev Team
-version: 1.0.1+3
+version: 1.0.2+4
 
 environment:
   sdk: ^3.11.0
@@ -54,6 +54,7 @@ dependencies:
   device_info_plus: ^12.4.0
   connectivity_plus: ^7.1.1
   image: ^4.1.3
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

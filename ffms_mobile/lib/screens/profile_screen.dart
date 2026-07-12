@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import '../providers/auth_provider.dart';
 import '../utils/image_upload_util.dart';
 import '../providers/travel_provider.dart';
@@ -12,7 +17,10 @@ import 'feedback_screen.dart';
 import 'permissions_screen.dart';
 import '../core/utils/salary_helper.dart';
 import '../providers/attendance_provider.dart';
+import '../services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+
 
 // Profile screen v2 — gradient header + modern stat cards + clean settings list
 class ProfileScreen extends StatefulWidget {
@@ -77,6 +85,274 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
+  Future<void> _downloadSalarySlip(BuildContext context, String monthStr, DateTime date) async {
+    final monthQuery = DateFormat('yyyy-MM').format(date);
+    final authProvider = context.read<AuthProvider>();
+    final currentUser = authProvider.currentUser;
+    final userId = currentUser?.id;
+    if (userId == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expired. Please log in again.')),
+        );
+      }
+      return;
+    }
+
+    // Show loading SnackBar BEFORE the try block
+    // so finally{} can always clear it — regardless of how we exit
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              ),
+              const SizedBox(width: 15),
+              Expanded(child: Text('Preparing salary slip for $monthStr...')),
+            ],
+          ),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 40), // Enough time for download
+        ),
+      );
+    }
+
+    String? successMessage;
+    String? errorMessage;
+
+    try {
+      // 1. Check / request storage permission (version-aware)
+      if (Platform.isAndroid) {
+        final hasPermission = await _requestStoragePermission(context);
+        if (!hasPermission) return; // finally{} will clear the SnackBar
+      }
+
+      // 2. Resolve save directory
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+          directory = await getExternalStorageDirectory();
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      final monthName = DateFormat('MMMM').format(date);
+      final yearStr = DateFormat('yyyy').format(date);
+      final empNameClean = (currentUser?.name ?? 'Employee').replaceAll(' ', '_');
+      final empIdClean = (currentUser?.employeeId ?? 'ID').replaceAll(' ', '_');
+      final String fileName = '${empNameClean}_${empIdClean}_${monthName}_$yearStr.pdf';
+      final String filePath = '${directory!.path}/$fileName';
+
+      // 3. Download PDF bytes — 30 second timeout
+      final response = await ApiService.client.get(
+        '/salary/slip/$userId',
+        queryParameters: {'month': monthQuery},
+        options: Options(
+          responseType: ResponseType.bytes,
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      // 4. Write to file
+      final file = File(filePath);
+      await file.writeAsBytes(response.data as List<int>);
+
+      successMessage = 'Saved to Downloads/$fileName ✓';
+
+      // 5. Auto-open PDF file on screen
+      try {
+        await OpenFilex.open(filePath);
+      } catch (openErr) {
+        debugPrint('Error opening downloaded file: $openErr');
+      }
+
+    } on DioException catch (dioErr) {
+      final statusCode = dioErr.response?.statusCode;
+      if (statusCode == 403) {
+        errorMessage = 'Access denied. Contact your HR administrator to enable salary slips.';
+      } else if (statusCode == 404) {
+        errorMessage = 'Salary slip for $monthStr is not yet generated.';
+      } else if (dioErr.type == DioExceptionType.connectionTimeout ||
+          dioErr.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'Download timed out. Please check your connection and try again.';
+      } else if (dioErr.type == DioExceptionType.connectionError) {
+        errorMessage = 'No internet connection. Please try again when online.';
+      } else {
+        errorMessage = 'Download failed (${statusCode ?? 'unknown error'}). Please try again.';
+      }
+    } catch (e) {
+      errorMessage = 'Something went wrong: ${e.toString().split('\n').first}';
+    } finally {
+      // ALWAYS clear the loading SnackBar — no matter how we exit
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        if (successMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(successMessage!),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else if (errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage!),
+              backgroundColor: AppColors.error,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+
+  /// Handles Android storage permission across all API levels:
+  /// - API < 29  (Android 9-):   Requests READ/WRITE_EXTERNAL_STORAGE
+  /// - API 29-32 (Android 10-12): Requests READ_EXTERNAL_STORAGE (WRITE no longer grantable)
+  /// - API 33+   (Android 13+):  No storage permission needed — scoped Downloads via MediaStore
+  /// Handles permanently denied state by showing an open-settings dialog.
+  Future<bool> _requestStoragePermission(BuildContext context) async {
+    // Detect Android SDK version
+    int sdkVersion = 0;
+    try {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      sdkVersion = androidInfo.version.sdkInt;
+    } catch (e) {
+      debugPrint('[StoragePermission] Could not get SDK version: $e');
+    }
+
+    // Android 13+ (API 33+): No storage permission needed for Downloads folder
+    if (sdkVersion >= 33) {
+      return true;
+    }
+
+    // Android 10-12 (API 29-32): Only READ_EXTERNAL_STORAGE is relevant
+    // Android <= 9  (API < 29):  Use full Permission.storage (READ + WRITE)
+    final Permission permissionToRequest =
+        sdkVersion >= 29 ? Permission.photos : Permission.storage;
+
+    PermissionStatus status = await permissionToRequest.status;
+
+    // Already granted — proceed immediately
+    if (status.isGranted) return true;
+
+    // Permanently denied (user tapped "Never ask again")
+    // Must direct them to App Settings to re-enable manually
+    if (status.isPermanentlyDenied) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        await _showOpenSettingsDialog(context);
+      }
+      return false;
+    }
+
+    // Request the permission — shows the system permission dialog
+    status = await permissionToRequest.request();
+
+    if (status.isGranted) return true;
+
+    // User denied (tapped "Deny" but not "Never ask again")
+    if (status.isDenied) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Storage permission is required to download salary slips.'),
+            backgroundColor: AppColors.warning,
+            action: SnackBarAction(
+              label: 'Allow',
+              textColor: Colors.white,
+              onPressed: () async {
+                await permissionToRequest.request();
+              },
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+
+    // Became permanently denied after the dialog — open settings
+    if (status.isPermanentlyDenied) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        await _showOpenSettingsDialog(context);
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  /// Shows a clear dialog explaining why the permission is needed
+  /// and offers a direct "Open Settings" button to fix it
+  Future<void> _showOpenSettingsDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.errorSoft,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.folder_off_rounded, color: AppColors.error, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Storage Permission Required',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'You have permanently denied storage permission.\n\n'
+            'To download salary slips, please enable "Storage" or '
+            '"Files and media" permission in App Settings.',
+            style: TextStyle(fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textTertiary)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await openAppSettings(); // Opens device App Settings for this app
+              },
+              icon: const Icon(Icons.settings_rounded, size: 16),
+              label: const Text('Open Settings'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   List<DateTime> _getAvailableSalarySlipMonths() {
     final List<DateTime> list = [];
     final now = DateTime.now();
@@ -102,10 +378,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   void _showSalarySlipsDialog(BuildContext context) {
     final availableMonths = _getAvailableSalarySlipMonths();
+    // Capture the OUTER Scaffold context here — before the dialog opens.
+    // The dialog builder's `context` parameter shadows this one and becomes
+    // unmounted as soon as Navigator.pop() is called. SnackBars shown after
+    // pop() must use this outer Scaffold context, not the dialog context.
+    final scaffoldContext = context;
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -154,10 +435,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: availableMonths.length,
-                      separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.border),
-                      itemBuilder: (context, index) {
+                      separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.border),
+                      itemBuilder: (_, index) {
                         final date = availableMonths[index];
                         final monthStr = DateFormat('MMMM yyyy').format(date);
+                        final periodStart = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month - 1, 10));
+                        final periodEnd = DateFormat('dd MMM yyyy').format(DateTime(date.year, date.month, 10));
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.description_outlined, color: AppColors.primary),
@@ -169,27 +452,20 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               color: AppColors.textPrimary,
                             ),
                           ),
+                          subtitle: Text(
+                            'Period: $periodStart – $periodEnd',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.download_rounded, color: AppColors.primary),
                             onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Downloading salary slip for $monthStr...'),
-                                  backgroundColor: AppColors.primary,
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                              Future.delayed(const Duration(seconds: 2), () {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Salary slip for $monthStr downloaded successfully!'),
-                                      backgroundColor: AppColors.success,
-                                    ),
-                                  );
-                                }
-                              });
+                              // Close dialog first, then download using the
+                              // OUTER scaffoldContext (still mounted after pop)
+                              Navigator.pop(dialogContext);
+                              _downloadSalarySlip(scaffoldContext, monthStr, date);
                             },
                           ),
                         );
@@ -201,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(
                 'Close',
                 style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
@@ -409,23 +685,26 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     required String title,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.primarySoft,
-          shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 18),
+        title: Text(
+          title,
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        onTap: onTap,
       ),
-      title: Text(
-        title,
-        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-      onTap: onTap,
     );
   }
 
@@ -536,6 +815,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
       for (final dateLogs in groupedByDate.values) {
         if (dateLogs.isEmpty) continue;
+
+        // Sum total working hours for the date
+        double totalHours = 0.0;
+        bool isShiftCompleted = true;
+        for (final l in dateLogs) {
+          totalHours += l.totalWorkingHours ?? 0.0;
+          if (l.punchOutTime == null) {
+            isShiftCompleted = false;
+          }
+        }
+
+        if (totalHours == 0.0 || !isShiftCompleted) {
+          continue;
+        }
+
         dynamic highestLog = dateLogs.first;
         int highestRank = getStatusRank(highestLog.status);
         for (final log in dateLogs) {
@@ -795,6 +1089,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         context,
                         MaterialPageRoute(builder: (context) => const PermissionsScreen()),
                       ),
+                    ),
+                    Divider(height: 1, color: AppColors.border),
+                    _buildNavigationRowItem(
+                      icon: Icons.alarm_rounded,
+                      title: 'Punch Alarm Settings',
+                      onTap: () => Navigator.pushNamed(context, '/alarm-settings'),
                     ),
                   ],
                 ),
