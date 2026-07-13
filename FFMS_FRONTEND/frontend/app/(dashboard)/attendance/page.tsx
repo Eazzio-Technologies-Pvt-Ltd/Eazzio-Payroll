@@ -198,7 +198,8 @@ export default function AttendancePage() {
           <thead>
             <tr>
               <th>Employee</th>
-              <th>Selfie</th>
+              <th>Punch In Selfie</th>
+              <th>Punch Out Selfie</th>
               <th>Check In</th>
               <th>Check Out</th>
               <th>Hours Worked</th>
@@ -213,7 +214,10 @@ export default function AttendancePage() {
                   <div style={{ fontWeight:600,fontSize:"14px" }}>{row.name}</div>
                 </td>
                 <td style={{ padding: "8px 12px" }}>
-                  <CloudinaryImage url={row.selfieUrl} placeholder="No Selfie" alt={`${row.name} Selfie`} />
+                  <CloudinaryImage url={row.selfieUrl} placeholder="No Selfie" alt={`${row.name} Punch In`} />
+                </td>
+                <td style={{ padding: "8px 12px" }}>
+                  <CloudinaryImage url={row.punchOutSelfieUrl} placeholder="No Selfie" alt={`${row.name} Punch Out`} />
                 </td>
                 <td>
                   <span style={{ fontFamily:"monospace",fontSize:"13px",color: row.checkIn==="--" ? "var(--text-muted)" : "var(--accent-green)" }}>

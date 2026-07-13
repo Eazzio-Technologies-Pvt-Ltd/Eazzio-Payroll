@@ -35,5 +35,6 @@ export interface Employee {
   historyLogs?: HistoryLog[];
   distance?: string;
   workingHours?: string;
+  shiftMins?: number;
 }
 

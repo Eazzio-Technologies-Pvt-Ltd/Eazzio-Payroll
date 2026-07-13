@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import { fetchEmployees, createEmployee, removeEmployee, updateEmployeeThunk, Employee } from "@/store/slices/employeeSlice";
 import { getStatusColor } from "@/lib/utils";
-import { Plus, Search, Trash2, Pencil, X, Coins, FileText, Calculator, Printer, Network, ChevronDown, ChevronRight, User } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, X, Coins, FileText, Calculator, Printer, Network, ChevronDown, ChevronRight, User, ToggleRight, ToggleLeft } from "lucide-react";
 import Link from "next/link";
 import { geofenceApi, attendanceApi, tasksApi, travelApi, advanceApi, expensesApi, shiftApi } from "@/lib/api-client";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
@@ -657,7 +657,6 @@ export default function EmployeesPage() {
   };
 
   const filtered = employees.filter((e: Employee) => {
-    if (e.status !== "active") return false;
 
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
       e.role.toLowerCase().includes(search.toLowerCase()) ||
@@ -780,6 +779,17 @@ export default function EmployeesPage() {
 
         {activeTab === "roster" ? (
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div style={{ position: "relative" }}>
+              <Search size={16} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+              <input
+                type="text"
+                placeholder="Search employee..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input"
+                style={{ paddingLeft: "32px", width: "200px", height: "36px" }}
+              />
+            </div>
             {isAdmin && (
               <select
                 className="input"
@@ -939,6 +949,7 @@ export default function EmployeesPage() {
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
                 <th style={{ textAlign: "left", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Name</th>
                 <th style={{ textAlign: "left", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Location</th>
+                <th style={{ textAlign: "left", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Account</th>
                 <th style={{ textAlign: "left", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Status</th>
                 <th style={{ textAlign: "left", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Punched-in</th>
                 <th style={{ textAlign: "center", padding: "16px 12px", fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)" }}>Productivity</th>
@@ -959,7 +970,7 @@ export default function EmployeesPage() {
                         <div className="skeleton-line" style={{ width: "180px", height: "10px" }} />
                       </div>
                     </td>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} style={{ padding: "16px 12px" }}>
                         <div className="skeleton-line" style={{ width: "60%" }} />
                       </td>
@@ -1021,6 +1032,17 @@ export default function EmployeesPage() {
                         </td>
                         <td style={{ padding: "16px 12px", fontSize: "13px", color: "var(--text-secondary)" }}>{emp.territory || "Head Office"}</td>
                         <td style={{ padding: "16px 12px", fontSize: "13px", color: "var(--text-secondary)" }}>
+                          <button onClick={(e) => { e.stopPropagation(); 
+                              dispatch(updateEmployeeThunk({
+                                id: emp.id,
+                                data: { status: emp.status === "inactive" ? "ACTIVE" : "INACTIVE" }
+                              }));
+                            }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                            {emp.status === "active" ? <ToggleRight size={24} color="#22c55e" /> : <ToggleLeft size={24} color="#94a3b8" />}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: emp.status === "active" ? "#22c55e" : "#94a3b8" }}>{emp.status === "active" ? "Active" : "Inactive"}</span>
+                          </button>
+                        </td>
+                        <td style={{ padding: "16px 12px", fontSize: "13px", color: "var(--text-secondary)" }}>
                           {emp.status === "active" ? (statsMap[emp.id]?.status || "Not Punched In") : "Inactive"}
                         </td>
                         <td style={{ padding: "16px 12px", fontSize: "13px", color: "var(--text-secondary)" }}>{statsMap[emp.id]?.checkIn || "-"}</td>
@@ -1051,7 +1073,7 @@ export default function EmployeesPage() {
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={9} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "14px" }}>
+                      <td colSpan={10} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)", fontSize: "14px" }}>
                         No records found
                       </td>
                     </tr>
@@ -1072,7 +1094,7 @@ export default function EmployeesPage() {
                   return (
                     <React.Fragment key={`loc-${loc}`}>
                       <tr style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--border)", borderTop: "2px solid var(--border)" }}>
-                        <td colSpan={9} style={{ padding: "12px 16px", fontWeight: 700, fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        <td colSpan={10} style={{ padding: "12px 16px", fontWeight: 700, fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                           📍 Location: {loc}
                         </td>
                       </tr>
@@ -1269,6 +1291,7 @@ export default function EmployeesPage() {
                 territoryId: emp.territoryId,
                 employeeId: emp.employeeId,
                 managerId: emp.managerId,
+                shiftId: emp.shiftId,
               };
               if (emp.password) {
                 updateData.password = emp.password;
@@ -1305,6 +1328,7 @@ export default function EmployeesPage() {
                 employeeId: emp.employeeId,
                 territoryId: emp.territoryId,
                 managerId: emp.managerId,
+                shiftId: emp.shiftId,
               }))
                 .unwrap()
                 .then((newEmp: any) => {

@@ -254,28 +254,30 @@ export default function AdminTopbar() {
         )}
 
         {/* Upgrade Button */}
-        <button
-          onClick={() => router.push("/admin/billing")}
-          style={{
-            background: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            transition: "background 0.15s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#2563eb")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#3b82f6")}
-        >
-          Upgrade
-        </button>
+        {currentUser?.role?.toUpperCase() === "ADMIN" && (
+          <button
+            onClick={() => router.push("/admin/billing")}
+            style={{
+              background: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              transition: "background 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#2563eb")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#3b82f6")}
+          >
+            Upgrade
+          </button>
+        )}
 
         {/* Admin Badge */}
         {!isMobile && (
