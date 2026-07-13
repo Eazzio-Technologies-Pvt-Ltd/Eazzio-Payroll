@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'tasks_screen.dart';
@@ -36,8 +37,10 @@ class _MainNavigationState extends State<MainNavigation> {
     // and the home navigation is mounted.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final attendanceProvider =
-          Provider.of<AttendanceProvider>(context, listen: false);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
       AutoPunchOutService.instance.start(attendanceProvider);
       debugPrint('[MainNavigation] AutoPunchOutService started.');
     });
@@ -67,7 +70,11 @@ class _MainNavigationState extends State<MainNavigation> {
     final authProvider = Provider.of<AuthProvider>(context);
     if (authProvider.state == AuthState.unauthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushNamedAndRemoveUntil(context, '/role_selection', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/role_selection',
+          (route) => false,
+        );
       });
       return const Scaffold(
         body: Center(
@@ -79,10 +86,7 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
@@ -108,28 +112,28 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
+              icon: Icon(LucideIcons.house),
+              activeIcon: Icon(LucideIcons.house),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.check_box_outlined),
-              activeIcon: Icon(Icons.check_box),
+              icon: Icon(LucideIcons.listTodo),
+              activeIcon: Icon(LucideIcons.listTodo),
               label: 'Tasks',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
+              icon: Icon(LucideIcons.mapPinned),
+              activeIcon: Icon(LucideIcons.mapPinned),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today_outlined),
-              activeIcon: Icon(Icons.calendar_today),
+              icon: Icon(LucideIcons.calendarDays),
+              activeIcon: Icon(LucideIcons.calendarDays),
               label: 'Attendance',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+              icon: Icon(LucideIcons.circleUser),
+              activeIcon: Icon(LucideIcons.circleUser),
               label: 'Profile',
             ),
           ],
