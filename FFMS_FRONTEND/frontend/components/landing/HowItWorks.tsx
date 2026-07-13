@@ -43,7 +43,7 @@ export default function HowItWorks() {
               key={idx} 
               className="min-w-[280px] md:min-w-[320px] max-w-[350px] flex-shrink-0 bg-white rounded-2xl p-8 border border-slate-200 shadow-sm snap-start relative overflow-hidden"
             >
-              <div className="absolute -right-4 -top-6 text-[80px] font-black text-slate-100 select-none pointer-events-none">
+              <div className="absolute right-4 top-4 text-[70px] leading-none font-black text-slate-100 select-none pointer-events-none">
                 {step.num}
               </div>
               <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 font-bold text-xl mb-6">
