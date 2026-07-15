@@ -62,6 +62,7 @@ export default function BillingPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<string | null>("PRO");
   const [isAnnual, setIsAnnual] = useState(false);
+  const [employeeCount, setEmployeeCount] = useState<number>(1);
 
   const handleSuccess = () => {
     router.push("/admin/dashboard");
@@ -131,8 +132,7 @@ export default function BillingPage() {
                     {plan.priceSuffix}
                   </span>
                 </div>
-
-                {/* Features */}
+                 {/* Features */}
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
@@ -141,11 +141,41 @@ export default function BillingPage() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Employee Selector */}
+                {plan.id !== 'FREE' && (
+                  <div className="mb-6 bg-slate-50 p-3 rounded-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                      Number of Employees
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={employeeCount}
+                        onChange={(e) => setEmployeeCount(Number(e.target.value))}
+                        className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {[1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100].map((num) => (
+                          <option key={num} value={num}>
+                            {num} Employees
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={employeeCount}
+                        onChange={(e) => setEmployeeCount(Math.min(100, Math.max(1, Number(e.target.value))))}
+                        className="w-20 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payment Button */}
-              <div className="mt-auto pt-4 border-t border-slate-100">
-                <RazorpayCheckout plan={plan.id} onSuccess={handleSuccess} />
+              <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <RazorpayCheckout plan={plan.id} isAnnual={isAnnual} employeeCount={plan.id === 'FREE' ? 1 : employeeCount} onSuccess={handleSuccess} />
               </div>
             </div>
           );
