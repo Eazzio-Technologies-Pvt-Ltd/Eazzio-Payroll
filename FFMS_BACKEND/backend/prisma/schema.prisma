@@ -627,6 +627,7 @@ model Subscription {
   razorpayPaymentId String?
   startsAt          DateTime
   expiresAt         DateTime
+  employeeCount     Int      @default(1)
   createdAt         DateTime @default(now())
   user              User     @relation(fields: [userId], references: [id])
 }
