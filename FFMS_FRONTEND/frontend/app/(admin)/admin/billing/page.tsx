@@ -145,7 +145,7 @@ export default function BillingPage() {
 
               {/* Payment Button */}
               <div className="mt-auto pt-4 border-t border-slate-100">
-                <RazorpayCheckout plan={plan.id} onSuccess={handleSuccess} />
+                <RazorpayCheckout plan={plan.id} isAnnual={isAnnual} onSuccess={handleSuccess} />
               </div>
             </div>
           );

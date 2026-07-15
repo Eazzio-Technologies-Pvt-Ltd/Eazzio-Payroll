@@ -15,7 +15,7 @@ const createOrder = async (req, res, next) => {
       key_secret: process.env.RAZORPAY_KEY_SECRET
     });
 
-    const { plan } = req.body;
+    const { plan, isAnnual } = req.body;
     const userId = req.user.id;
 
     if (!['FREE', 'BASIC', 'PRO'].includes(plan)) {
@@ -24,7 +24,7 @@ const createOrder = async (req, res, next) => {
 
     const startsAt = new Date();
     const expiresAt = new Date();
-    expiresAt.setDate(startsAt.getDate() + 30);
+    expiresAt.setDate(startsAt.getDate() + (isAnnual ? 365 : 30));
 
     if (plan === 'FREE') {
       await prisma.subscription.create({
@@ -40,12 +40,25 @@ const createOrder = async (req, res, next) => {
     }
 
     // Amount in paise
-    const amount = plan === 'BASIC' ? 49900 : 99900;
+    const PLAN_AMOUNTS = {
+      BASIC: {
+        monthly: 9900,   // ₹99
+        annual:  7900,   // ₹79/mo billed annually = 7900 * 12 = 94800 paise total
+      },
+      PRO: {
+        monthly: 19900,  // ₹199
+        annual:  14900,  // ₹149/mo billed annually = 14900 * 12 = 178800 paise total
+      },
+    };
+
+    const amount = isAnnual
+      ? PLAN_AMOUNTS[plan].annual * 12
+      : PLAN_AMOUNTS[plan].monthly;
     
     const options = {
       amount,
       currency: 'INR',
-      receipt: `receipt_sub_${Date.now()}`
+      receipt: `receipt_sub_${plan}_${isAnnual ? 'annual' : 'monthly'}_${Date.now()}`
     };
 
     const order = await razorpay.orders.create(options);
