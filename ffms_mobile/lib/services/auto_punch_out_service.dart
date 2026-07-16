@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../providers/attendance_provider.dart';
@@ -7,8 +8,7 @@ import '../core/utils/notification_helper.dart';
 
 /// AutoPunchOutService — Handles two auto-punch-out triggers:
 ///
-/// 1. **9-Hour Rule**: If a user has been punched in for ≥ 9 hours,
-///    they are automatically punched out with location + notification.
+/// 1. **Shift End + 30 Minutes Rule**: Automatically punches out 30 minutes after shift ends.
 ///
 /// 2. **Midnight Reset (12:00 AM)**: Any open punch session is force-closed
 ///    at midnight, local state is cleared, and a notification is sent.
@@ -25,7 +25,7 @@ class AutoPunchOutService {
 
   AttendanceProvider? _attendanceProvider;
 
-  static const int _maxShiftHours = 9; // auto-punch-out after 9 hours
+  static const int _fallbackHours = 9; // fallback auto-punch-out after 9 hours
 
   // ─────────────────────────────────────────────────────────────────────────
   // Start / Stop
@@ -59,7 +59,7 @@ class AutoPunchOutService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 9-Hour Rule
+  // Shift End + 30 Minutes Rule (Renamed/Kept check method name)
   // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> _checkNineHourRule() async {
@@ -72,16 +72,62 @@ class AutoPunchOutService {
     final punchInTime = StorageHelper.getPunchInTime();
     if (punchInTime == null) return;
 
-    final hoursElapsed = DateTime.now().difference(punchInTime).inHours;
+    DateTime? shiftEndTime;
+    final profileJson = StorageHelper.getUserProfileJson();
+    if (profileJson != null) {
+      try {
+        final userMap = jsonDecode(profileJson);
+        final shiftMap = userMap['shift'];
+        if (shiftMap != null) {
+          final startTimeStr = shiftMap['startTime'] as String?;
+          final endTimeStr = shiftMap['endTime'] as String?;
+          if (startTimeStr != null && endTimeStr != null && startTimeStr.isNotEmpty && endTimeStr.isNotEmpty) {
+            final startParts = startTimeStr.split(':');
+            final endParts = endTimeStr.split(':');
+            final startMin = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+            final endMin = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+            
+            final baseDay = DateTime(punchInTime.year, punchInTime.month, punchInTime.day, 0, 0, 0);
+            var endTarget = baseDay.add(Duration(minutes: endMin));
+            
+            // If endMinutes is less than startMinutes, shift ends on the next calendar day
+            if (endMin < startMin) {
+              endTarget = endTarget.add(const Duration(days: 1));
+            }
+            shiftEndTime = endTarget;
+          }
+        }
+      } catch (e) {
+        debugPrint('[AutoPunchOut] Error parsing shift timing: $e');
+      }
+    }
 
-    if (hoursElapsed >= _maxShiftHours) {
-      debugPrint('[AutoPunchOut] 9-hour rule triggered. Punched in at $punchInTime. '
-          'Hours elapsed: $hoursElapsed. Executing auto punch-out...');
+    final now = DateTime.now();
+    bool shouldTrigger = false;
+    String triggerReason = '';
+
+    if (shiftEndTime != null) {
+      final triggerTime = shiftEndTime.add(const Duration(minutes: 30));
+      if (now.isAfter(triggerTime)) {
+        shouldTrigger = true;
+        triggerReason = '30 minutes past shift end ($shiftEndTime)';
+      }
+    } else {
+      // Fallback: 9 hours rule
+      final hoursElapsed = now.difference(punchInTime).inHours;
+      if (hoursElapsed >= _fallbackHours) {
+        shouldTrigger = true;
+        triggerReason = 'fallback $_fallbackHours-hour limit reached';
+      }
+    }
+
+    if (shouldTrigger) {
+      debugPrint('[AutoPunchOut] Trigger rule matched: $triggerReason. Punched in at $punchInTime. Executing auto punch-out...');
       await _executePunchOut(
-        reason: '9-hour limit reached',
+        reason: triggerReason,
         notificationTitle: 'Auto Punch-Out',
         notificationBody:
-            'You have been automatically punched out after $_maxShiftHours hours. '
+            'You have been automatically punched out as your shift has ended. '
             'Please verify your attendance.',
       );
     }

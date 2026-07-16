@@ -102,6 +102,45 @@ class AlarmService {
     }
   }
 
+  /// Snooze an alarm: cancel the current alarm and reschedule it 5 minutes from now.
+  /// Called when the user taps the Snooze action on a punch notification.
+  static Future<bool> snoozeAlarm({required bool isPunchIn}) async {
+    try {
+      // Cancel the currently ringing or scheduled alarm for this event
+      await cancelAlarm(isPunchIn);
+      await stopActiveAlarm();
+
+      // Schedule a new alarm 5 minutes from now
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 5));
+
+      final prefs = await SharedPreferences.getInstance();
+      final customTone = isPunchIn
+          ? prefs.getString(prefPunchInTone)
+          : prefs.getString(prefPunchOutTone);
+
+      final success = await _channel.invokeMethod<bool>('scheduleAlarm', {
+        'timeInMillis': snoozeTime.millisecondsSinceEpoch,
+        'isPunchIn': isPunchIn,
+        'customTunePath': customTone,
+      });
+
+      debugPrint('[AlarmService] Snooze scheduled for $snoozeTime (isPunchIn=$isPunchIn, success=$success)');
+      return success ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('[AlarmService] Error snoozing alarm: $e');
+      return false;
+    }
+  }
+
+  /// Cancel ALL alarms immediately — called as soon as attendance action is completed.
+  /// Rule: Once punch-in or punch-out succeeds, ALL related alarms MUST be cancelled immediately.
+  static Future<void> cancelAllImmediately() async {
+    await cancelAlarm(true);   // cancel punch-in alarm
+    await cancelAlarm(false);  // cancel punch-out alarm
+    await stopActiveAlarm();   // stop any currently ringing alarm
+    debugPrint('[AlarmService] All alarms cancelled immediately after successful punch action.');
+  }
+
   /// Synchronize/schedule alarms based on stored preferences and active user shift
   static Future<void> syncAlarms(String? shiftStartTime, String? shiftEndTime) async {
     final prefs = await SharedPreferences.getInstance();

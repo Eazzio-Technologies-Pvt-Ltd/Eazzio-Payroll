@@ -100,14 +100,14 @@ class AuthProvider extends ChangeNotifier {
         endToday = endToday.add(const Duration(days: 1));
       }
 
-      // Auto punch-out is targetted exactly 5 minutes after the shift end time
-      var punchOutTargetTime = endToday.add(const Duration(minutes: 5));
+      // Auto punch-out is targetted exactly 30 minutes after the shift end time
+      var punchOutTargetTime = endToday.add(const Duration(minutes: 30));
 
-      // If the target time (shift end + 5 minutes) has already passed today, check if user is still punched in.
-      // Otherwise schedule it for the next day's shift end + 5 minutes.
+      // If the target time (shift end + 30 minutes) has already passed today, check if user is still punched in.
+      // Otherwise schedule it for the next day's shift end + 30 minutes.
       if (punchOutTargetTime.isBefore(now)) {
         if (StorageHelper.getPunchInState()) {
-          debugPrint('[AutoPunchOut] Current time has already passed the shift end + 5 minutes. Triggering auto punch-out immediately.');
+          debugPrint('[AutoPunchOut] Current time has already passed the shift end + 30 minutes. Triggering auto punch-out immediately.');
           _performAutoPunchOut();
           return;
         }
@@ -115,7 +115,7 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final duration = punchOutTargetTime.difference(now);
-      debugPrint('[AutoPunchOut] Scheduling auto punch-out in ${duration.inHours}h ${duration.inMinutes % 60}m at ${punchOutTargetTime.toLocal()} (5 minutes after shift end)');
+      debugPrint('[AutoPunchOut] Scheduling auto punch-out in ${duration.inHours}h ${duration.inMinutes % 60}m at ${punchOutTargetTime.toLocal()} (30 minutes after shift end)');
 
       _autoPunchOutTimer = Timer(duration, () async {
         await _performAutoPunchOut();

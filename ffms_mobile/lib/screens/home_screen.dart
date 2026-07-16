@@ -49,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final String _analyticsFilter = 'single';
   DateTime? _selectedTimelineDate;
   bool _isPunchingIn = false;
+  // Debounce guard: prevents duplicate punch actions within 2 seconds of each other
+  DateTime? _lastPunchActionTime;
 
   // ─────────────────────────── Time-based Greeting ─────────────────────────────
   String _getGreeting() {
@@ -243,6 +245,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _handleAttendanceAction() async {
+    // TASK-004: Debounce guard — reject any second tap within 2 seconds of the first
+    final now = DateTime.now();
+    if (_lastPunchActionTime != null &&
+        now.difference(_lastPunchActionTime!).inSeconds < 2) {
+      debugPrint('[HomeScreen] Debounce: punch action ignored (< 2s since last action)');
+      return false;
+    }
+    _lastPunchActionTime = now;
+
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.currentUser;
@@ -748,14 +759,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 final sessionCount = sessions.length;
                 String buttonText;
 
-                if (!isPunchedIn && sessionCount == 0) {
-                  buttonText = 'Swipe to Punch In (Session 1)';
-                } else if (isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Swipe to Punch Out (Session 1)';
-                } else if (!isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Swipe to Punch In (Session 2)';
+                if (isPunchedIn) {
+                  // Active session: user must punch out.
+                  // The session number is the size of the list.
+                  buttonText = 'Swipe to Punch Out (Session $sessionCount)';
                 } else {
-                  buttonText = 'Swipe to Punch Out (Session 2)';
+                  // Not punched in: user can punch in for the NEXT session
+                  final nextSession = sessionCount + 1;
+                  buttonText = 'Swipe to Punch In (Session $nextSession)';
                 }
 
                 return SwipeToPunch(
