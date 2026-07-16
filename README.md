@@ -22,7 +22,7 @@ A state-of-the-art enterprise solution for tracking, managing, and optimizing on
 
 ## 📖 About The Project
 
-The **Eazzio Technology** is an end-to-end platform designed for organizations to seamlessly manage their distributed mobile workforce. It offers powerful real-time tracking, attendance logging, dynamic geofencing, robust task management, and deep analytical insights, all wrapped in a premium, role-based user interface.
+The **Eazzio Payroll** is an end-to-end platform designed for organizations to seamlessly manage their distributed mobile workforce. It offers powerful real-time tracking, attendance logging, dynamic geofencing, robust task management, and deep analytical insights, all wrapped in a premium, role-based user interface.
 
 Whether you're managing a small local team or a massive regional sales force, FFMS acts as your central command center, bridging the gap between field agents and administrative managers.
 
@@ -185,4 +185,3 @@ This project is proprietary software belonging to **Eazzio technology**. Unautho
 ---
 
 <p align="center">⚙️ Developed with precision by the Eazzio Technology Team</p>
-
