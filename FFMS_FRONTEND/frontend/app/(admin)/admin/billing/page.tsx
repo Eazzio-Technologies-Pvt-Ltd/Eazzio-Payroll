@@ -9,38 +9,50 @@ const PLANS = [
   {
     id: "FREE" as const,
     name: "Free",
-    price: "₹0",
+    priceMonthly: "₹0",
+    priceAnnually: "₹0",
+    priceSuffix: "",
     subtitle: "Try Eazzio at no cost",
     features: [
       "Up to 5 employees",
       "Basic attendance tracking",
-      "Basic payroll",
+      "Manual payroll calculation",
+      "Daily activity logs",
+      "Mobile App Access",
     ],
     highlight: false,
   },
   {
     id: "BASIC" as const,
     name: "Basic",
-    price: "₹499/mo",
+    priceMonthly: "₹99",
+    priceAnnually: "₹79",
+    priceSuffix: "/user/mo",
     subtitle: "For growing teams",
     features: [
       "Up to 30 employees",
-      "Live field tracking",
-      "Attendance + Payroll",
-      "Email support",
+      "Live GPS tracking & routes",
+      "Automated Payroll & Payslips",
+      "Expense & Claims Management",
+      "Task & Visit Management",
+      "Standard email support",
     ],
     highlight: false,
   },
   {
     id: "PRO" as const,
     name: "Pro",
-    price: "₹999/mo",
+    priceMonthly: "₹199",
+    priceAnnually: "₹149",
+    priceSuffix: "/user/mo",
     subtitle: "For large organizations",
     features: [
       "Unlimited employees",
-      "Advanced reports",
-      "Geofencing validation",
-      "Priority support",
+      "Advanced Policy Violation Engine",
+      "Real-time productivity analytics",
+      "Dynamic Incentives & Deductions",
+      "Custom Reports & Exports",
+      "24/7 Priority Phone Support",
     ],
     highlight: true,
   },
@@ -49,6 +61,8 @@ const PLANS = [
 export default function BillingPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<string | null>("PRO");
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [employeeCount, setEmployeeCount] = useState<number>(1);
 
   const handleSuccess = () => {
     router.push("/admin/dashboard");
@@ -57,13 +71,27 @@ export default function BillingPage() {
   return (
     <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       {/* Header */}
-      <div className="text-center mb-8 animate-[fadeIn_0.5s_ease]">
+      <div className="text-center mb-6 animate-[fadeIn_0.5s_ease]">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
           Choose Your Plan
         </h1>
         <p className="mt-2 text-base md:text-lg text-slate-500 max-w-2xl mx-auto">
           Unlock the full power of Eazzio Field Force Management
         </p>
+      </div>
+
+      {/* Billing Toggle */}
+      <div className="flex justify-center items-center gap-4 mb-10 animate-[fadeIn_0.5s_ease]">
+        <span className={`text-sm font-semibold ${!isAnnual ? "text-slate-900" : "text-slate-500"}`}>Monthly</span>
+        <button 
+          onClick={() => setIsAnnual(!isAnnual)}
+          className="relative w-14 h-7 rounded-full bg-blue-600 transition-colors focus:outline-none"
+        >
+          <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all transform ${isAnnual ? "translate-x-8" : "translate-x-1"}`} />
+        </button>
+        <span className={`text-sm font-semibold flex items-center gap-2 ${isAnnual ? "text-slate-900" : "text-slate-500"}`}>
+          Annually <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Save 20%</span>
+        </span>
       </div>
 
       {/* Plans Grid */}
@@ -96,13 +124,15 @@ export default function BillingPage() {
                 </div>
 
                 {/* Price */}
-                <div className="mb-6">
+                <div className="mb-6 flex items-baseline">
                   <span className="text-4xl font-extrabold tracking-tight text-slate-900">
-                    {plan.price}
+                    {isAnnual ? plan.priceAnnually : plan.priceMonthly}
+                  </span>
+                  <span className="ml-1 text-sm font-medium text-slate-500">
+                    {plan.priceSuffix}
                   </span>
                 </div>
-
-                {/* Features */}
+                 {/* Features */}
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2">
@@ -111,11 +141,41 @@ export default function BillingPage() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Employee Selector */}
+                {plan.id !== 'FREE' && (
+                  <div className="mb-6 bg-slate-50 p-3 rounded-2xl border border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                      Number of Employees
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={employeeCount}
+                        onChange={(e) => setEmployeeCount(Number(e.target.value))}
+                        className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {[1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100].map((num) => (
+                          <option key={num} value={num}>
+                            {num} Employees
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={employeeCount}
+                        onChange={(e) => setEmployeeCount(Math.min(100, Math.max(1, Number(e.target.value))))}
+                        className="w-20 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Payment Button */}
-              <div className="mt-auto pt-4 border-t border-slate-100">
-                <RazorpayCheckout plan={plan.id} onSuccess={handleSuccess} />
+              <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <RazorpayCheckout plan={plan.id} isAnnual={isAnnual} employeeCount={plan.id === 'FREE' ? 1 : employeeCount} onSuccess={handleSuccess} />
               </div>
             </div>
           );

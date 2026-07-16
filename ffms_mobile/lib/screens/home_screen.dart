@@ -679,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$greeting, ${authUser?.name.split(' ').first ?? 'Employee'} 👋',
+                          '$greeting, ${authUser?.name.split(' ').first ?? 'Employee'}',
                           style: GoogleFonts.inter(
                             fontSize: r.fontXXL,
                             fontWeight: FontWeight.w800,
@@ -2014,13 +2014,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         double salaryFactor = 0.0;
                         bool isPayable = false;
 
-                        // PRESENT -> 100%, LATE -> 100%, HALF_DAY -> 50%, ABSENT or other -> 0%
-                        if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
-                          salaryFactor = 1.0;
-                          isPayable = true;
-                        } else if (finalStatus == 'HALF_DAY') {
-                          salaryFactor = 0.5;
-                          isPayable = true;
+                        // Check if shift is completed (has punched out for all sessions today)
+                        bool isShiftCompleted = true;
+                        for (final l in dateLogs) {
+                          if (l.punchOutTime == null) {
+                            isShiftCompleted = false;
+                            break;
+                          }
+                        }
+
+                        if (totalHours > 0.0 && isShiftCompleted) {
+                          // PRESENT -> 100%, LATE -> 100%, HALF_DAY -> 50%, ABSENT or other -> 0%
+                          if (finalStatus == 'PRESENT' || finalStatus == 'ON_DUTY' || finalStatus == 'LATE') {
+                            salaryFactor = 1.0;
+                            isPayable = true;
+                          } else if (finalStatus == 'HALF_DAY') {
+                            salaryFactor = 0.5;
+                            isPayable = true;
+                          }
                         }
 
                         final dailySalary = dailySalaryRate * salaryFactor;

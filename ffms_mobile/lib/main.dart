@@ -20,8 +20,8 @@ import 'screens/leave_status_screen.dart';
 import 'screens/leave_details_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/role_selection_screen.dart';
+import 'screens/alarm_settings_screen.dart';
 import 'core/utils/notification_helper.dart';
-import 'core/utils/storage_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,20 +43,13 @@ void main() async {
     // Initialize API service and Secure Storage
     await ApiService.initialize();
 
-    // RESTORE BACKGROUND SERVICE ON BOOT/STARTUP:
-    // If the user has already punched in (tracking is active in storage)
-    // but the background service was killed by the OS or the app restarted,
-    // we restore tracking to survive manual app closes/kills and OS memory reclamation.
-    final token = await StorageHelper.getAccessToken();
-    if (token != null && StorageHelper.isTrackingActive()) {
-      final isRunning = await FlutterForegroundTask.isRunningService;
-      if (!isRunning) {
-        debugPrint('[Main] Restoring background tracking service...');
-        await LocationService().startTracking(shiftStatus: 'Restored Active');
-      }
-    }
+    // NOTE: Background tracking restoration is intentionally deferred to SplashScreen.
+    // Calling LocationService().startTracking() here (in main) would trigger
+    // system permission dialogs (Geolocator.requestPermission) BEFORE the Flutter
+    // widget tree exists, causing black screen / ANR crashes on Android.
+    // SplashScreen handles restoration after the app UI is fully initialized.
   } catch (e) {
-    debugPrint('Failed to initialize API Service / StorageHelper / Restoring tracking: $e');
+    debugPrint('Failed to initialize API Service / StorageHelper: $e');
   }
 
   try {
@@ -108,6 +101,7 @@ class EazzioPayrollApp extends StatelessWidget {
         '/leave-status': (context) => const LeaveStatusScreen(),
         '/leave-details': (context) => const LeaveDetailsScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/alarm-settings': (context) => const AlarmSettingsScreen(),
       },
     );
   }

@@ -33,6 +33,9 @@
     <!-- Notifications — required for task alerts and punch-in reminders on Android 13+ -->
     <!-- Used in: notification_helper.dart via flutter_local_notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <!-- Foreground Service — required to keep GPS tracking alive when app is in background -->
     <!-- Used in: location_service.dart via flutter_foreground_task package -->
@@ -139,6 +142,17 @@
             android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
             android:foregroundServiceType="location"
             android:exported="false"/>
+
+        <receiver
+            android:name=".AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <service
+            android:name=".AlarmService"
+            android:enabled="true"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
 
         <!-- BootReceiver removed: flutter_foreground_task v8.x registers its own
              receiver internally via plugin's merged manifest. Manual declaration

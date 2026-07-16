@@ -5,6 +5,8 @@ import { fetchClient } from "@/lib/fetch-client";
 
 interface RazorpayCheckoutProps {
   plan: 'FREE' | 'BASIC' | 'PRO';
+  isAnnual?: boolean;
+  employeeCount?: number;
   onSuccess: () => void;
 }
 
@@ -13,7 +15,7 @@ const BASE_URL =
     ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"
     : "http://localhost:5000/api/v1";
 
-export default function RazorpayCheckout({ plan, onSuccess }: RazorpayCheckoutProps) {
+export default function RazorpayCheckout({ plan, isAnnual, employeeCount, onSuccess }: RazorpayCheckoutProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function RazorpayCheckout({ plan, onSuccess }: RazorpayCheckoutPr
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, isAnnual: isAnnual ?? false, employeeCount: employeeCount ?? 1 }),
         credentials: "include",
       });
 
@@ -61,7 +63,7 @@ export default function RazorpayCheckout({ plan, onSuccess }: RazorpayCheckoutPr
         amount,
         currency,
         name: "Eazzio",
-        description: plan === "BASIC" ? "Basic Plan — Monthly" : "Pro Plan — Monthly",
+        description: `${plan === "BASIC" ? "Basic" : "Pro"} Plan — ${isAnnual ? "Annual" : "Monthly"}`,
         order_id: orderId,
         theme: { color: "#4F46E5" },
         handler: async (responsePayload: any) => {

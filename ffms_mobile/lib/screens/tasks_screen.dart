@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,7 +22,8 @@ class TasksScreen extends StatefulWidget {
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
-class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin {
+class _TasksScreenState extends State<TasksScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -45,17 +47,11 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
 
     _tabController = TabController(length: _tabs.length, vsync: this);
@@ -83,7 +79,10 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
 
   void _fetchTasksForCurrentTab() {
     final status = _tabs[_tabController.index]['status'];
-    Provider.of<TaskProvider>(context, listen: false).fetchMyTasks(status: status);
+    Provider.of<TaskProvider>(
+      context,
+      listen: false,
+    ).fetchMyTasks(status: status);
   }
 
   @override
@@ -116,8 +115,14 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
     final filteredTasks = taskProvider.tasks.where((task) {
       if (_searchQuery.isEmpty) return true;
       return task.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (task.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-          (task.projectName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+          (task.description?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ??
+              false) ||
+          (task.projectName?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ??
+              false);
     }).toList();
 
     return Scaffold(
@@ -126,7 +131,10 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
         automaticallyImplyLeading: false,
         title: Text(
           'My Tasks',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary),
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -137,12 +145,21 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
               TabBar(
                 controller: _tabController,
                 isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                padding: EdgeInsets.zero,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 20),
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.textSecondary,
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
-                labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-                unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
+                labelStyle: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: GoogleFonts.inter(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
                 tabs: _tabs.map((t) => Tab(text: t['label'])).toList(),
               ),
               Container(color: AppColors.border, height: 1),
@@ -156,60 +173,73 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
           position: _slideAnim,
           child: Column(
             children: [
-          // Search box
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) {
-                setState(() => _searchQuery = val);
-              },
-              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
-              decoration: modernInputDecoration(
-                hint: 'Search tasks...',
-                prefixIcon: Icons.search,
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18, color: AppColors.textSecondary),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
+              // Search box
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) {
+                    setState(() => _searchQuery = val);
+                  },
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                  decoration: modernInputDecoration(
+                    hint: 'Search tasks...',
+                    prefixIcon: LucideIcons.search,
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              LucideIcons.x,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // Tasks List — single unified list
-          Expanded(
-            child: RefreshIndicator(
-              color: AppColors.primary,
-              backgroundColor: AppColors.surface,
-              strokeWidth: 2.5,
-              onRefresh: () async => _fetchTasksForCurrentTab(),
-              child: taskProvider.isLoading
-                  ? ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      itemCount: 6,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) => const TaskSkeletonCard(),
-                    )
-                  : filteredTasks.isEmpty
+              // Tasks List — single unified list
+              Expanded(
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.surface,
+                  strokeWidth: 2.5,
+                  onRefresh: () async => _fetchTasksForCurrentTab(),
+                  child: taskProvider.isLoading
+                      ? ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          itemCount: 6,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) =>
+                              const TaskSkeletonCard(),
+                        )
+                      : filteredTasks.isEmpty
                       ? ListView(
                           children: [
-                            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.05,
+                            ),
                             const EmptyState(
-                              icon: Icons.task_alt_outlined,
+                              icon: LucideIcons.listTodo,
                               title: 'No tasks assigned yet',
-                              subtitle: 'Check back later or create a personal task using the button below.',
+                              subtitle:
+                                  'Check back later or create a personal task using the button below.',
                             ),
                           ],
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: filteredTasks.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final task = filteredTasks[index];
                             return StaggeredListItem(
@@ -220,7 +250,9 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
                                   if (task.id.startsWith('local_')) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('This personal task is saved offline. It will sync when you are online.'),
+                                        content: Text(
+                                          'This personal task is saved offline. It will sync when you are online.',
+                                        ),
                                       ),
                                     );
                                     return;
@@ -228,7 +260,8 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => TaskDetailScreen(taskId: task.id),
+                                      builder: (context) =>
+                                          TaskDetailScreen(taskId: task.id),
                                     ),
                                   );
                                 },
@@ -236,17 +269,23 @@ class _TasksScreenState extends State<TasksScreen> with TickerProviderStateMixin
                             );
                           },
                         ),
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-    ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showPersonalTaskSheet,
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('Personal Task', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(LucideIcons.plus, color: Colors.white),
+        label: Text(
+          'Personal Task',
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -302,7 +341,10 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
     if (userId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User session not found. Please re-login.'), backgroundColor: AppColors.error),
+          const SnackBar(
+            content: Text('User session not found. Please re-login.'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
       setState(() => _submitting = false);
@@ -322,11 +364,17 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
         Navigator.pop(context);
         widget.onCreated();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Personal task created!'), backgroundColor: AppColors.success),
+          const SnackBar(
+            content: Text('Personal task created!'),
+            backgroundColor: AppColors.success,
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(taskProvider.errorMessage ?? 'Failed to create task'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(taskProvider.errorMessage ?? 'Failed to create task'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -365,13 +413,20 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               const SizedBox(height: 16),
               Text(
                 'Create Personal Task',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
                 'This task is private to you and hidden from admin/manager.',
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -388,12 +443,16 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _titleController,
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
                 decoration: modernInputDecoration(
                   hint: 'What do you need to do?',
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Title is required';
+                  if (val == null || val.trim().isEmpty)
+                    return 'Title is required';
                   return null;
                 },
               ),
@@ -412,10 +471,11 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 3,
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
-                decoration: modernInputDecoration(
-                  hint: 'Add details...',
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
                 ),
+                decoration: modernInputDecoration(hint: 'Add details...'),
               ),
               const SizedBox(height: 16),
 
@@ -423,7 +483,10 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
               GestureDetector(
                 onTap: _selectDueDate,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: AppTheme.cardDecoration,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -434,7 +497,10 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                           children: [
                             Text(
                               'Due Date (optional)',
-                              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -446,7 +512,9 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: _dueDate != null ? AppColors.textPrimary : AppColors.textTertiary,
+                                color: _dueDate != null
+                                    ? AppColors.textPrimary
+                                    : AppColors.textTertiary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -455,7 +523,11 @@ class _PersonalTaskSheetState extends State<_PersonalTaskSheet> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(Icons.calendar_today_outlined, color: AppColors.primary, size: 20),
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                     ],
                   ),
                 ),

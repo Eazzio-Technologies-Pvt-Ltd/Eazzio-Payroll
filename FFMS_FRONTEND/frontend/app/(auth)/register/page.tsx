@@ -56,7 +56,7 @@ export default function RegisterPage() {
   const [designation, setDesignation] = useState("Assistant Manager");
   
   // Step 2: Choose Plan
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "professional" | "enterprise">("professional");
+  const [selectedPlan, setSelectedPlan] = useState<"free" | "basic" | "pro">("pro");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
   
   // Step 3: Confirmation
@@ -378,31 +378,31 @@ export default function RegisterPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
                   {[
                     {
-                      id: "starter" as const,
-                      name: "Starter",
+                      id: "free" as const,
+                      name: "Free",
                       priceMonthly: 0,
                       priceAnnual: 0,
-                      features: ["Up to 5 Execs", "Basic Live GPS", "Standard Tasks", "Email Support"],
+                      features: ["Up to 5 employees", "Basic attendance tracking", "Manual payroll calculation", "Daily activity logs", "Mobile App Access"],
                       color: "#64748b",
                       popular: false
                     },
                     {
-                      id: "professional" as const,
-                      name: "Professional",
-                      priceMonthly: 1999,
-                      priceAnnual: 1599,
-                      features: ["Up to 50 Execs", "Geofencing Monitor", "Live Map Playback", "Dynamic Forms", "Priority Support"],
+                      id: "basic" as const,
+                      name: "Basic",
+                      priceMonthly: 99,
+                      priceAnnual: 79,
+                      features: ["Up to 30 employees", "Live GPS tracking & routes", "Automated Payroll & Payslips", "Expense & Claims Management", "Task & Visit Management", "Standard email support"],
                       color: "#0077ee",
-                      popular: true
+                      popular: false
                     },
                     {
-                      id: "enterprise" as const,
-                      name: "Enterprise",
-                      priceMonthly: 4999,
-                      priceAnnual: 3999,
-                      features: ["Unlimited Execs", "Advanced Audits", "Custom Reports API", "Dedicated Manager", "24/7 Phone SLA"],
+                      id: "pro" as const,
+                      name: "Pro",
+                      priceMonthly: 199,
+                      priceAnnual: 149,
+                      features: ["Unlimited employees", "Advanced Policy Violation Engine", "Real-time productivity analytics", "Dynamic Incentives & Deductions", "Custom Reports & Exports", "24/7 Priority Phone Support"],
                       color: "#7c3aed",
-                      popular: false
+                      popular: true
                     }
                   ].map((p) => {
                     const price = billingCycle === "monthly" ? p.priceMonthly : p.priceAnnual;
@@ -440,7 +440,7 @@ export default function RegisterPage() {
                           <div style={{ marginTop: "8px", display: "flex", alignItems: "baseline", justifyContent: "center", gap: "2px" }}>
                             <span style={{ fontSize: "18px", fontWeight: 700 }}>₹</span>
                             <span style={{ fontSize: "28px", fontWeight: 800 }}>{price.toLocaleString("en-IN")}</span>
-                            <span style={{ fontSize: "11px", color: "#64748b" }}>/mo</span>
+                            <span style={{ fontSize: "11px", color: "#64748b" }}>{p.id === 'free' ? '' : '/user/mo'}</span>
                           </div>
                         </div>
 

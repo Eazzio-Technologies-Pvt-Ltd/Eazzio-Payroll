@@ -162,12 +162,17 @@ exports.updateSalaryStructure = async (req, res) => {
 
 exports.generateSlip = async (req, res) => {
   try {
-    const { organizationId } = req.user;
+    const { organizationId, id: reqUserId, role: reqUserRole } = req.user;
     const { userId } = req.params;
     const { month, companyName } = req.query;
 
     if (!month) {
       return res.status(400).json({ success: false, message: 'Month is required' });
+    }
+
+    // Access control: Only ADMINs or the employee themselves can generate/download the slip
+    if (reqUserRole !== 'ADMIN' && reqUserId !== userId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const data = await salaryService.gatherPayslipData(userId, organizationId, month);
@@ -177,8 +182,24 @@ exports.generateSlip = async (req, res) => {
 
     const customCompanyName = companyName || 'Eazzio Technologies Pvt Ltd';
 
+    let monthName = month;
+    let year = '';
+    if (month && month.includes('-')) {
+      const [y, mNum] = month.split('-');
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      monthName = monthNames[parseInt(mNum, 10) - 1] || mNum;
+      year = y;
+    }
+
+    const empNameClean = data.user.name.replace(/\s+/g, '_');
+    const empIdClean = (data.user.employeeId || '').replace(/\s+/g, '_');
+    const finalFilename = `${empNameClean}_${empIdClean}_${monthName}${year ? '_' + year : ''}.pdf`;
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Salary_Slip_${data.user.name.replace(/\s+/g, '_')}_${month}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=${finalFilename}`);
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);

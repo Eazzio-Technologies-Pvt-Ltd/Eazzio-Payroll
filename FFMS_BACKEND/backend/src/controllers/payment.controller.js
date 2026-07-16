@@ -15,16 +15,20 @@ const createOrder = async (req, res, next) => {
       key_secret: process.env.RAZORPAY_KEY_SECRET
     });
 
-    const { plan } = req.body;
+    const { plan, isAnnual, employeeCount = 1 } = req.body;
     const userId = req.user.id;
 
     if (!['FREE', 'BASIC', 'PRO'].includes(plan)) {
       return res.status(400).json({ success: false, error: 'Invalid plan' });
     }
 
+    if (plan !== 'FREE' && (employeeCount < 1 || employeeCount > 100)) {
+      return res.status(400).json({ success: false, error: 'Employee count must be between 1 and 100' });
+    }
+
     const startsAt = new Date();
     const expiresAt = new Date();
-    expiresAt.setDate(startsAt.getDate() + 30);
+    expiresAt.setDate(startsAt.getDate() + (isAnnual ? 365 : 30));
 
     if (plan === 'FREE') {
       await prisma.subscription.create({
@@ -33,19 +37,33 @@ const createOrder = async (req, res, next) => {
           plan,
           status: 'ACTIVE',
           startsAt,
-          expiresAt
+          expiresAt,
+          employeeCount: 1
         }
       });
       return res.json({ success: true });
     }
 
     // Amount in paise
-    const amount = plan === 'BASIC' ? 49900 : 99900;
+    const PLAN_RATES = {
+      BASIC: { monthly: 9900, annual: 7900 },   // per employee in paise
+      PRO:   { monthly: 19900, annual: 14900 },  // per employee in paise
+    };
+
+    const ratePerEmployee = isAnnual
+      ? PLAN_RATES[plan].annual
+      : PLAN_RATES[plan].monthly;
+
+    const amount = plan === 'FREE'
+      ? 0
+      : isAnnual
+        ? ratePerEmployee * employeeCount * 12   // full year charged upfront
+        : ratePerEmployee * employeeCount;        // one month charged
     
     const options = {
       amount,
       currency: 'INR',
-      receipt: `receipt_sub_${Date.now()}`
+      receipt: `rcpt_${plan.toLowerCase()}_${isAnnual ? 'ann' : 'mon'}_${employeeCount}_${Date.now()}`
     };
 
     const order = await razorpay.orders.create(options);
@@ -57,7 +75,8 @@ const createOrder = async (req, res, next) => {
         status: 'PENDING',
         razorpayOrderId: order.id,
         startsAt,
-        expiresAt
+        expiresAt,
+        employeeCount: employeeCount
       }
     });
 

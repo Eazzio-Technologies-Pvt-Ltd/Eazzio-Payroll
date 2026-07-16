@@ -1,53 +1,62 @@
 "use client";
 import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Pricing() {
   const [activeIndex, setActiveIndex] = useState(1);
+  const [isAnnual, setIsAnnual] = useState(false);
+  const router = useRouter();
 
   const plans = [
     {
-      name: "STARTER",
-      price: "₹0",
-      period: "/mo",
-      description: "Essential tools for small field teams.",
+      name: "FREE",
+      priceMonthly: "₹0",
+      priceAnnually: "₹0",
+      period: "",
+      description: "Try Eazzio at no cost.",
       features: [
-        "Up to 5 Execs",
-        "Basic Live GPS",
-        "Standard Tasks",
-        "Email Support"
+        "Up to 5 employees",
+        "Basic attendance tracking",
+        "Manual payroll calculation",
+        "Daily activity logs",
+        "Mobile App Access"
       ],
       isPopular: false,
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
-      name: "PROFESSIONAL",
-      price: "₹499",
-      period: "/mo",
-      description: "Advanced features for growing organizations.",
+      name: "BASIC",
+      priceMonthly: "₹99",
+      priceAnnually: "₹79",
+      period: "/user/mo",
+      description: "For growing teams.",
       features: [
-        "Up to 50 Execs",
-        "Geofencing Monitor",
-        "Live Map Playback",
-        "Dynamic Forms",
-        "Priority Support"
+        "Up to 30 employees",
+        "Live GPS tracking & routes",
+        "Automated Payroll & Payslips",
+        "Expense & Claims Management",
+        "Task & Visit Management",
+        "Standard email support"
       ],
-      isPopular: true,
+      isPopular: false,
       buttonStyle: "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25",
     },
     {
-      name: "ENTERPRISE",
-      price: "₹999",
-      period: "/mo",
-      description: "Dedicated solutions for operations.",
+      name: "PRO",
+      priceMonthly: "₹199",
+      priceAnnually: "₹149",
+      period: "/user/mo",
+      description: "For large organizations.",
       features: [
-        "Unlimited Execs",
-        "Advanced Audits",
-        "Custom Reports API",
-        "Dedicated Manager",
-        "24/7 Phone SLA"
+        "Unlimited employees",
+        "Advanced Policy Violation Engine",
+        "Real-time productivity analytics",
+        "Dynamic Incentives & Deductions",
+        "Custom Reports & Exports",
+        "24/7 Priority Phone Support"
       ],
-      isPopular: false,
+      isPopular: true,
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
   ];
@@ -106,6 +115,20 @@ export default function Pricing() {
           Choose the perfect plan for your team
         </p>
 
+        {/* Billing Toggle */}
+        <div className="flex justify-center items-center gap-4 mb-6">
+          <span className={`text-sm font-semibold ${!isAnnual ? "text-blue-600" : "text-slate-500"}`}>Monthly</span>
+          <button 
+            onClick={() => setIsAnnual(!isAnnual)}
+            className="relative w-14 h-7 rounded-full bg-blue-600 transition-colors focus:outline-none"
+          >
+            <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all transform ${isAnnual ? "translate-x-8" : "translate-x-1"}`} />
+          </button>
+          <span className={`text-sm font-semibold flex items-center gap-2 ${isAnnual ? "text-blue-600" : "text-slate-500"}`}>
+            Annually <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Save 20%</span>
+          </span>
+        </div>
+
         {/* Dynamic State Text (Optional enhancement matching visual reference) */}
         <p className="text-blue-600 font-medium tracking-wide">
           {activeIndex + 1}. Showing {plans[activeIndex].name} Plan
@@ -150,13 +173,20 @@ export default function Pricing() {
               <p className="text-sm mb-6 min-h-[40px] text-slate-600">{plan.description}</p>
 
               <div className="mb-8">
-                <span className="text-5xl font-black text-slate-900">{plan.price}</span>
-                {plan.price !== "Custom" && <span className="ml-2 text-slate-500">{plan.period}</span>}
+                <span className="text-5xl font-black text-slate-900">
+                  {isAnnual ? plan.priceAnnually : plan.priceMonthly}
+                </span>
+                {plan.period !== "" && <span className="ml-2 text-slate-500">{plan.period}</span>}
               </div>
 
               <button
+                onClick={() => {
+                  if (idx === activeIndex) {
+                    router.push("/register");
+                  }
+                }}
                 className={`w-full py-3.5 rounded-xl font-bold transition-all duration-200 mb-8 ${idx === activeIndex
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                  ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 cursor-pointer'
                   : 'bg-slate-100 text-slate-400 border border-slate-200 pointer-events-none'
                   }`}
               >
