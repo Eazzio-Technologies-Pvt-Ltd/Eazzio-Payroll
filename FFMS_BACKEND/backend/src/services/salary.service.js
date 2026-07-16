@@ -313,7 +313,7 @@ const gatherPayslipData = async (userId, organizationId, month) => {
 
   const netSalary = Math.max(0, (baseSalary - unpaidLeaveDeduction) + bonus - advancesDeduction);
 
-  // Salary period: 1st of month → end of month (30th/31st)
+// Salary period: 1st of month → end of month (30th/31st)
   const periodStartDate = new Date(year, m - 1, 1);
   const periodEndDate = new Date(year, m, 0); // Last day of month m
   const dateFormatOptions = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' };

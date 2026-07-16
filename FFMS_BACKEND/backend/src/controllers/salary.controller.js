@@ -283,3 +283,71 @@ exports.emailSlip = async (req, res) => {
     }
   }
 };
+
+// ─── Employee self-service: view own salary slip ─────────────────────────────
+exports.getMySlip = async (req, res) => {
+  try {
+    const { id: userId, organizationId, isSalarySlipEnabled } = req.user;
+
+    if (!isSalarySlipEnabled) {
+      return res.status(403).json({
+        success: false,
+        message: 'Salary slip access is not enabled for your account. Contact your admin.'
+      });
+    }
+
+    // Default month to current IST month if not provided
+    let month = req.query.month;
+    if (!month) {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit'
+      });
+      const parts = formatter.formatToParts(now);
+      const y = parts.find(p => p.type === 'year').value;
+      const m = parts.find(p => p.type === 'month').value;
+      month = `${y}-${m}`;
+    }
+
+    const data = await salaryService.gatherPayslipData(userId, organizationId, month);
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'Salary data not found' });
+    }
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('[salary.controller] getMySlip Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch salary slip' });
+  }
+};
+
+// ─── Admin: toggle salary-slip access for an employee ────────────────────────
+exports.toggleSlipAccess = async (req, res) => {
+  try {
+    const { organizationId } = req.user;
+    const { userId } = req.params;
+
+    // Verify user belongs to the same org
+    const user = await prisma.user.findFirst({
+      where: { id: userId, organizationId },
+      select: { id: true, isSalarySlipEnabled: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found in your organization' });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { isSalarySlipEnabled: !user.isSalarySlipEnabled },
+      select: { id: true, name: true, isSalarySlipEnabled: true }
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('[salary.controller] toggleSlipAccess Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to toggle salary slip access' });
+  }
+};
