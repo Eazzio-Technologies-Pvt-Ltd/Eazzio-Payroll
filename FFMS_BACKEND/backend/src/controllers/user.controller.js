@@ -2,12 +2,61 @@ const userService = require('../services/user.service');
 const { successResponse } = require('../utils/response');
 const { createUserSchema, updateUserSchema, assignTerritorySchema, forceResetPasswordSchema } = require('../validations/user.validation');
 const { BadRequestError } = require('../utils/errors');
+const prisma = require('../config/prisma');
 
 /**
  * Create user
  */
 const createUser = async (req, res, next) => {
   try {
+    // 1. Get the requesting admin's ID from req.user.id
+    const adminId = req.user.id;
+
+    // 2. Find their active subscription
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId: adminId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 3. Determine the limit
+    if (subscription) {
+      let limit = 5;
+      if (subscription.plan === 'FREE') {
+        limit = 5;
+      } else if (subscription.plan === 'BASIC' || subscription.plan === 'PRO') {
+        limit = subscription.employeeCount;
+      }
+
+      // 4. Count current users in the system EXCLUDING:
+      // - role === 'SUPER_ADMIN'
+      // - role === 'ADMIN'
+      // - id === req.user.id
+      const rolesToExclude = ['ADMIN'];
+      const { Role } = require('@prisma/client');
+      if (Role && Role.SUPER_ADMIN) {
+        rolesToExclude.push('SUPER_ADMIN');
+      }
+
+      const currentCount = await prisma.user.count({
+        where: {
+          organizationId: req.user.organizationId,
+          role: { notIn: rolesToExclude },
+          id: { not: adminId }
+        }
+      });
+
+      // 5. If currentCount >= limit:
+      if (currentCount >= limit) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'EMPLOYEE_LIMIT_REACHED',
+            message: `You have reached your employee limit of ${limit}. Please upgrade your plan to add more employees.`
+          }
+        });
+      }
+    }
+
     const parseResult = createUserSchema.safeParse(req.body);
     if (!parseResult.success) {
       throw new BadRequestError('Validation failed', parseResult.error.flatten().fieldErrors);
