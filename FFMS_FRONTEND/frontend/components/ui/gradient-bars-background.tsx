@@ -1,4 +1,5 @@
 import React from "react";
+import { BRAND } from "@/lib/brand";
 
 interface GradientBarsProps {
   numBars?: number;
@@ -51,7 +52,7 @@ const GradientBars: React.FC<GradientBarsProps> = ({
                   animation: `pulseBar ${animationDuration}s ease-in-out infinite alternate`,
                   animationDelay: `${index * 0.1}s`,
                   // @ts-ignore
-                  "--initial-scale": height / 100,
+                  "--initial-scale": `${height / 100}`,
                 }}
               />
             );
@@ -74,10 +75,10 @@ interface GradientBarsBackgroundProps {
 
 export default function GradientBarsBackground({
   numBars = 20,
-  gradientFrom = "rgb(0, 180, 100)",
-  gradientTo = "transparent",
+  gradientFrom = BRAND.barGradientFrom,
+  gradientTo = BRAND.barGradientTo,
   animationDuration = 2,
-  backgroundColor = "white",
+  backgroundColor = "black",
   children,
   className = "",
 }: GradientBarsBackgroundProps) {

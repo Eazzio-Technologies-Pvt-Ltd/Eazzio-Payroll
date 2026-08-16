@@ -2,7 +2,12 @@
 import React from "react";
 import Image from "next/image";
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
-import GradientBarsBackground from "@/components/ui/gradient-bars-background";
+import dynamic from "next/dynamic";
+
+const GradientBarsBackground = dynamic(
+  () => import("@/components/ui/gradient-bars-background"),
+  { ssr: false }
+);
 import { DM_Sans } from "next/font/google";
 
 import Link from "next/link";
@@ -15,8 +20,6 @@ export function PayrollHero() {
         titleComponent={
           <GradientBarsBackground
             numBars={25}
-            gradientFrom="rgba(10, 13, 160, 1)"
-            gradientTo="transparent"
             animationDuration={2}
             backgroundColor="white"
             className="rounded-2xl py-16 px-8 shadow-sm border border-slate-100 mb-12 mt-16"
