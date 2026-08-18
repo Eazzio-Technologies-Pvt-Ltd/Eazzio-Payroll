@@ -3,7 +3,7 @@
 import SaaSTemplate from "@/components/ui/saa-s-template";
 import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
-import Testimonials from "@/components/landing/Testimonials";
+import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import Pricing from "@/components/landing/Pricing";
 import CTABanner from "@/components/landing/CTABanner";
 import Footer from "@/components/landing/Footer";
@@ -19,7 +19,7 @@ export default function LandingPage() {
       <main>
         <Features />
         <HowItWorks />
-        <Testimonials />
+        <TestimonialsSection />
         <Pricing />
         <CTABanner />
       </main>

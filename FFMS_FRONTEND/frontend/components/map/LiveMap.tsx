@@ -42,11 +42,11 @@ export default function LiveMap({
       try {
         const container = document.getElementById(MAP_CONTAINER_ID);
         if (container) {
-          container.innerHTML = ""; // Clear existing DOM to prevent Mappls destroy crash on HMR
+          container.innerHTML = "";
         }
 
         mapRef.current = new mappls.Map(MAP_CONTAINER_ID, {
-          center: [19.076, 72.877],
+          center: { lat: 19.076, lng: 72.877 },
           zoom: 10,
           zoomControl: true,
           search: false,
