@@ -1,7 +1,6 @@
 "use client";
 
-import Header from "@/components/landing/Header";
-import { PayrollHero } from "@/components/PayrollHero";
+import SaaSTemplate from "@/components/ui/saa-s-template";
 import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Testimonials from "@/components/landing/Testimonials";
@@ -16,9 +15,8 @@ export default function LandingPage() {
       <div className="fixed inset-0 w-full h-full -z-10">
         <BgradientAnim animationDuration={8} />
       </div>
-      <Header />
+      <SaaSTemplate />
       <main>
-        <PayrollHero />
         <Features />
         <HowItWorks />
         <Testimonials />

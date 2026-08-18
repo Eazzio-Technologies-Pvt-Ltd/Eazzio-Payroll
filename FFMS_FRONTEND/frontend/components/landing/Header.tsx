@@ -42,8 +42,8 @@ export default function Header() {
     >
       <div className="flex items-center justify-between md:justify-start gap-6 px-5 py-2">
         {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0">
-          <img src="/logo.png" alt="Eazzio Payroll" className="h-7 w-auto object-contain" />
+        <div className="flex items-center shrink-0">
+          <img src="/logo.png" alt="Eazzio Payroll" className="h-9 md:h-11 w-auto object-contain" />
         </div>
 
         {/* Desktop Nav Links */}

@@ -122,9 +122,9 @@ export function FeatureCarousel() {
   return (
     <div className="w-full max-w-7xl mx-auto md:p-8">
       <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[4rem] flex flex-col lg:flex-row min-h-[450px] lg:aspect-[16/8]">
-        <div className="w-full lg:w-[40%] min-h-[250px] md:min-h-[320px] lg:h-full relative z-30 flex flex-col items-start justify-center overflow-hidden px-8 md:px-16 lg:pl-16 bg-[#62B2FE] ">
+        <div className="w-full lg:w-[40%] min-h-[250px] md:min-h-[320px] lg:h-full relative z-30 flex flex-col items-start justify-center overflow-hidden px-8 md:px-16 lg:pl-16 bg-gradient-to-br from-[#62B2FE] via-[#4E9CEF] to-[#2563EB] ">
           <div className="absolute inset-x-0 top-0 h-12 md:h-20 lg:h-16 bg-gradient-to-b from-[#62B2FE] via-[#62B2FE]/80 to-transparent z-40" />
-          <div className="absolute inset-x-0 bottom-0 h-12 md:h-20 lg:h-16 bg-gradient-to-t from-[#62B2FE] via-[#62B2FE]/80 to-transparent z-40" />
+          <div className="absolute inset-x-0 bottom-0 h-12 md:h-20 lg:h-16 bg-gradient-to-t from-[#2563EB] via-[#2563EB]/80 to-transparent z-40" />
           <div className="relative w-full h-full flex items-center justify-center lg:justify-start z-20">
             {FEATURES.map((feature, index) => {
               const isActive = index === currentIndex;
