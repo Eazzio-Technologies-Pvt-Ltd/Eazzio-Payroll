@@ -143,7 +143,7 @@ export default function LoginPage() {
       <div style={{ width: "100%", maxWidth: "410px", animation: "fadeIn 0.5s ease", position: "relative", zIndex: 2 }}>
         {/* Logo (replace TR@NSForce text) */}
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          <img src="/logo.png" alt="Eazzio Payroll" style={{ width: 180, height: "auto", objectFit: "contain", display: "inline-block" }} />
+          <img src="/login-logo.png" alt="Eazzio Payroll" style={{ width: 185, height: "auto", objectFit: "contain", display: "inline-block" }} />
           <p style={{ fontSize: "14px", color: "rgba(255, 255, 255, 0.85)", fontWeight: 500, marginTop: 12 }}>Sign in to your dashboard</p>
         </div>
 
