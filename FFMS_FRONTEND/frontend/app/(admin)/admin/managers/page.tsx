@@ -86,8 +86,8 @@ export default function AdminManagersPage() {
 
   useEffect(() => {
     loadData();
-    geofenceApi.getZones().then(res => setTerritories(res.data || [])).catch(console.error);
-    shiftApi.list().then(res => setShifts(res.data || [])).catch(console.error);
+    geofenceApi.getZones().then(res => setTerritories(Array.isArray(res.data) ? res.data : ((res.data as any)?.zones || []))).catch(console.error);
+    shiftApi.list().then(res => setShifts(Array.isArray(res.data) ? res.data : ((res.data as any)?.shifts || []))).catch(console.error);
   }, []);
 
   const filtered = managers.filter((m) => {
@@ -510,10 +510,14 @@ export default function AdminManagersPage() {
   );
 }
 
+type ManagerFormDataType = {
+  name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; shiftId: string; baseSalary: number; bonus: number; travelAllowanceRate: number;
+};
+
 function ManagerFormModal({ title, formData, setFormData, onSubmit, onClose, submitLabel, managers, territories, shifts }: {
   title: string;
-  formData: { name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; };
-  setFormData: React.Dispatch<React.SetStateAction<{ name: string; email: string; password: string; department: string; phone: string; role: string; managerId: string; empPrefix: string; empSuffix: string; territoryId: string; status: string; }>>;
+  formData: ManagerFormDataType;
+  setFormData: React.Dispatch<React.SetStateAction<ManagerFormDataType>>;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   submitLabel: string;
