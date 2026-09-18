@@ -2,9 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { DM_Sans } from "next/font/google";
 
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800"] });
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800", "900"] });
 
 // Inline Button Component
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,21 +16,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "default", size = "default", className = "", children, ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
-    
+    const baseStyles =
+      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+
     const variants = {
       default: "bg-slate-900 text-white hover:bg-slate-800 shadow-sm",
       secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-200",
-      ghost: "hover:bg-slate-100 text-slate-700 hover:text-slate-900",
-      gradient: "bg-slate-900 text-white hover:bg-slate-800 shadow-md hover:scale-105 active:scale-95"
+      ghost: "hover:bg-slate-100/80 text-slate-700 hover:text-slate-900",
+      gradient: "bg-slate-900 text-white hover:bg-slate-800 shadow-md hover:scale-105 active:scale-95",
     };
-    
+
     const sizes = {
       default: "h-10 px-4 py-2 text-sm",
-      sm: "h-10 px-5 text-sm",
-      lg: "h-12 px-8 text-base"
+      sm: "h-9 sm:h-10 px-4 sm:px-5 text-sm",
+      lg: "h-12 px-8 text-base",
     };
-    
+
     return (
       <button
         ref={ref}
@@ -88,12 +90,24 @@ const Navigation = React.memo(() => {
 
   return (
     <header className="fixed top-0 w-full z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
+      <style>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <nav className="max-w-7xl mx-auto px-6 py-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center shrink-0">
+          <Link href="/" className="flex items-center shrink-0">
             <img src="/logo.png" alt="Eazzio Payroll" className="h-10 md:h-12 w-auto object-contain" />
-          </div>
-          
+          </Link>
+
           <div className="hidden md:flex items-center justify-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <a href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               Features
@@ -175,13 +189,39 @@ const Navigation = React.memo(() => {
 
 Navigation.displayName = "Navigation";
 
-// Hero Component (Light Theme)
-const Hero = React.memo(() => {
+// ============================================================================
+// 1. COMPLETE 16:9 CINEMATIC WORKFLOW IMAGE (ENTIRE IMAGE VISIBLE, NO CROPPING)
+// ============================================================================
+const CinematicIntroSection = React.memo(() => {
+  return (
+    <section className="w-full bg-slate-950 select-none overflow-hidden">
+      {/* 
+        Complete 16:9 cinematic workflow image scaled proportionally across all viewports.
+        Zero cropping on top, bottom, left, or right. No object-fit: cover. No fixed 100vh height.
+      */}
+      <img
+        src="/eazzio-hero-workflow-v4.jpg"
+        alt="Eazzio Payroll field workforce workflow"
+        className="w-full h-auto block select-none"
+        loading="eager"
+        decoding="async"
+      />
+    </section>
+  );
+});
+
+CinematicIntroSection.displayName = "CinematicIntroSection";
+
+// ============================================================================
+// 2. EXISTING HERO SECTION (PRESERVED BELOW INTRO SECTION EXACTLY AS BEFORE)
+// ============================================================================
+const ExistingHero = React.memo(() => {
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-start px-6 py-20 md:py-24 bg-transparent text-slate-900"
+      id="main-hero"
+      className="relative min-h-screen flex flex-col items-center justify-start px-6 pt-16 pb-20 md:pt-20 md:pb-24 bg-transparent text-slate-900"
       style={{
-        animation: "fadeIn 0.6s ease-out"
+        animation: "fadeIn 0.6s ease-out",
       }}
     >
       <style>{`
@@ -189,17 +229,6 @@ const Hero = React.memo(() => {
           from {
             opacity: 0;
             transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
           }
           to {
             opacity: 1;
@@ -217,10 +246,10 @@ const Hero = React.memo(() => {
       </aside>
 
       {/* Headline */}
-      <h1 className={`${dmSans.className} text-4xl md:text-5xl lg:text-6xl font-extrabold text-center max-w-4xl px-6 leading-tight mb-4 text-[#0a2a1a] tracking-tight`}>
+      <h2 className={`${dmSans.className} text-4xl md:text-5xl lg:text-6xl font-extrabold text-center max-w-4xl px-6 leading-tight mb-4 text-[#0a2a1a] tracking-tight`}>
         Smart Field Management for{" "}
         <span className="text-blue-600">Stronger Teams</span>
-      </h1>
+      </h2>
 
       {/* Subtitle */}
       <p className="text-sm md:text-base text-center max-w-2xl px-6 mb-8 text-slate-600 font-normal leading-relaxed">
@@ -252,7 +281,7 @@ const Hero = React.memo(() => {
           className="absolute left-1/2 w-[90%] pointer-events-none z-0"
           style={{
             top: "-23%",
-            transform: "translateX(-50%)"
+            transform: "translateX(-50%)",
           }}
           aria-hidden="true"
         >
@@ -263,7 +292,7 @@ const Hero = React.memo(() => {
             loading="eager"
           />
         </div>
-        
+
         <div className="relative z-10">
           <img
             src="/dashboard-preview.png"
@@ -277,14 +306,23 @@ const Hero = React.memo(() => {
   );
 });
 
-Hero.displayName = "Hero";
+ExistingHero.displayName = "ExistingHero";
 
-// Main Component (Light Theme)
+// Main Landing Page Header Component
 export default function Component() {
   return (
     <div className="min-h-screen bg-transparent text-slate-900">
+      {/* 1. Global Navigation Bar */}
       <Navigation />
-      <Hero />
+
+      {/* Spacer matching fixed navbar height so intro image starts immediately below it */}
+      <div className="h-[61px] md:h-[69px] w-full shrink-0" aria-hidden="true" />
+
+      {/* 2. New Full-Viewport Cinematic Intro Section (First Screen) */}
+      <CinematicIntroSection />
+
+      {/* 3. Existing Hero & Dashboard Preview (Preserved Below the Intro) */}
+      <ExistingHero />
     </div>
   );
 }

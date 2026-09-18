@@ -5,7 +5,8 @@ import type { NextRequest } from "next/server";
  * Role-based access middleware.
  *
  * Route rules:
- *  - /login, /register        → always accessible (redirect to dashboard if already logged in)
+ *  - /login                   → redirect to dashboard if already logged in
+ *  - /register                → always accessible (always opens registration form)
  *  - /admin/*                 → ADMIN role only
  *  - /dashboard, (dashboard)/* → any authenticated role (ADMIN, MANAGER, EMPLOYEE, etc.)
  *  - everything else          → pass through (landing page, API routes, etc.)
@@ -41,9 +42,10 @@ export function proxy(request: NextRequest) {
   const role = request.cookies.get("ff_user_role")?.value?.toUpperCase();
   const isLoggedIn = Boolean(token);
 
-  // Public routes — if already authenticated, redirect to the correct home
+  // Public routes — if already authenticated, only /login redirects to the correct home.
+  // /register always opens the registration form even if the user has registered before.
   if (PUBLIC_ROUTES.includes(pathname)) {
-    if (isLoggedIn && (pathname === "/login" || pathname === "/register")) {
+    if (isLoggedIn && pathname === "/login") {
       const dest = role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
       return NextResponse.redirect(new URL(dest, request.url));
     }

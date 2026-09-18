@@ -3,13 +3,30 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import FUIBentoGridDark from "@/components/ui/bento";
-import { Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, Sparkles } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, Sparkles, SkipForward, SkipBack } from "lucide-react";
+
+const PLAYLIST = [
+  {
+    id: "work-video",
+    src: "/eazzio%20work%20video.mp4",
+    title: "Workflow Demo",
+    badge: "1/2 • Workflow Demo",
+  },
+  {
+    id: "platform-preview",
+    src: "/use_this_logo_replace_the_used.mp4",
+    title: "Platform Overview",
+    badge: "2/2 • Platform Overview",
+  },
+];
 
 export default function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef0 = useRef<HTMLVideoElement>(null);
+  const videoRef1 = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -30,6 +47,8 @@ export default function HowItWorks() {
   const y = useTransform(smoothProgress, [0, 1], [40, 0]);
   const scale = useTransform(smoothProgress, [0, 1], [0.96, 1]);
 
+  const [video1Available, setVideo1Available] = useState(true);
+
   // Sync fullscreen change with document event (e.g. when user presses ESC)
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -39,21 +58,115 @@ export default function HowItWorks() {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Handle Video 1 load error (e.g. missing file)
+  const handleVideo0Error = () => {
+    console.warn("Video 1 (/eazzio work video.mp4) is not available, falling back to Video 2.");
+    setVideo1Available(false);
+    setActiveVideoIndex(1);
+    const v1 = videoRef1.current;
+    if (v1) {
+      v1.currentTime = 0;
+      v1.muted = isMuted;
+      v1.play().then(() => setIsPlaying(true)).catch(console.warn);
+    }
+  };
+
+  // Auto-play on mount
+  useEffect(() => {
+    const v0 = videoRef0.current;
+    const v1 = videoRef1.current;
+    if (v0) {
+      v0.muted = isMuted;
+      v0.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {
+          // If v0 fails, try v1
+          if (v1) {
+            v1.muted = isMuted;
+            v1.play().then(() => {
+              setActiveVideoIndex(1);
+              setIsPlaying(true);
+            }).catch(console.warn);
+          }
+        });
+    }
+  }, []);
+
+  // Seamless circular loop transition when a video ends
+  const handleEnded = (endedIndex: number) => {
+    if (!video1Available) {
+      // Loop video 2 continuously if video 1 is missing
+      const v1 = videoRef1.current;
+      if (v1) {
+        v1.currentTime = 0;
+        v1.play().catch(console.warn);
+      }
+      return;
+    }
+
+    const nextIndex = (endedIndex + 1) % PLAYLIST.length;
+    const currentVideo = endedIndex === 0 ? videoRef0.current : videoRef1.current;
+    const nextVideo = nextIndex === 0 ? videoRef0.current : videoRef1.current;
+
+    if (currentVideo) {
+      currentVideo.pause();
+      currentVideo.currentTime = 0;
+    }
+
+    setActiveVideoIndex(nextIndex);
+    setProgress(0);
+
+    if (nextVideo) {
+      nextVideo.currentTime = 0;
+      nextVideo.muted = isMuted;
+      nextVideo.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.warn("Autoplay next video failed:", err);
+        });
+    }
+  };
+
+  const switchVideo = (targetIndex: number) => {
+    if (targetIndex === activeVideoIndex) return;
+    const currentVideo = activeVideoIndex === 0 ? videoRef0.current : videoRef1.current;
+    const nextVideo = targetIndex === 0 ? videoRef0.current : videoRef1.current;
+
+    if (currentVideo) {
+      currentVideo.pause();
+      currentVideo.currentTime = 0;
+    }
+
+    setActiveVideoIndex(targetIndex);
+    setProgress(0);
+
+    if (nextVideo) {
+      nextVideo.currentTime = 0;
+      nextVideo.muted = isMuted;
+      if (isPlaying) {
+        nextVideo.play().catch((err) => console.warn("Switch play failed:", err));
+      }
+    }
+  };
+
   const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
+    const activeVideo = activeVideoIndex === 0 ? videoRef0.current : videoRef1.current;
+    if (!activeVideo) return;
+    if (activeVideo.paused) {
+      activeVideo.play().then(() => setIsPlaying(true)).catch(console.warn);
     } else {
-      videoRef.current.pause();
+      activeVideo.pause();
       setIsPlaying(false);
     }
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
+    const newMuted = !isMuted;
+    if (videoRef0.current) videoRef0.current.muted = newMuted;
+    if (videoRef1.current) videoRef1.current.muted = newMuted;
+    setIsMuted(newMuted);
   };
 
   const toggleFullscreen = async () => {
@@ -73,20 +186,15 @@ export default function HowItWorks() {
     }
   };
 
-  const handleTimeUpdate = () => {
-    if (!videoRef.current) return;
-    const current = videoRef.current.currentTime;
-    const duration = videoRef.current.duration;
+  const handleTimeUpdate = (index: number) => {
+    if (index !== activeVideoIndex) return;
+    const activeVideo = index === 0 ? videoRef0.current : videoRef1.current;
+    if (!activeVideo) return;
+    const current = activeVideo.currentTime;
+    const duration = activeVideo.duration;
     if (duration > 0) {
       setProgress((current / duration) * 100);
     }
-  };
-
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickPos = (e.clientX - rect.left) / rect.width;
-    videoRef.current.currentTime = clickPos * videoRef.current.duration;
   };
 
   return (
@@ -119,30 +227,47 @@ export default function HowItWorks() {
           {/* Ambient Glow Aura */}
           <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-r from-emerald-500/15 via-blue-500/15 to-teal-500/15 blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 -z-10" />
 
-          {/* Video Player Container (Rectangular, No Black Border) */}
+          {/* Video Player Container (Fixed 16:9 Aspect Ratio, Sharp Rectangular Corners, No Border) */}
           <div
             ref={videoContainerRef}
-            className={`relative w-full overflow-hidden bg-transparent shadow-2xl transition-all duration-300 ${
+            className={`relative w-full aspect-video overflow-hidden bg-slate-950 shadow-2xl transition-all duration-300 rounded-none border-0 ${
               isFullscreen
-                ? "flex items-center justify-center h-screen w-screen bg-black"
-                : "rounded-none"
+                ? "!fixed !inset-0 !h-screen !w-screen !z-[9999] !rounded-none !bg-black"
+                : ""
             }`}
           >
-            {/* The Video Element */}
+            {/* Video 1: Eazzio Work Video (Plays First when file is provided) */}
             <video
-              ref={videoRef}
-              src="/use_this_logo_replace_the_used.mp4"
-              autoPlay
-              loop
-              muted
+              ref={videoRef0}
+              src="/eazzio%20work%20video.mp4"
+              muted={isMuted}
               playsInline
-              preload="metadata"
-              onTimeUpdate={handleTimeUpdate}
+              preload="auto"
+              onTimeUpdate={() => handleTimeUpdate(0)}
+              onEnded={() => handleEnded(0)}
+              onError={handleVideo0Error}
               onClick={togglePlay}
-              className={`w-full cursor-pointer transition-all duration-300 ${
-                isFullscreen
-                  ? "h-full w-full object-contain"
-                  : "w-full h-auto object-cover mx-auto block"
+              className={`w-full h-full object-cover cursor-pointer transition-opacity duration-500 absolute inset-0 ${
+                activeVideoIndex === 0
+                  ? "opacity-100 z-10 pointer-events-auto"
+                  : "opacity-0 z-0 pointer-events-none"
+              }`}
+            />
+
+            {/* Video 2: Platform Showcase (Plays Second, Perfect Sync) */}
+            <video
+              ref={videoRef1}
+              src="/use_this_logo_replace_the_used.mp4"
+              muted={isMuted}
+              playsInline
+              preload="auto"
+              onTimeUpdate={() => handleTimeUpdate(1)}
+              onEnded={() => handleEnded(1)}
+              onClick={togglePlay}
+              className={`w-full h-full object-cover cursor-pointer transition-opacity duration-500 absolute inset-0 ${
+                activeVideoIndex === 1
+                  ? "opacity-100 z-10 pointer-events-auto"
+                  : "opacity-0 z-0 pointer-events-none"
               }`}
             />
 
@@ -158,28 +283,51 @@ export default function HowItWorks() {
               </div>
             )}
 
-            {/* Top Bar Overlay Tag (only appears on hover) */}
-            <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-200 pointer-events-none shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            {/* Top Bar Overlay Tag (shows current playing part and switches on hover) */}
+            <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-full px-3.5 py-1.5 text-xs font-semibold text-slate-200 pointer-events-none shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Platform Preview</span>
+              <span>{PLAYLIST[activeVideoIndex].badge}</span>
             </div>
 
-            {/* Bottom Controls Bar (play, unmute, fullscreen, progress - appears only on hover) */}
+            {/* Bottom Controls Bar (play, unmute, next/prev, fullscreen, 2-segment progress bar) */}
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 sm:p-5 z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-300">
-              {/* Interactive Progress Bar (White color) */}
-              <div
-                onClick={handleProgressClick}
-                className="w-full h-1.5 bg-white/30 hover:h-2 rounded-full cursor-pointer overflow-hidden transition-all"
-              >
-                <div
-                  className="h-full bg-white rounded-full transition-all duration-100 shadow-[0_0_8px_rgba(255,255,255,0.7)]"
-                  style={{ width: `${progress}%` }}
-                />
+              {/* Dual-Segment Interactive Progress Bar */}
+              <div className="flex items-center gap-2 w-full">
+                {PLAYLIST.map((item, idx) => {
+                  const isCurrent = activeVideoIndex === idx;
+                  const isPast = activeVideoIndex > idx;
+                  const segWidth = isCurrent ? progress : isPast ? 100 : 0;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeVideoIndex !== idx) {
+                          switchVideo(idx);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const clickPos = (e.clientX - rect.left) / rect.width;
+                          const activeVid = idx === 0 ? videoRef0.current : videoRef1.current;
+                          if (activeVid && activeVid.duration) {
+                            activeVid.currentTime = clickPos * activeVid.duration;
+                          }
+                        }
+                      }}
+                      className="flex-1 h-1.5 hover:h-2 bg-white/30 rounded-full cursor-pointer overflow-hidden transition-all relative"
+                      title={`${item.title} (Click to switch)`}
+                    >
+                      <div
+                        className="h-full bg-white rounded-full transition-all duration-100 shadow-[0_0_8px_rgba(255,255,255,0.7)]"
+                        style={{ width: `${segWidth}%` }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-1 text-slate-200">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <button
                     onClick={togglePlay}
                     type="button"
@@ -187,6 +335,15 @@ export default function HowItWorks() {
                     title={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white text-white" />}
+                  </button>
+
+                  <button
+                    onClick={() => switchVideo((activeVideoIndex + 1) % PLAYLIST.length)}
+                    type="button"
+                    className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-md transition-colors"
+                    title="Next Video"
+                  >
+                    <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </button>
 
                   <button
@@ -202,7 +359,11 @@ export default function HowItWorks() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hidden sm:inline">
+                    {PLAYLIST[activeVideoIndex].title}
+                  </span>
+
                   <button
                     onClick={toggleFullscreen}
                     type="button"
