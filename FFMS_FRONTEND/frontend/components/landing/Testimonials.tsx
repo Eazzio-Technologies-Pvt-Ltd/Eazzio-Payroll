@@ -1,4 +1,25 @@
+"use client";
+
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+
 export default function Testimonials() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start 0.92", "start 0.65"],
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 24,
+    restDelta: 0.001,
+  });
+
+  const opacity = useTransform(smoothProgress, [0, 1], [0, 1]);
+  const y = useTransform(smoothProgress, [0, 1], [40, 0]);
+  const scale = useTransform(smoothProgress, [0, 1], [0.96, 1]);
+
   const testimonials = [
     {
       quote: "Eazzio Payroll completely transformed how we manage our sales representatives. The real-time tracking alone saved us countless hours of manual verification.",
@@ -24,22 +45,28 @@ export default function Testimonials() {
   ];
 
   return (
-    <section className="py-20 md:py-32 bg-white w-full border-t border-slate-100">
+    <section ref={containerRef} className="py-20 md:py-32 bg-transparent w-full border-t border-slate-100/50">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 lg:px-20">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <motion.div
+          style={{ opacity, y, scale }}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6">
             Trusted by <span className="text-blue-600">Industry Leaders</span>
           </h2>
           <p className="text-lg text-slate-600">
             See how Eazzio is helping organizations across the globe streamline their field operations.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <motion.div
+          style={{ opacity, y }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+        >
           {testimonials.map((test, idx) => (
             <div 
               key={idx} 
-              className="bg-slate-50 rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between"
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-slate-200/80 shadow-sm flex flex-col justify-between"
             >
               <div className="mb-8">
                 <div className="flex gap-1 mb-4">
@@ -64,7 +91,7 @@ export default function Testimonials() {
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

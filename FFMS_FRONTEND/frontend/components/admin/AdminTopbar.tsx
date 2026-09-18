@@ -173,7 +173,7 @@ export default function AdminTopbar() {
           borderRight: "none",
         }}>
           <img
-            src="/logo.png"
+            src="/dashboardlogo.png"
             alt="Eazzio Logo"
             style={{ height: "56px", objectFit: "contain", maxWidth: "200px" }}
           />
