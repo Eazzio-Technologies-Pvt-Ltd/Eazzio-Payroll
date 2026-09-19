@@ -6,6 +6,7 @@ const logger = require('../config/logger');
 const { getLocalDate, getLocalHoursAndMinutes } = require('../utils/timezone');
 const { closeAbandonedSessions } = require('../utils/sessionCleanup');
 const { getISTDateBoundaries } = require('../utils/salaryUtils');
+const { detectFaceInBase64 } = require('../utils/faceDetection');
 
 
 /**
@@ -168,6 +169,7 @@ const checkIn = async (userId, { latitude, longitude, selfieBase64 }, organizati
   // 2. Upload selfie to Cloudinary if provided
   let selfieUrl = null;
   if (selfieBase64) {
+    await detectFaceInBase64(selfieBase64); // throws if no face detected
     selfieUrl = await uploadSelfie(selfieBase64);
   }
 
