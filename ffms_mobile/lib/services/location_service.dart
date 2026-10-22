@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../core/utils/offline_cache.dart';
 import '../core/utils/offline_telemetry_cache.dart';
 import '../core/utils/storage_helper.dart';
+import '../core/utils/notification_helper.dart';
 import 'api_service.dart';
 
 /// `LocationService` is a Singleton that manages high-precision GPS tracking for Field Agents.
@@ -51,30 +52,6 @@ class LocationService {
 
     if (permission == LocationPermission.deniedForever) {
       return false;
-    }
-
-    // Request Always Allow (background) location permission for Android 10+ (API 29+)
-    // FIXED: Added ACCESS_BACKGROUND_LOCATION explicit check and request. Geolocator's requestPermission() only
-    // requests while-in-use permission. Without Always Allow, background tracking fails.
-    if (!kIsWeb && Platform.isAndroid) {
-      int sdkVersion = 0;
-      try {
-        final androidInfo = await DeviceInfoPlugin().androidInfo;
-        sdkVersion = androidInfo.version.sdkInt;
-      } catch (e) {
-        debugPrint('[LocationService] Error checking Android SDK version: $e');
-      }
-
-      if (sdkVersion >= 29) {
-        var alwaysStatus = await Permission.locationAlways.status;
-        if (!alwaysStatus.isGranted) {
-          alwaysStatus = await Permission.locationAlways.request();
-        }
-        if (!alwaysStatus.isGranted) {
-          debugPrint('[LocationService] WARNING: ACCESS_BACKGROUND_LOCATION is required for reliable background tracking but was not granted.');
-          return false;
-        }
-      }
     }
 
     // Request Activity Recognition / Sensors permission for motion tracking
@@ -137,11 +114,16 @@ class LocationService {
     _isTracking = true;
 
     if (!kIsWeb && Platform.isAndroid) {
-      // Register callback to receive updates from task handler
-      FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
+      final isRunning = await FlutterForegroundTask.isRunningService;
+      if (!isRunning) {
+        // Register callback to receive updates from task handler
+        FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
 
-      // Start the foreground service
-      await startForegroundTask(shiftStatus ?? 'ACTIVE');
+        // Start the foreground service
+        await startForegroundTask(shiftStatus ?? 'ACTIVE');
+      } else {
+        await updateNotification(shiftStatus ?? 'ACTIVE');
+      }
     } else {
       // Non-Android platforms (iOS, Web) run in the main isolate
       _startLocalGpsStream(onLocationUpdated);
@@ -157,6 +139,12 @@ class LocationService {
     if (!kIsWeb && Platform.isAndroid) {
       await stopForegroundTask();
       FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
+      try {
+        await NotificationHelper.showNewNotification(
+          'Eazzio Payroll — Off Duty',
+          'Tracking your location stopped.',
+        );
+      } catch (_) {}
     } else {
       await _positionStreamSubscription?.cancel();
       _stopTimer?.cancel();
@@ -254,11 +242,11 @@ class LocationService {
   static void initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'payroll_location',
-        channelName: 'Eazzio Payroll Location Tracking',
-        channelDescription: 'Keeps GPS active while you are on duty.',
-        channelImportance: NotificationChannelImportance.LOW,
-        priority: NotificationPriority.LOW,
+        channelId: 'payroll_location_high',
+        channelName: 'Eazzio Payroll Shift Tracking',
+        channelDescription: 'Active shift location tracking notification.',
+        channelImportance: NotificationChannelImportance.HIGH,
+        priority: NotificationPriority.HIGH,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: true,

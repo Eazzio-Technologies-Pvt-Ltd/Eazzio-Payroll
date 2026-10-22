@@ -330,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       children: [
                         SizedBox(height: r.spaceXL),
                         Text(
-                          'v1.0.2 · Powered by Eazzio Technologies Pvt Ltd',
+                          'v1.0.3 · Powered by Eazzio Technologies Pvt Ltd',
                           style: GoogleFonts.inter(
                             fontSize: r.fontSM, // responsive font size
                             color: AppColors.textTertiary,

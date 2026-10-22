@@ -1,4 +1,4 @@
-package com.eazzio.payroll
+package com.eazzio.eazziopayroll
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -341,7 +341,7 @@ class _AlarmSettingsScreenState extends State<AlarmSettingsScreen> {
                     ),
                     onTap: () async {
                       if (!_batteryIgnored) {
-                        final channel = MethodChannel('com.eazzio.payroll/device_settings');
+                        final channel = MethodChannel('com.eazzio.eazziopayroll/device_settings');
                         await channel.invokeMethod('openBatteryOptimizationSettings');
                         await Future.delayed(const Duration(seconds: 1));
                         _checkPermissions();

@@ -35,24 +35,13 @@ class ImageUploadUtil {
     String? employeeName,
     String? employeeId,
   }) async {
-    // 1. Request camera/gallery permissions before opening picker
+    // 1. Request camera permission only if camera is used
     if (cameraOnly) {
       final cameraStatus = await Permission.camera.request();
       if (!cameraStatus.isGranted) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Camera permission is required to take photo.')),
-          );
-        }
-        return null;
-      }
-    } else {
-      final cameraStatus = await Permission.camera.request();
-      final photosStatus = await Permission.photos.request();
-      if (!cameraStatus.isGranted && !photosStatus.isGranted) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Camera or Photos permission is required.')),
           );
         }
         return null;
@@ -87,6 +76,19 @@ class ImageUploadUtil {
     }
 
     if (selectedSource == null) return null;
+
+    // Check camera permission if user selected camera from the modal
+    if (selectedSource == ImageSource.camera && !cameraOnly) {
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Camera permission is required to take photo.')),
+          );
+        }
+        return null;
+      }
+    }
 
     // 3. Open image picker — compress to 800px × 70% quality (keeps under 500KB typically)
     final picker = ImagePicker();

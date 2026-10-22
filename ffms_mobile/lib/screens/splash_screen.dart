@@ -37,71 +37,75 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkAuth() async {
-    // Minimum splash display time for branding
-    await Future.delayed(const Duration(milliseconds: 1800));
-
-    if (!mounted) return;
-
-    // Restore background tracking service if user was punched in before app kill
-    // This is done HERE (after widget tree is ready) — NOT in main() —
-    // to prevent permission dialogs from showing before Flutter initializes.
     try {
-      final token = await StorageHelper.getAccessToken();
-      if (token != null && StorageHelper.isTrackingActive()) {
-        final isRunning = await FlutterForegroundTask.isRunningService;
-        if (!isRunning) {
-          debugPrint('[SplashScreen] Restoring background tracking service...');
-          await LocationService().startTracking(shiftStatus: 'Restored Active');
-        }
-      }
-    } catch (e) {
-      debugPrint('[SplashScreen] Tracking restoration failed (non-fatal): $e');
-    }
+      // 1. Minimum splash display time for smooth branding entrance
+      await Future.delayed(const Duration(milliseconds: 1500));
 
-    if (!mounted) return;
-
-    final bool hasGrantedAllPermissions = StorageHelper.hasPermissionsBeenGranted();
-
-    if (!hasGrantedAllPermissions) {
       if (!mounted) return;
-      final navigator = Navigator.of(context);
-      navigator.pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => PermissionsScreen(
-            onPermissionsGranted: () async {
-              final innerNavigator = Navigator.of(context);
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              try {
-                await authProvider.checkAuthStatus().timeout(const Duration(seconds: 5));
-              } catch (e) {
-                debugPrint('Auth check failed: $e');
-              }
-              if (authProvider.isAuthenticated) {
-                innerNavigator.pushReplacementNamed('/home');
-              } else {
-                innerNavigator.pushReplacementNamed('/role_selection');
-              }
-            },
+
+      // 2. Safe check of storage and background task (with 3-second hard timeout to avoid infinite hang)
+      try {
+        final token = await StorageHelper.getAccessToken().timeout(const Duration(seconds: 2));
+        if (token != null && StorageHelper.isTrackingActive()) {
+          final isRunning = await FlutterForegroundTask.isRunningService.timeout(const Duration(seconds: 2));
+          if (!isRunning) {
+            debugPrint('[SplashScreen] Restoring background tracking service...');
+            await LocationService().startTracking(shiftStatus: 'Restored Active').timeout(const Duration(seconds: 3));
+          }
+        }
+      } catch (e) {
+        debugPrint('[SplashScreen] Tracking restoration skipped/timed out: $e');
+      }
+
+      if (!mounted) return;
+
+      final bool hasGrantedAllPermissions = StorageHelper.hasPermissionsBeenGranted();
+
+      if (!hasGrantedAllPermissions) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => PermissionsScreen(
+              onPermissionsGranted: () async {
+                final innerNavigator = Navigator.of(context);
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                try {
+                  await authProvider.checkAuthStatus().timeout(const Duration(seconds: 4));
+                } catch (e) {
+                  debugPrint('Auth check failed: $e');
+                }
+                if (authProvider.isAuthenticated) {
+                  innerNavigator.pushReplacementNamed('/home');
+                } else {
+                  innerNavigator.pushReplacementNamed('/role_selection');
+                }
+              },
+            ),
           ),
-        ),
-      );
-      return;
-    }
+        );
+        return;
+      }
 
-    final navigator = Navigator.of(context);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    try {
-      await authProvider.checkAuthStatus().timeout(const Duration(seconds: 5));
-    } catch (e) {
-      debugPrint('Auth check failed: $e');
-    }
+      final navigator = Navigator.of(context);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      try {
+        await authProvider.checkAuthStatus().timeout(const Duration(seconds: 4));
+      } catch (e) {
+        debugPrint('Auth check failed: $e');
+      }
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (authProvider.isAuthenticated) {
-      navigator.pushReplacementNamed('/home');
-    } else {
-      navigator.pushReplacementNamed('/role_selection');
+      if (authProvider.isAuthenticated) {
+        navigator.pushReplacementNamed('/home');
+      } else {
+        navigator.pushReplacementNamed('/role_selection');
+      }
+    } catch (criticalErr) {
+      debugPrint('[SplashScreen] Critical unhandled error in splash: $criticalErr');
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/role_selection');
+      }
     }
   }
 

@@ -306,12 +306,12 @@ class _MapScreenState extends State<MapScreen> {
                     if (_mapToken != null)
                       TileLayer(
                         urlTemplate: 'https://apis.mappls.com/advancedmaps/v1/$_mapToken/retina_map/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.eazzio.payroll',
+                        userAgentPackageName: 'com.eazzio.eazziopayroll',
                       )
                     else
                       TileLayer(
                         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.eazzio.payroll',
+                        userAgentPackageName: 'com.eazzio.eazziopayroll',
                       ),
                     PolygonLayer(
                       polygons: _geofencePolygons,

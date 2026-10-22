@@ -1,0 +1,16 @@
+# Root .gitignore for Eazzio-Payroll
+
+# Root level temp files & docs
+*.docx
+.~lock.*
+.DS_Store
+*.log
+
+# Submodules/Backend/Frontend ignore
+FFMS_BACKEND/
+FFMS_FRONTEND/
+
+# Keystores & sensitive keys
+*.jks
+*.keystore
+*.pem

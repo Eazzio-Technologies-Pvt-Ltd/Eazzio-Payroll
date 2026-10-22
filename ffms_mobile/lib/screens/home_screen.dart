@@ -22,7 +22,6 @@ import '../core/theme/app_theme.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/utils/notification_helper.dart';
 import '../core/utils/constants.dart';
-import 'permissions_screen.dart';
 import 'request_advance_screen.dart';
 import '../core/utils/responsive.dart'; // Responsive helper — no hardcoded sizes
 import '../widgets/animated_counter.dart';
@@ -261,22 +260,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
 
-    // 2. Verify and request location permission
+    // 2. Verify and request foreground location permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PermissionsScreen(
-              onPermissionsGranted: () {
-                Navigator.pop(context);
-                _handleAttendanceAction();
-              },
-            ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Location permission is required for attendance verification."),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -748,14 +742,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 final sessionCount = sessions.length;
                 String buttonText;
 
-                if (!isPunchedIn && sessionCount == 0) {
-                  buttonText = 'Swipe to Punch In (Session 1)';
-                } else if (isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Swipe to Punch Out (Session 1)';
-                } else if (!isPunchedIn && sessionCount == 1) {
-                  buttonText = 'Swipe to Punch In (Session 2)';
+                if (!isPunchedIn) {
+                  final nextSession = sessionCount + 1;
+                  buttonText = 'Swipe to Punch In (Session $nextSession)';
                 } else {
-                  buttonText = 'Swipe to Punch Out (Session 2)';
+                  final currentSession = sessionCount > 0 ? sessionCount : 1;
+                  buttonText = 'Swipe to Punch Out (Session $currentSession)';
                 }
 
                 return SwipeToPunch(

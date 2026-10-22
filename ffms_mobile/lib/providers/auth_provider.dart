@@ -272,7 +272,7 @@ class AuthProvider extends ChangeNotifier {
     });
 
     // 3. Clear stored tokens + notify server in background (non-blocking)
-    _authService.logout().catchError((_) {});
+    _authService.logout().catchError((_) => false);
   }
 
   // Upload Profile Image

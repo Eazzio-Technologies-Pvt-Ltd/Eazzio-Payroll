@@ -2,9 +2,8 @@ name: ffms_mobile
 description: "Field Force Management Mobile App"
 publish_to: 'none'
 # Version format: major.minor.patch+buildNumber
-# Bumped for Task 10 release build — AndroidManifest cleanup + APK
-# Date: 2026-06-10 | Antigravity Dev Team
-version: 1.0.2+4
+# Bumped to version code 12 to upload fresh bundle without broad photo/video permissions
+version: 1.0.3+13
 
 environment:
   sdk: ^3.11.0

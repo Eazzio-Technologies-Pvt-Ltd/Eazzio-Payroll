@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -70,20 +71,19 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   /// Verifies current status of all permissions
   Future<void> _checkPermissions({bool isInit = false}) async {
     try {
-      bool locStatusAlways = false;
       bool locStatusInUse = false;
       bool cameraStatus = false;
-      bool photosStatus = false;
+      bool photosStatus = _photosGranted;
       bool notificationsStatus = false;
 
       if (!kIsWeb) {
-        locStatusAlways = await Permission.locationAlways.isGranted;
         locStatusInUse = await Permission.location.isGranted;
         cameraStatus = await Permission.camera.isGranted;
-        photosStatus = await Permission.photos.isGranted || await Permission.storage.isGranted;
+        if (!Platform.isAndroid) {
+          photosStatus = await Permission.photos.isGranted;
+        }
         notificationsStatus = await Permission.notification.isGranted;
       } else {
-        locStatusAlways = true;
         locStatusInUse = true;
         cameraStatus = true;
         photosStatus = true;
@@ -121,7 +121,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
         }
       }
 
-      final newLoc = locStatusAlways || locStatusInUse;
+      final newLoc = locStatusInUse;
 
       // Trigger light haptic if any permission was newly granted (not on first init load)
       if (!isInit) {
@@ -164,16 +164,13 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     }
   }
 
-  /// Location: Always / When in Use
+  /// Location: Foreground (When in Use)
   Future<void> _grantLocation() async {
     if (kIsWeb) {
       await _checkPermissions();
       return;
     }
-    var status = await Permission.location.request();
-    if (status.isGranted) {
-      await Permission.locationAlways.request();
-    }
+    await Permission.location.request();
     await _checkPermissions();
   }
 
@@ -187,14 +184,68 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
     await _checkPermissions();
   }
 
-  /// Photo Library / Storage
+  /// Photo Library / System Photo Picker Test
   Future<void> _grantPhotos() async {
     if (kIsWeb) {
+      setState(() => _photosGranted = true);
       await _checkPermissions();
       return;
     }
-    await Permission.photos.request();
-    await Permission.storage.request();
+
+    if (Platform.isAndroid) {
+      // Android Photo Picker: Google Play compliant, zero storage permissions required.
+      // Verify the system picker can open and return an accessible image.
+      try {
+        final picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 800,
+          maxHeight: 800,
+          imageQuality: 70,
+        );
+
+        if (image != null) {
+          final file = File(image.path);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            if (bytes.isNotEmpty) {
+              if (mounted) {
+                setState(() => _photosGranted = true);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Photo selected and verified successfully.'),
+                    backgroundColor: AppColors.secondary,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
+          }
+        } else {
+          // User cancelled without selecting
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No photo was selected. You can select one anytime.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('[PermissionsScreen] Photo picker test failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open photo picker: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } else {
+      await Permission.photos.request();
+    }
     await _checkPermissions();
   }
 
@@ -265,7 +316,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
   }
 
   /// Power / Auto Launch settings
-  static const _channel = MethodChannel('com.eazzio.payroll/device_settings');
+  static const _channel = MethodChannel('com.eazzio.eazziopayroll/device_settings');
 
   Future<void> _grantPower() async {
     if (!kIsWeb && Platform.isAndroid) {
@@ -433,8 +484,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
         onGrant: _grantCamera,
       ),
       PermissionStep(
-        title: 'Photo Library',
-        explanation: 'Needed to select images from your gallery',
+        title: Platform.isAndroid ? 'Photos & Media' : 'Photo Library',
+        explanation: Platform.isAndroid 
+            ? 'Select an image to grant photo access via system picker' 
+            : 'Needed to select images from your gallery',
         icon: Icons.photo_library,
         isGranted: _photosGranted,
         onGrant: _grantPhotos,
@@ -612,7 +665,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                               }
                             },
                       child: Text(
-                        _allGranted ? 'Continue' : 'Grant ${steps[currentStep].title}',
+                        _allGranted
+                            ? 'Continue'
+                            : (steps[currentStep].title == 'Photos & Media'
+                                ? 'Select Image to Give Permission'
+                                : 'Grant ${steps[currentStep].title}'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

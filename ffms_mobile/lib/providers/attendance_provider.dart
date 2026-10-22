@@ -54,7 +54,20 @@ class AttendanceProvider extends ChangeNotifier {
   }
 
   bool get isPunchedIn => isCurrentlyPunchedIn;
-  bool get isDayComplete => todaySessions.length >= 2 && todaySessions.every((m) => m.punchOutTime != null);
+  bool get isDayComplete => totalWorkingHoursToday >= 8.0 && todaySessions.every((m) => m.punchOutTime != null);
+
+  double get totalWorkingHoursToday {
+    return todaySessions.fold<double>(0.0, (sum, s) {
+      if (s.punchOutTime != null) {
+        return sum + (s.totalWorkingHours ?? 0.0);
+      } else if (s.punchInTime != null) {
+        final diff = DateTime.now().difference(s.punchInTime!.toLocal());
+        final hours = diff.inMinutes / 60.0;
+        return sum + (hours > 0 ? hours : 0.0);
+      }
+      return sum;
+    });
+  }
 
   List<AttendanceModel> get todaySessions {
     final list = List<AttendanceModel>.from(_todaySessions);

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- ============================================================= -->
     <!-- FFMS Mobile App — AndroidManifest.xml Permissions             -->
     <!-- Only permissions actively used by the app are listed below    -->
@@ -10,25 +11,21 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Location — required for GPS tracking, punch-in geofence validation -->
-    <!-- Used in: location_service.dart via geolocator package -->
+    <!-- Location — required for GPS attendance validation and shift route tracking -->
+    <!-- Used in: location_service.dart via geolocator & flutter_foreground_task -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Ensure background location is never merged from any transitive plugin -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
 
     <!-- Camera — required for selfie capture on punch-in/out and task completion -->
     <!-- Used in: image_upload_util.dart via image_picker package -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Storage — required for gallery access in expense receipt and proof photo upload -->
-    <!-- READ_EXTERNAL_STORAGE capped at API 32 — replaced by READ_MEDIA_IMAGES on API 33+ -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- WRITE_EXTERNAL_STORAGE capped at API 29 — scoped storage applies on API 30+ -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
-    <!-- READ_MEDIA_IMAGES — required on Android 13+ for gallery image picker -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Google Play Photo & Video Policy: Use native system picker instead of broad storage -->
+    <!-- Remove broad media permissions injected by plugins or manifest -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
 
     <!-- Notifications — required for task alerts and punch-in reminders on Android 13+ -->
     <!-- Used in: notification_helper.dart via flutter_local_notifications -->
@@ -139,7 +136,7 @@
             android:value="2" />
         
         <service
-            android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="location"
             android:exported="false"/>
 

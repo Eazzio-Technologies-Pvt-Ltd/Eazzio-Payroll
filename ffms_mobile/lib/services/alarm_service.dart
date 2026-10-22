@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 class AlarmService {
-  static const MethodChannel _channel = MethodChannel('com.eazzio.payroll/alarm_notifications');
+  static const MethodChannel _channel = MethodChannel('com.eazzio.eazziopayroll/alarm_notifications');
 
   // Shared preferences keys
   static const String prefPunchInTime = 'alarm_punch_in_time';

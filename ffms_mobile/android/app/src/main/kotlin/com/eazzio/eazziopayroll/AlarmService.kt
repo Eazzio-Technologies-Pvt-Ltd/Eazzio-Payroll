@@ -1,4 +1,4 @@
-package com.eazzio.payroll
+package com.eazzio.eazziopayroll
 
 import android.app.*
 import android.content.Context
@@ -33,7 +33,7 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("AlarmService", "AlarmService onStartCommand")
         
-        if (intent?.action == "com.eazzio.payroll.ACTION_SNOOZE") {
+        if (intent?.action == "com.eazzio.eazziopayroll.ACTION_SNOOZE") {
             Log.d("AlarmService", "Snooze action triggered via intent")
             val isPunchInArg = intent.getBooleanExtra("isPunchIn", true)
             val customTunePathArg = intent.getStringExtra("customTunePath")
@@ -60,7 +60,7 @@ class AlarmService : Service() {
         )
 
         val snoozeIntent = Intent(this, AlarmService::class.java).apply {
-            action = "com.eazzio.payroll.ACTION_SNOOZE"
+            action = "com.eazzio.eazziopayroll.ACTION_SNOOZE"
             putExtra("isPunchIn", isPunchIn)
             putExtra("customTunePath", customTunePath)
         }

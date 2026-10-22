@@ -1,4 +1,4 @@
-package com.eazzio.payroll
+package com.eazzio.eazziopayroll
 
 import android.app.AlarmManager
 import android.app.NotificationManager
@@ -19,8 +19,8 @@ import java.io.File
 import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.eazzio.payroll/device_settings"
-    private val ALARM_CHANNEL = "com.eazzio.payroll/alarm_notifications"
+    private val CHANNEL = "com.eazzio.eazziopayroll/device_settings"
+    private val ALARM_CHANNEL = "com.eazzio.eazziopayroll/alarm_notifications"
     private var pendingAudioResult: MethodChannel.Result? = null
     private val PICK_AUDIO_REQUEST_CODE = 999
 

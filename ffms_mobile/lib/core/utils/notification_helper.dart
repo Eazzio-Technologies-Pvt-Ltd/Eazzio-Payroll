@@ -19,6 +19,19 @@ class NotificationHelper {
           // Handle notification tap
         },
       );
+
+      // Explicitly create the high-importance notification channel for Android 8.0+
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        const AndroidNotificationChannel channel = AndroidNotificationChannel(
+          'general_notif_channel',
+          'General Notifications',
+          description: 'General app alerts and updates',
+          importance: Importance.max,
+        );
+        await androidImplementation.createNotificationChannel(channel);
+      }
     } catch (e) {
       // Catch initialization errors to avoid blocking application boot
       debugPrint("NotificationHelper initialization error: $e");

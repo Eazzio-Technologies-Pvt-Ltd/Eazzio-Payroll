@@ -125,7 +125,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
 
                       // Footer
                       Text(
-                        'v1.0.2 · Powered by Eazzio Technologies Pvt Ltd',
+                        'v1.0.3 · Powered by Eazzio Technologies Pvt Ltd',
                         style: GoogleFonts.inter(
                           fontSize: r.fontSM,
                           color: AppColors.textTertiary,
