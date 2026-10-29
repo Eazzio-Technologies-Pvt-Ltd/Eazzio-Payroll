@@ -9,10 +9,10 @@ export default function Footer() {
     {
       title: "About Eazzio",
       links: [
-        { label: "Our Story", href: "#" },
-        { label: "Careers", href: "#" },
-        { label: "Blog", href: "#" },
-        { label: "Legal", href: "#" },
+        { label: "Our Story", href: "/about" },
+        { label: "Careers", href: "/careers" },
+        { label: "Blog", href: "/blog" },
+        { label: "Legal", href: "/legal" },
       ],
     },
     {
