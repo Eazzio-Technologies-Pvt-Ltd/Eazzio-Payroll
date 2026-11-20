@@ -19,29 +19,39 @@ export default function FilterBar({
 }: FilterBarProps) {
   
   const SelectStyles = {
-    padding: "6px 10px",
-    background: "#f8fafc",
-    border: "1px solid #cbd5e1",
-    borderRadius: "6px",
-    color: "#334155",
+    padding: "6px 12px",
+    background: "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.95)",
+    borderRadius: "12px",
+    color: "#1c1917",
     fontSize: "13px",
     fontWeight: 600,
     minWidth: "140px",
     outline: "none",
-    cursor: "pointer"
+    cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(120, 80, 60, 0.04)",
+    transition: "all 0.2s ease"
   };
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 16px",
-      background: "#fff",
-      borderBottom: "1px solid #e2e8f0",
-      flexWrap: "wrap",
-      gap: "12px"
-    }}>
+    <div
+      className="gw-panel"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "12px 18px",
+        borderRadius: 0,
+        borderTop: "none",
+        borderLeft: "none",
+        borderRight: "none",
+        borderBottom: "1px solid var(--gw-edge, #e2e8f0)",
+        flexWrap: "wrap",
+        gap: "12px"
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
         {/* Territory Filter */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
