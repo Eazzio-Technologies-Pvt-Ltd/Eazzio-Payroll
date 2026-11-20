@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 import { Users, CalendarCheck, Briefcase, TrendingUp, X } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 
 export default function AdminAnalyticsPage() {
@@ -32,41 +33,43 @@ export default function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto" }}>
-        {/* KPI Summary Row Skeleton (4 columns) */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton-card" style={{ height: 86, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div className="skeleton-circle" style={{ width: "46px", height: "46px", flexShrink: 0 }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-                <div className="skeleton-line" style={{ width: "50%", height: "26px" }} />
-                <div className="skeleton-line" style={{ width: "70%", height: "12px" }} />
+      <GlassBackground variant="overview">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto" }}>
+          {/* KPI Summary Row Skeleton (4 columns) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="skeleton-card" style={{ height: 86, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+                <div className="skeleton-circle" style={{ width: "46px", height: "46px", flexShrink: 0 }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                  <div className="skeleton-line" style={{ width: "50%", height: "26px" }} />
+                  <div className="skeleton-line" style={{ width: "70%", height: "12px" }} />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Charts Row Skeleton (2 columns) */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
-          <div className="skeleton-card" style={{ height: 320, padding: "20px", display: "flex", flexDirection: "column" }}>
-            <div className="skeleton-line" style={{ width: "150px", height: "18px", marginBottom: 8 }} />
-            <div className="skeleton-line" style={{ width: "200px", height: "12px", marginBottom: 24 }} />
+          {/* Charts Row Skeleton (2 columns) */}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
+            <div className="skeleton-card" style={{ height: 320, padding: "20px", display: "flex", flexDirection: "column" }}>
+              <div className="skeleton-line" style={{ width: "150px", height: "18px", marginBottom: 8 }} />
+              <div className="skeleton-line" style={{ width: "200px", height: "12px", marginBottom: 24 }} />
+              <div className="skeleton-box" style={{ width: "100%", flex: 1, borderRadius: 8 }} />
+            </div>
+            <div className="skeleton-card" style={{ height: 320, padding: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div className="skeleton-line" style={{ width: "150px", height: "18px", marginBottom: 8, alignSelf: "flex-start" }} />
+              <div className="skeleton-line" style={{ width: "100px", height: "12px", marginBottom: 24, alignSelf: "flex-start" }} />
+              <div className="skeleton-circle" style={{ width: "150px", height: "150px", margin: "auto" }} />
+            </div>
+          </div>
+
+          {/* Full Width Chart Skeleton */}
+          <div className="skeleton-card" style={{ height: 360, padding: "20px", display: "flex", flexDirection: "column" }}>
+            <div className="skeleton-line" style={{ width: "180px", height: "18px", marginBottom: 8 }} />
+            <div className="skeleton-line" style={{ width: "250px", height: "12px", marginBottom: 24 }} />
             <div className="skeleton-box" style={{ width: "100%", flex: 1, borderRadius: 8 }} />
           </div>
-          <div className="skeleton-card" style={{ height: 320, padding: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div className="skeleton-line" style={{ width: "150px", height: "18px", marginBottom: 8, alignSelf: "flex-start" }} />
-            <div className="skeleton-line" style={{ width: "100px", height: "12px", marginBottom: 24, alignSelf: "flex-start" }} />
-            <div className="skeleton-circle" style={{ width: "150px", height: "150px", margin: "auto" }} />
-          </div>
         </div>
-
-        {/* Full Width Chart Skeleton */}
-        <div className="skeleton-card" style={{ height: 360, padding: "20px", display: "flex", flexDirection: "column" }}>
-          <div className="skeleton-line" style={{ width: "180px", height: "18px", marginBottom: 8 }} />
-          <div className="skeleton-line" style={{ width: "250px", height: "12px", marginBottom: 24 }} />
-          <div className="skeleton-box" style={{ width: "100%", flex: 1, borderRadius: 8 }} />
-        </div>
-      </div>
+      </GlassBackground>
     );
   }
 
@@ -130,9 +133,10 @@ export default function AdminAnalyticsPage() {
   }));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <GlassBackground variant="overview" showAdjustButton>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
 
-      {/* ── KPI Summary Row ── */}
+        {/* ── KPI Summary Row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
         {summaryKPIs.map((kpi) => (
           <div key={kpi.label} className="card" style={{ padding: "18px 20px", flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -298,5 +302,6 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }
