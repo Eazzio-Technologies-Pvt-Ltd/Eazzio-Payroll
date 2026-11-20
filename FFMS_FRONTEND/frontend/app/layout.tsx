@@ -6,6 +6,7 @@ import StoreProvider from "@/components/StoreProvider";
 import AuthProvider from "@/components/AuthProvider";
 import { SocketInitializer } from "@/components/SocketInitializer";
 import { Toaster } from "react-hot-toast";
+import { GlassSafetyToggle } from "@/components/ui/glass-safety-toggle";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 const hankenGrotesk = Hanken_Grotesk({ subsets: ["latin"], display: "swap", variable: '--font-hanken' });
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SocketInitializer />
             <Toaster position="top-right" />
             {children}
+            <GlassSafetyToggle />
           </StoreProvider>
         </AuthProvider>
       </body>

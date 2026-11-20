@@ -701,3 +701,193 @@ select.input { cursor: pointer; }
   }
 }
 
+/* ==========================================================================
+   LIQUID GLASS EXPANSION SYSTEM: VARIANTS, ACCENTS & SAFETY SWITCH
+   ========================================================================== */
+
+/* Calm Warm Porcelain Fluid Ambient Background for Data/Tables */
+.gw-bg-calm {
+  background-color: #f7ede6;
+  background-image: 
+    radial-gradient(at 10% 10%, #fff7f2 0px, transparent 55%),
+    radial-gradient(at 90% 15%, #f2d9cb 0px, transparent 50%),
+    radial-gradient(at 50% 85%, #eed2c1 0px, transparent 60%),
+    radial-gradient(at 15% 90%, #f9e5da 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glass Variants Tuning */
+.gw-variant-data {
+  --gw-opacity: 0.90;
+  --gw-blur: 16px;
+  --gw-edge: rgba(255, 255, 255, 0.92);
+}
+
+.gw-variant-settings {
+  --gw-opacity: 0.94;
+  --gw-blur: 14px;
+  --gw-edge: rgba(255, 255, 255, 0.95);
+}
+
+.gw-variant-map {
+  --gw-opacity: 0.82;
+  --gw-blur: 20px;
+}
+
+/* Data-heavy table cards */
+.gw-table-card {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 20px;
+  box-shadow: 
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 1),
+    0 10px 28px -4px rgba(120, 80, 60, 0.07);
+}
+
+/* High-contrast sticky table headers in Glass Mode (WCAG AA Compliance) */
+[data-ui="glass"] table th,
+[data-ui="glass"] .table-wrapper th {
+  background: rgba(253, 248, 245, 0.97) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #1c1917 !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid rgba(220, 200, 190, 0.8) !important;
+}
+
+/* Automatic Liquid Glass Card Transformation when in Glass Mode */
+[data-ui="glass"] .dashboard-content .card:not(.solid-card):not(.gw-no-glass) {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px) saturate(175%);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  box-shadow: 
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 1),
+    0 10px 28px -4px rgba(120, 80, 60, 0.07);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+[data-ui="glass"] .dashboard-content .card:not(.solid-card):not(.gw-no-glass):hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow: 
+    inset 0 1px 2px 0 #ffffff,
+    0 16px 36px -6px rgba(120, 80, 60, 0.12);
+}
+
+/* Form and input enhancement in Glass Mode */
+[data-ui="glass"] .dashboard-content input.input,
+[data-ui="glass"] .dashboard-content select.input,
+[data-ui="glass"] .dashboard-content textarea.input {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #1c1917;
+}
+
+[data-ui="glass"] .dashboard-content input.input:focus,
+[data-ui="glass"] .dashboard-content select.input:focus,
+[data-ui="glass"] .dashboard-content textarea.input:focus {
+  background: #ffffff;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.16);
+  outline: none;
+}
+
+/* Dark Navy Sidebar and Header Glass Accents (Rule: keep dark navy, subtle glass touches only) */
+[data-ui="glass"] aside {
+  background: rgba(8, 29, 57, 0.95) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-ui="glass"] header {
+  background: rgba(8, 29, 57, 0.95) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-ui="glass"] .sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Map Containers: Strictly Keep Solid & Unblurred */
+[data-ui="glass"] .leaflet-container,
+[data-ui="glass"] .solid-card,
+[data-ui="glass"] .gw-no-glass,
+[data-ui="glass"] #map {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Modal and Drawers Crisp High-Opacity Glass */
+[data-ui="glass"] .modal-box {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ==========================================================================
+   SAFETY SWITCH: CLASSIC UI OVERRIDES
+   When data-ui="classic", restore original styling with 100% fidelity
+   ========================================================================== */
+[data-ui="classic"] .dashboard-content .card {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+[data-ui="classic"] .gw-glass,
+[data-ui="classic"] .gw-panel,
+[data-ui="classic"] .gw-panel-subtle,
+[data-ui="classic"] .gw-table-card,
+[data-ui="classic"] .gw-form-card,
+[data-ui="classic"] .gw-dashboard-canvas {
+  background: var(--bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+
+[data-ui="classic"] .gw-bg-mesh,
+[data-ui="classic"] .gw-bg-aurora,
+[data-ui="classic"] .gw-bg-wallpaper,
+[data-ui="classic"] .gw-bg-minimal,
+[data-ui="classic"] .gw-bg-calm {
+  background: var(--bg-primary) !important;
+  background-image: none !important;
+}
+
+[data-ui="classic"] .gw-orb,
+[data-ui="classic"] .gw-light-sweep {
+  display: none !important;
+}
+
+[data-ui="classic"] .gw-page-wrapper {
+  margin: 0 !important;
+  min-height: auto !important;
+  background: transparent !important;
+}
+
+[data-ui="classic"] .gw-glass-container {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+
