@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Sparkles, Layout, Check } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { Palette, Check, SlidersHorizontal } from "lucide-react";
 
 export const UI_MODE_STORAGE_KEY = "eazzio_ui_mode";
 
@@ -9,6 +12,9 @@ export function GlassSafetyToggle() {
   const [mode, setMode] = useState<"glass" | "classic">("glass");
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const pathname = usePathname();
+  const user = useSelector((s: RootState) => s.auth.user);
 
   useEffect(() => {
     setMounted(true);
@@ -18,7 +24,7 @@ export function GlassSafetyToggle() {
         setMode(saved);
         document.documentElement.setAttribute("data-ui", saved);
       } else {
-        // Default to glass in development
+        // Default to glass
         setMode("glass");
         document.documentElement.setAttribute("data-ui", "glass");
       }
@@ -35,7 +41,21 @@ export function GlassSafetyToggle() {
     document.documentElement.setAttribute("data-ui", newMode);
   };
 
-  if (!mounted) return null;
+  // Check if we are on landing page, login page, register, or public pages
+  const isPublicRoute =
+    !pathname ||
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/about") ||
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/careers") ||
+    pathname.startsWith("/legal") ||
+    pathname.startsWith("/admin-setup") ||
+    pathname.startsWith("/logout");
+
+  // Only render after login (must have mounted, not be on public route, and user must be authenticated)
+  if (!mounted || isPublicRoute || !user) return null;
 
   return (
     <aside
@@ -48,9 +68,9 @@ export function GlassSafetyToggle() {
         display: "flex",
         alignItems: "center",
         gap: "6px",
-        background: "rgba(19, 27, 46, 0.92)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
+        background: "rgba(19, 27, 46, 0.94)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
         borderRadius: "30px",
         padding: collapsed ? "6px" : "4px 6px",
@@ -64,7 +84,7 @@ export function GlassSafetyToggle() {
       {collapsed ? (
         <button
           onClick={() => setCollapsed(false)}
-          title="Open UI Switcher"
+          title="Open UI Theme Switcher"
           style={{
             background: mode === "glass" ? "#ea580c" : "#3b82f6",
             border: "none",
@@ -76,9 +96,10 @@ export function GlassSafetyToggle() {
             justifyContent: "center",
             color: "white",
             cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
-          {mode === "glass" ? <Sparkles size={14} /> : <Layout size={14} />}
+          <Palette size={15} />
         </button>
       ) : (
         <>
@@ -91,9 +112,13 @@ export function GlassSafetyToggle() {
               letterSpacing: "0.06em",
               color: "rgba(255, 255, 255, 0.6)",
               userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
-            UI Mode:
+            <Palette size={12} color="#f97316" />
+            UI Theme:
           </div>
 
           <button
@@ -113,7 +138,7 @@ export function GlassSafetyToggle() {
               transition: "all 0.2s ease",
             }}
           >
-            <Sparkles size={12} />
+            <Palette size={12} />
             Glass
             {mode === "glass" && <Check size={11} />}
           </button>
@@ -135,7 +160,7 @@ export function GlassSafetyToggle() {
               transition: "all 0.2s ease",
             }}
           >
-            <Layout size={12} />
+            <SlidersHorizontal size={12} />
             Classic
             {mode === "classic" && <Check size={11} />}
           </button>
