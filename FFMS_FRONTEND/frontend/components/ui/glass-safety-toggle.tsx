@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Palette, Check, SlidersHorizontal } from "lucide-react";
+import { Palette, Check, SlidersHorizontal, Sparkles } from "lucide-react";
 
 export const UI_MODE_STORAGE_KEY = "eazzio_ui_mode";
 
@@ -142,6 +142,35 @@ export function GlassSafetyToggle() {
             Glass
             {mode === "glass" && <Check size={11} />}
           </button>
+
+          {mode === "glass" && (
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("eazzio_glass_open_modal"));
+                }
+              }}
+              title="Adjust Liquid Glass Material"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "4px 8px",
+                borderRadius: "20px",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                cursor: "pointer",
+                background: "rgba(255, 255, 255, 0.14)",
+                color: "#ffffff",
+                fontWeight: 600,
+                fontSize: "10px",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Sparkles size={11} className="text-amber-400" />
+              Adjust
+            </button>
+          )}
 
           <button
             onClick={() => toggleMode("classic")}

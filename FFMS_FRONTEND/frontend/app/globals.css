@@ -449,19 +449,20 @@ select.input { cursor: pointer; }
 
 :root {
   --gw-blur: 24px;
-  --gw-opacity: 0.75;
+  --gw-opacity: 0.78;
   --gw-saturation: 180%;
   --gw-tint: 255, 255, 255;
   --gw-edge: rgba(255, 255, 255, 0.85);
   --gw-shadow: 0 12px 30px -4px rgba(120, 80, 60, 0.08);
+  --gw-page-bg: #dfb8a3;
 }
 
 /* Master Glass Shell Canvas (from Reference Image) */
 .gw-dashboard-canvas {
-  background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(36px) saturate(180%);
-  -webkit-backdrop-filter: blur(36px) saturate(180%);
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(var(--gw-tint), calc(var(--gw-opacity) * 0.7));
+  backdrop-filter: blur(calc(var(--gw-blur) * 1.25)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(calc(var(--gw-blur) * 1.25)) saturate(var(--gw-saturation));
+  border: 1.5px solid var(--gw-edge);
   border-radius: 28px;
   box-shadow: 
     inset 0 1.5px 2px 0 rgba(255, 255, 255, 1),
@@ -716,34 +717,24 @@ select.input { cursor: pointer; }
   background-attachment: fixed;
 }
 
-/* Glass Variants Tuning */
-.gw-variant-data {
-  --gw-opacity: 0.90;
-  --gw-blur: 16px;
-  --gw-edge: rgba(255, 255, 255, 0.92);
-}
-
-.gw-variant-settings {
-  --gw-opacity: 0.94;
-  --gw-blur: 14px;
-  --gw-edge: rgba(255, 255, 255, 0.95);
-}
-
+/* Glass Variants (Inherits global user-tuned material variables) */
+.gw-variant-overview,
+.gw-variant-data,
+.gw-variant-settings,
 .gw-variant-map {
-  --gw-opacity: 0.82;
-  --gw-blur: 20px;
+  /* Dynamic values inherited from :root (--gw-blur, --gw-opacity, --gw-saturation, --gw-edge, --gw-shadow) */
 }
 
 /* Data-heavy table cards */
 .gw-table-card {
-  background: rgba(255, 255, 255, 0.90);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: rgba(var(--gw-tint), var(--gw-opacity));
+  backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  border: 1px solid var(--gw-edge);
   border-radius: 20px;
   box-shadow: 
     inset 0 1px 1.5px 0 rgba(255, 255, 255, 1),
-    0 10px 28px -4px rgba(120, 80, 60, 0.07);
+    var(--gw-shadow);
 }
 
 /* High-contrast sticky table headers in Glass Mode (WCAG AA Compliance) */
@@ -759,14 +750,15 @@ select.input { cursor: pointer; }
 
 /* Automatic Liquid Glass Card Transformation when in Glass Mode */
 [data-ui="glass"] .dashboard-content .card:not(.solid-card):not(.gw-no-glass) {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(18px) saturate(175%);
-  -webkit-backdrop-filter: blur(18px) saturate(175%);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(var(--gw-tint), var(--gw-opacity));
+  backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  -webkit-backdrop-filter: blur(var(--gw-blur)) saturate(var(--gw-saturation));
+  border: 1px solid var(--gw-edge);
   border-radius: 18px;
   box-shadow: 
     inset 0 1px 1.5px 0 rgba(255, 255, 255, 1),
-    0 10px 28px -4px rgba(120, 80, 60, 0.07);
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.02),
+    var(--gw-shadow);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease;
 }
 

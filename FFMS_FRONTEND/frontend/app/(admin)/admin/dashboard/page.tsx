@@ -78,7 +78,7 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "#dfb8a3" }}>
+      <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "var(--gw-page-bg, #dfb8a3)" }}>
         <GlassProvider initialPreset="frosted">
           <div style={{ padding: "24px 28px 48px", maxWidth: 1600, margin: "0 auto" }}>
             <div className="gw-dashboard-canvas" style={{ padding: "28px", display: "flex", flexDirection: "column", gap: 24 }}>
@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
 
   if (!stats) {
     return (
-      <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "#dfb8a3" }}>
+      <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "var(--gw-page-bg, #dfb8a3)" }}>
         <GlassProvider initialPreset="frosted">
           <div
             style={{
@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
       : 0;
 
   return (
-    <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "#dfb8a3" }}>
+    <div style={{ margin: "-28px", minHeight: "calc(100vh - 70px)", background: "var(--gw-page-bg, #dfb8a3)" }}>
       <GlassProvider initialPreset="frosted">
         <div style={{ padding: "20px 24px 44px", maxWidth: 1600, margin: "0 auto" }}>
           {/* Master Glass Shell Canvas (Identical to the Reference Image) */}

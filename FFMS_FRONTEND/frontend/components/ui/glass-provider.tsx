@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, {
@@ -41,7 +40,7 @@ export interface GlassSettings {
   bgStyle: BackgroundStyle;
 }
 
-const PRESET_VALUES: Record<
+export const PRESET_VALUES: Record<
   "clear" | "frosted" | "solid",
   Omit<GlassSettings, "preset" | "bgStyle">
 > = {
@@ -68,7 +67,7 @@ const PRESET_VALUES: Record<
   },
 };
 
-const DEFAULT_SETTINGS: GlassSettings = {
+export const DEFAULT_SETTINGS: GlassSettings = {
   blur: 24,
   opacity: 0.78,
   saturation: 180,
@@ -78,7 +77,81 @@ const DEFAULT_SETTINGS: GlassSettings = {
   bgStyle: "mesh",
 };
 
-const STORAGE_KEY = "eazzio_admin_glass_settings_v3";
+export const STORAGE_KEY = "eazzio_admin_glass_settings_v3";
+export const GLASS_SETTINGS_EVENT = "eazzio_glass_settings_changed";
+export const GLASS_OPEN_MODAL_EVENT = "eazzio_glass_open_modal";
+
+export function getBgColorForStyle(bgStyle: BackgroundStyle): string {
+  switch (bgStyle) {
+    case "mesh":
+      return "#dfb8a3";
+    case "aurora":
+      return "#edd3c4";
+    case "wallpaper":
+      return "#d8a892";
+    case "minimal":
+    default:
+      return "#edd2c2";
+  }
+}
+
+export function getBgClassForStyle(bgStyle: BackgroundStyle): string {
+  switch (bgStyle) {
+    case "mesh":
+      return "gw-bg-mesh";
+    case "aurora":
+      return "gw-bg-aurora";
+    case "wallpaper":
+      return "gw-bg-wallpaper";
+    case "minimal":
+    default:
+      return "gw-bg-minimal";
+  }
+}
+
+export function applyGlassCssVariables(settings: GlassSettings) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.style.setProperty("--gw-blur", `${settings.blur}px`);
+  root.style.setProperty("--gw-opacity", `${settings.opacity}`);
+  root.style.setProperty("--gw-saturation", `${settings.saturation}%`);
+  root.style.setProperty("--gw-edge", `rgba(255, 255, 255, ${settings.edge})`);
+  root.style.setProperty("--gw-tint", settings.tint);
+  root.style.setProperty("--gw-shadow", "0 10px 32px 0 rgba(15, 23, 42, 0.07)");
+  root.style.setProperty("--gw-page-bg", getBgColorForStyle(settings.bgStyle));
+  root.setAttribute("data-gw-bg", settings.bgStyle);
+}
+
+export function getSavedGlassSettings(fallbackPreset: GlassPreset = "frosted"): GlassSettings {
+  const fallbackValues =
+    PRESET_VALUES[fallbackPreset as keyof typeof PRESET_VALUES] ||
+    PRESET_VALUES.frosted;
+  const fallback: GlassSettings = {
+    ...DEFAULT_SETTINGS,
+    ...fallbackValues,
+    preset: fallbackPreset,
+  };
+
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn("Could not read glass settings from localStorage:", e);
+  }
+  return fallback;
+}
 
 interface GlassContextValue {
   settings: GlassSettings;
@@ -91,12 +164,64 @@ interface GlassContextValue {
   toggleSettings: () => void;
 }
 
-const GlassContext = createContext<GlassContextValue | null>(null);
+export const GlassContext = createContext<GlassContextValue | null>(null);
 
 export function useGlass(): GlassContextValue {
   const ctx = useContext(GlassContext);
   if (!ctx) {
-    throw new Error("useGlass must be used within a GlassProvider");
+    return {
+      settings: DEFAULT_SETTINGS,
+      updateSettings: (partial) => {
+        if (typeof window !== "undefined") {
+          const current = getSavedGlassSettings();
+          const updated = { ...current, ...partial };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          } catch {}
+          applyGlassCssVariables(updated);
+          window.dispatchEvent(
+            new CustomEvent(GLASS_SETTINGS_EVENT, { detail: updated })
+          );
+        }
+      },
+      setPreset: (p) => {
+        if (typeof window !== "undefined") {
+          const val = PRESET_VALUES[p];
+          const current = getSavedGlassSettings();
+          const updated = { ...current, ...val, preset: p };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          } catch {}
+          applyGlassCssVariables(updated);
+          window.dispatchEvent(
+            new CustomEvent(GLASS_SETTINGS_EVENT, { detail: updated })
+          );
+        }
+      },
+      resetSettings: () => {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+          } catch {}
+          applyGlassCssVariables(DEFAULT_SETTINGS);
+          window.dispatchEvent(
+            new CustomEvent(GLASS_SETTINGS_EVENT, { detail: DEFAULT_SETTINGS })
+          );
+        }
+      },
+      isSettingsOpen: false,
+      openSettings: () => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent(GLASS_OPEN_MODAL_EVENT));
+        }
+      },
+      closeSettings: () => {},
+      toggleSettings: () => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent(GLASS_OPEN_MODAL_EVENT));
+        }
+      },
+    };
   }
   return ctx;
 }
@@ -105,52 +230,54 @@ export interface GlassProviderProps {
   children: React.ReactNode;
   initialPreset?: "clear" | "frosted" | "solid";
   containerClassName?: string;
+  enableContainerDiv?: boolean;
 }
 
 export function GlassProvider({
   children,
   initialPreset = "frosted",
   containerClassName = "",
+  enableContainerDiv = true,
 }: GlassProviderProps) {
   const [settings, setSettings] = useState<GlassSettings>(() => {
-    const base = PRESET_VALUES[initialPreset];
-    return {
-      ...DEFAULT_SETTINGS,
-      ...base,
-      preset: initialPreset,
-    };
+    return getSavedGlassSettings(initialPreset);
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Hydration-safe localStorage load
+  // Hydration-safe localStorage load & sync listener
   useEffect(() => {
     setMounted(true);
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Partial<GlassSettings>;
-        setSettings((prev) => ({
-          ...prev,
-          ...parsed,
-        }));
-      }
-    } catch (e) {
-      console.warn("Could not read glass settings from localStorage:", e);
-    }
-  }, []);
+    const saved = getSavedGlassSettings(initialPreset);
+    setSettings(saved);
+    applyGlassCssVariables(saved);
 
-  // Save to localStorage whenever settings change (after mount)
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch (e) {
-      console.warn("Could not write glass settings to localStorage:", e);
-    }
-  }, [settings, mounted]);
+    const handleSync = (e: Event) => {
+      const custom = e as CustomEvent<GlassSettings>;
+      if (custom.detail) {
+        setSettings(custom.detail);
+        applyGlassCssVariables(custom.detail);
+      } else {
+        const fresh = getSavedGlassSettings();
+        setSettings(fresh);
+        applyGlassCssVariables(fresh);
+      }
+    };
+
+    const handleOpenModal = () => setIsSettingsOpen(true);
+
+    window.addEventListener(GLASS_SETTINGS_EVENT, handleSync);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener(GLASS_OPEN_MODAL_EVENT, handleOpenModal);
+
+    return () => {
+      window.removeEventListener(GLASS_SETTINGS_EVENT, handleSync);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener(GLASS_OPEN_MODAL_EVENT, handleOpenModal);
+    };
+  }, [initialPreset]);
 
   // GSAP reveal animation for elements with .gw-reveal
   useGSAP(
@@ -204,21 +331,66 @@ export function GlassProvider({
           break;
         }
       }
-      return { ...updated, preset: matchedPreset };
+      updated.preset = matchedPreset;
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Could not write glass settings to localStorage:", e);
+      }
+
+      applyGlassCssVariables(updated);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(GLASS_SETTINGS_EVENT, { detail: updated })
+        );
+      }
+
+      return updated;
     });
   }, []);
 
   const setPreset = useCallback((preset: "clear" | "frosted" | "solid") => {
     const val = PRESET_VALUES[preset];
-    setSettings((prev) => ({
-      ...prev,
-      ...val,
-      preset,
-    }));
+    setSettings((prev) => {
+      const updated: GlassSettings = {
+        ...prev,
+        ...val,
+        preset,
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn("Could not write glass settings to localStorage:", e);
+      }
+
+      applyGlassCssVariables(updated);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent(GLASS_SETTINGS_EVENT, { detail: updated })
+        );
+      }
+
+      return updated;
+    });
   }, []);
 
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+    } catch (e) {}
+
+    applyGlassCssVariables(DEFAULT_SETTINGS);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(GLASS_SETTINGS_EVENT, { detail: DEFAULT_SETTINGS })
+      );
+    }
   }, []);
 
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
@@ -237,66 +409,70 @@ export function GlassProvider({
     ["--gw-edge" as string]: `rgba(255, 255, 255, ${settings.edge})`,
     ["--gw-tint" as string]: settings.tint,
     ["--gw-shadow" as string]: "0 10px 32px 0 rgba(15, 23, 42, 0.07)",
+    ["--gw-page-bg" as string]: getBgColorForStyle(settings.bgStyle),
   };
 
-  // Background style renderer
-  const getBackgroundClass = () => {
-    switch (settings.bgStyle) {
-      case "mesh":
-        return "gw-bg-mesh";
-      case "aurora":
-        return "gw-bg-aurora";
-      case "wallpaper":
-        return "gw-bg-wallpaper";
-      case "minimal":
-      default:
-        return "gw-bg-minimal";
-    }
+  const bgClass = getBgClassForStyle(settings.bgStyle);
+
+  const contextValue: GlassContextValue = {
+    settings,
+    updateSettings,
+    setPreset,
+    resetSettings,
+    isSettingsOpen,
+    openSettings,
+    closeSettings,
+    toggleSettings,
   };
 
   return (
-    <GlassContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        setPreset,
-        resetSettings,
-        isSettingsOpen,
-        openSettings,
-        closeSettings,
-        toggleSettings,
-      }}
-    >
-      <div
-        ref={containerRef}
-        style={glassStyle}
-        className={`gw-glass-container relative min-h-full w-full ${getBackgroundClass()} ${containerClassName}`}
-      >
-        {/* Soft floating luminous ambient orbs for liquid refraction */}
+    <GlassContext.Provider value={contextValue}>
+      {enableContainerDiv ? (
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden select-none z-0"
+          ref={containerRef}
+          style={glassStyle}
+          className={`gw-glass-container relative min-h-full w-full ${bgClass} ${containerClassName}`}
         >
-          <div className="gw-light-sweep gw-sweep-1" />
-          <div className="gw-light-sweep gw-sweep-2" />
-          <div className="gw-orb gw-orb-1" />
-          <div className="gw-orb gw-orb-2" />
-          <div className="gw-orb gw-orb-3" />
+          {/* Soft floating luminous ambient orbs for liquid refraction */}
+          {settings.bgStyle !== "minimal" && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 overflow-hidden select-none z-0"
+            >
+              <div className="gw-light-sweep gw-sweep-1" />
+              <div className="gw-light-sweep gw-sweep-2" />
+              <div className="gw-orb gw-orb-1" />
+              <div className="gw-orb gw-orb-2" />
+              <div className="gw-orb gw-orb-3" />
+            </div>
+          )}
+
+          {/* Page Content */}
+          <div className="relative z-10">{children}</div>
+
+          {/* Glass Settings Panel (Accessible Modal) */}
+          <GlassSettingsModal
+            isOpen={isSettingsOpen}
+            onClose={closeSettings}
+            settings={settings}
+            onUpdate={updateSettings}
+            onSetPreset={setPreset}
+            onReset={resetSettings}
+          />
         </div>
-
-        {/* Dashboard Content */}
-        <div className="relative z-10">{children}</div>
-
-        {/* Glass Settings Panel (Accessible Modal) */}
-        <GlassSettingsModal
-          isOpen={isSettingsOpen}
-          onClose={closeSettings}
-          settings={settings}
-          onUpdate={updateSettings}
-          onSetPreset={setPreset}
-          onReset={resetSettings}
-        />
-      </div>
+      ) : (
+        <div ref={containerRef} style={glassStyle} className={containerClassName}>
+          {children}
+          <GlassSettingsModal
+            isOpen={isSettingsOpen}
+            onClose={closeSettings}
+            settings={settings}
+            onUpdate={updateSettings}
+            onSetPreset={setPreset}
+            onReset={resetSettings}
+          />
+        </div>
+      )}
     </GlassContext.Provider>
   );
 }
@@ -416,7 +592,7 @@ function GlassSettingsModal({
                 Adjust Glass Material
               </h2>
               <p id={descId} className="text-xs text-slate-500">
-                Liquid glassmorphism live controls
+                Live material tuner — applies globally across all pages
               </p>
             </div>
           </div>
