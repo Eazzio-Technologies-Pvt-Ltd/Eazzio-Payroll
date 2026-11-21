@@ -5,6 +5,7 @@ import {
   Edit2, X, Users, Briefcase, CheckCircle, CreditCard, Clock,
   CheckCircle2, XCircle, FileText, Calendar, Download, Mail, Send
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 interface SalaryData {
   id: string;
@@ -306,8 +307,9 @@ export default function SalaryPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div>
-      {/* ── Page Header ── */}
+    <GlassBackground variant="data">
+      <div>
+        {/* ── Page Header ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "20px" }}>
         <div>
           <div className="page-title">Salary Management</div>
@@ -740,6 +742,7 @@ export default function SalaryPage() {
           </div>
         );
       })()}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

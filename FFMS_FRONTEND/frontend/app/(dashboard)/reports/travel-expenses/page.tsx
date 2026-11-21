@@ -16,6 +16,7 @@ import {
   Building2,
   Star
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   "Food / Meal": <Utensils size={14} />,
@@ -87,8 +88,9 @@ export default function TravelExpensesReportPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-      {/* Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+        {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -259,5 +261,6 @@ export default function TravelExpensesReportPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }

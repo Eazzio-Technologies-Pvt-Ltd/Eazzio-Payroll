@@ -27,6 +27,7 @@ import {
   LineChart,
   Line
 } from "recharts";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<"attendance" | "tasks" | "analytics">("attendance");
@@ -108,8 +109,9 @@ export default function ReportsPage() {
   const lateCount = attendance.filter((a: any) => a.status === "late").length;
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Header */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 className="page-title">Executive Reports</h1>
@@ -470,6 +472,7 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

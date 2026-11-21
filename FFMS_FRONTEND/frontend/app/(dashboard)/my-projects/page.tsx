@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { projectsApi, ApiProject } from "@/lib/api-client";
 import { Search, Briefcase, CheckCircle2, PauseCircle, X } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const statusColors: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
   ACTIVE: { bg: "#dcfce7", text: "#16a34a", icon: <CheckCircle2 size={13} />, label: "Active" },
@@ -60,9 +61,10 @@ export default function MyProjectsPage() {
   ];
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         <h1 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "24px", fontWeight: 700, margin: 0, color: "#1e293b" }}>
           <Briefcase size={24} color="var(--accent-blue)" /> My Projects
         </h1>
@@ -160,5 +162,6 @@ export default function MyProjectsPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }

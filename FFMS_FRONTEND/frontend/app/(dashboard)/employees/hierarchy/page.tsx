@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { ChevronRight, ChevronDown, Search, User, ArrowUpRight } from "lucide-react";
 import { Employee } from "@/store/slices/employeeSlice";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function MyTeamHierarchyPage() {
   const profile = useSelector((s: RootState) => s.auth.user);
@@ -33,9 +34,10 @@ export default function MyTeamHierarchyPage() {
   }
 
   return (
-    <div style={{ background: "#fff", minHeight: "100vh", fontFamily: "'Inter', sans-serif", padding: "0 24px" }}>
-      
-      {/* Top Header */}
+    <GlassBackground variant="data">
+      <div style={{ minHeight: "100vh", fontFamily: "'Inter', sans-serif", padding: "0 24px" }}>
+        
+        {/* Top Header */}
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", padding: "20px 0 16px" }}>
         <div>
           <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, marginBottom: "4px" }}>Team /</div>
@@ -226,5 +228,6 @@ export default function MyTeamHierarchyPage() {
       </div>
 
     </div>
+    </GlassBackground>
   );
 }

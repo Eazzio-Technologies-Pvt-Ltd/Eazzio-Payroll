@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
+import { GlassBackground } from "@/components/ui/glass-background";
 import {
   addExpense,
   approveExpense,
@@ -372,8 +373,9 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Page Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Page Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1020,6 +1022,7 @@ export default function ExpensesPage() {
           </div>
         </div>
         , document.body)}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

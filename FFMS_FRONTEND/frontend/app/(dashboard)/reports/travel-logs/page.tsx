@@ -14,6 +14,7 @@ import {
   DollarSign,
   Route,
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function TravelLogsReportPage() {
   const employees = useSelector((s: RootState) => s.employees.list);
@@ -115,8 +116,9 @@ export default function TravelLogsReportPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-      {/* Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+        {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -316,6 +318,7 @@ export default function TravelLogsReportPage() {
           Please select an employee and a month to view travel logs.
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }
