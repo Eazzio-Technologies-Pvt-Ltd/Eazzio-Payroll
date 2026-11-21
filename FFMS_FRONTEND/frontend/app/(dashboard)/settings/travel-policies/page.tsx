@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plane, Save, Briefcase, Car, Coffee, Info } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function TravelPoliciesPage() {
     const [saved, setSaved] = useState(false);
@@ -12,8 +13,9 @@ export default function TravelPoliciesPage() {
     }
 
     return (
-        <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <GlassBackground variant="settings">
+            <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
                     <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <Plane size={24} color="var(--accent-blue)" /> Travel Policies
@@ -92,5 +94,6 @@ export default function TravelPoliciesPage() {
 
             </div>
         </div>
+        </GlassBackground>
     );
 }

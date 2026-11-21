@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageSquare, AlertCircle, ShieldCheck, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function AnonymousFeedbackPage() {
   const [content, setContent] = useState("");
@@ -58,8 +59,9 @@ export default function AnonymousFeedbackPage() {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <div className="page-header" style={{ marginBottom: "30px" }}>
+    <GlassBackground variant="settings">
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
+        <div className="page-header" style={{ marginBottom: "30px" }}>
         <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <MessageSquare size={24} /> Anonymous Feedback
         </h1>
@@ -133,5 +135,6 @@ export default function AnonymousFeedbackPage() {
         )}
       </div>
     </div>
+    </GlassBackground>
   );
 }

@@ -5,6 +5,7 @@ import { Map, Plus, Trash2, MapPin, X, Send, Eye, Pencil } from "lucide-react";
 import { geofenceApi, mapApi } from "@/lib/api-client";
 import { loadMapplsSDK, fetchMapToken } from "@/lib/mappls-loader";
 import { parseCoordinate } from "@/lib/parseCoordinate";
+import { GlassBackground } from "@/components/ui/glass-background";
  
 interface Territory {
   id: string;
@@ -535,8 +536,9 @@ export default function TerritorySetupPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Map size={24} color="var(--accent-blue)" /> Territory Setup
@@ -842,6 +844,7 @@ export default function TerritorySetupPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

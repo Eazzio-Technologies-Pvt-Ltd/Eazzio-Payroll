@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Clock, Plus, Trash2, Pencil, X, Check, RotateCcw } from "lucide-react";
 import { shiftApi } from "@/lib/api-client";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 interface Shift {
   id: string;
@@ -136,7 +137,8 @@ export default function TimingSettingsPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "1000px" }}>
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "1000px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -391,5 +393,6 @@ export default function TimingSettingsPage() {
         </div>
       )}
     </div>
+    </GlassBackground>
   );
 }

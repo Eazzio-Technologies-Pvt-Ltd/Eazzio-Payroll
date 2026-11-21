@@ -27,6 +27,7 @@ import {
   Activity,
   MapPin
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function NotificationsPage() {
   const dispatch = useDispatch();
@@ -210,8 +211,9 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* KPI Cards Row */}
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* KPI Cards Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
         <div className="card" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <div style={{ width: "42px", height: "42px", background: "rgba(0,82,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -745,5 +747,6 @@ export default function NotificationsPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }

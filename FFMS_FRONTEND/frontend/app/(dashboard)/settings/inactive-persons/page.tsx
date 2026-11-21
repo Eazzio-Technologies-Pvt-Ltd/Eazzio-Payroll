@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import { fetchEmployees, Employee, updateEmployeeThunk } from "@/store/slices/employeeSlice";
 import { UserX, RefreshCw } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function InactivePersonsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -28,8 +29,9 @@ export default function InactivePersonsPage() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <GlassBackground variant="settings">
+      <div style={{ padding: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <UserX size={24} color="var(--accent-red)" />
@@ -91,5 +93,6 @@ export default function InactivePersonsPage() {
         </table>
       </div>
     </div>
+    </GlassBackground>
   );
 }
