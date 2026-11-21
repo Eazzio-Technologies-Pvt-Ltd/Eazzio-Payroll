@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 import { locationApi } from "@/lib/api-client";
 import { fetchEmployees } from "@/store/slices/employeeSlice";
 import MapLoader from "@/components/common/MapLoader";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 // Dynamically import map to avoid SSR issues with Leaflet
 const LiveMapInner = dynamic(() => import("@/components/map/LiveMap"), { ssr: false, loading: () => (
@@ -66,11 +67,12 @@ export default function MapPage() {
   const active = employees.filter(e => e.status === "active" && e.lat !== 0 && e.lng !== 0);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "16px", height: "calc(100vh - 130px)" }}>
-      {/* Map */}
-      <div className="card" style={{ padding: "0", overflow: "hidden", height: "100%" }}>
-        <LiveMapInner employees={active} selectedId={selected} onSelect={setSelected} />
-      </div>
+    <GlassBackground variant="map">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "16px", height: "calc(100vh - 130px)" }}>
+        {/* Map - strictly keep solid without blur */}
+        <div className="card solid-card" style={{ padding: "0", overflow: "hidden", height: "100%", background: "#ffffff" }}>
+          <LiveMapInner employees={active} selectedId={selected} onSelect={setSelected} />
+        </div>
 
       {/* Employee list panel */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto" }}>
@@ -123,5 +125,6 @@ export default function MapPage() {
         ))}
       </div>
     </div>
+    </GlassBackground>
   );
 }

@@ -6,6 +6,7 @@ import {
   MapPin, Navigation, Compass, Activity, Clock, ShieldAlert, Loader2, AlertCircle
 } from "lucide-react";
 import { locationApi, geofenceApi } from "@/lib/api-client";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 // Dynamically import map component to avoid SSR errors
 const GeofenceMap = dynamic(() => import("@/components/map/GeofenceMap"), {
@@ -202,7 +203,8 @@ export default function GeofencingPage() {
   const activeGeofenceName = currentData.geofences[0]?.name || "Assigned Territory";
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <GlassBackground variant="map">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1 className="page-title">Geofencing Monitor</h1>
@@ -344,5 +346,6 @@ export default function GeofencingPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }
