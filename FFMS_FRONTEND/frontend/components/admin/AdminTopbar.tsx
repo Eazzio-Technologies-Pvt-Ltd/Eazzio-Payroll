@@ -152,7 +152,7 @@ export default function AdminTopbar() {
     <header
       style={{
         height: "70px",
-        background: "var(--sidebar-bg)",
+        background: "var(--navbar-bg)",
         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: isMobile ? "0 16px" : "0 28px",

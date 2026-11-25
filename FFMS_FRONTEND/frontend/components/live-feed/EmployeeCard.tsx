@@ -183,18 +183,14 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
   return (
     <div
       style={{
-        background: "#ffffff",
-        borderRadius: mode === "full" ? "14px" : "9px",
-        border: "1px solid #e2e8f0",
+        borderRadius: mode === "full" ? "18px" : "12px",
         overflow: "hidden",
         display: "flex",
         flexDirection: isRowLayout ? "row" : "column",
-        boxShadow: "0 2px 12px rgba(48,117,228,0.05)",
         height: (isFullscreen && !isPastFeed) ? "100%" : "auto",
         minHeight: isPastFeed ? "480px" : (isFullscreen ? "0" : "auto"),
-        transition: "box-shadow 0.2s",
       }}
-      className="employee-live-card"
+      className="employee-live-card gw-glass gw-hover-lift"
     >
       {/* ════════════════════ INFO PANEL ════════════════════ */}
       <div style={{
@@ -203,9 +199,9 @@ export default function EmployeeCard({ employee, isPastFeed, gridSize = 8, isFul
         flexDirection: "column",
         justifyContent: "space-between",
         padding: panelPad,
-        borderRight: isRowLayout ? "1px solid #e2e8f0" : "none",
-        borderBottom: !isRowLayout ? "1px solid #e2e8f0" : "none",
-        background: "#ffffff",
+        borderRight: isRowLayout ? "1px solid rgba(120, 80, 60, 0.08)" : "none",
+        borderBottom: !isRowLayout ? "1px solid rgba(120, 80, 60, 0.08)" : "none",
+        background: "rgba(255, 255, 255, 0.65)",
         minWidth: 0,
         gap: infoGap,
       }}>

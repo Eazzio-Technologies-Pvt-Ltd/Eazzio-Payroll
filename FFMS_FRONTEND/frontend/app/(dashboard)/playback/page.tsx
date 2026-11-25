@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { usersApi, locationApi } from "@/lib/api-client";
 import MapLoader from "@/components/common/MapLoader";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 // Dynamically import map component to avoid SSR errors
 const PlaybackMap = dynamic(() => import("@/components/map/PlaybackMap"), {
@@ -189,8 +190,9 @@ export default function PlaybackPage() {
   const currentPoint = route[activePointIndex] || { lat: null, lng: null, time: "N/A", speed: "N/A", status: "No logs found" };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "calc(100vh - 100px)", overflow: "hidden" }}>
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexShrink: 0 }}>
+    <GlassBackground variant="map">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "calc(100vh - 100px)", overflow: "hidden" }}>
+        <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexShrink: 0 }}>
         <div>
           <h1 className="page-title">Routes Playback</h1>
           <p className="page-subtitle">Replay historic travel paths, coordinates, speeds, and log indices.</p>
@@ -352,5 +354,6 @@ export default function PlaybackPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }

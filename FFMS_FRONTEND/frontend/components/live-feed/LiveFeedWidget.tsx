@@ -540,44 +540,49 @@ export default function LiveFeedWidget({
   return (
     <div 
       ref={containerRef} 
-      className="card"
+      className="gw-glass"
       style={{ 
         display: "flex", 
         flexDirection: "column", 
-        background: "var(--bg-card)", 
         overflow: "hidden",
         position: "relative",
         height: isFullscreen ? "100vh" : "680px",
-        borderRadius: isFullscreen ? 0 : 16,
-        border: isFullscreen ? "none" : "1px solid #e2e8f0",
-        boxShadow: "0 4px 24px rgba(48, 117, 228, 0.06)",
+        borderRadius: isFullscreen ? 0 : 22,
         zIndex: isFullscreen ? 9999 : 1
       }}
     >
       {/* Top Header */}
-      <div style={{
-        padding: "16px 20px",
-        borderBottom: "1px solid #e2e8f0",
-        background: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        zIndex: 10
-      }}>
+      <div 
+        className="gw-panel"
+        style={{
+          padding: "16px 20px",
+          borderTop: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          borderBottom: "1px solid rgba(120, 80, 60, 0.08)",
+          borderRadius: 0,
+          background: "rgba(255, 255, 255, 0.75)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          zIndex: 10
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <h3 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#0f172a" }}>Live Monitoring Feed</h3>
+          <h3 style={{ fontSize: "18px", fontWeight: 800, margin: 0, color: "#1c1917", letterSpacing: "-0.02em" }}>Live Monitoring Feed</h3>
           <div style={{ 
             display: "flex", 
             alignItems: "center", 
             gap: "8px", 
-            background: "rgba(16, 185, 129, 0.1)", 
-            color: "#10b981", 
-            padding: "4px 10px", 
+            background: "rgba(16, 185, 129, 0.12)", 
+            color: "#059669", 
+            border: "1px solid rgba(16, 185, 129, 0.2)",
+            padding: "4px 12px", 
             borderRadius: "20px", 
             fontSize: "12px", 
-            fontWeight: 600 
+            fontWeight: 700 
           }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981" }} />
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
             {activeCount} / {employeesList.length} ONLINE
           </div>
         </div>
@@ -592,14 +597,15 @@ export default function LiveFeedWidget({
               }
             }}
             style={{
-              padding: "8px 14px",
-              background: showPastFeed ? "var(--accent-blue)" : "transparent",
-              color: showPastFeed ? "white" : "var(--text-primary)",
-              border: `1px solid ${showPastFeed ? "var(--accent-blue)" : "var(--border-color)"}`,
-              borderRadius: "6px",
+              padding: "8px 16px",
+              background: showPastFeed ? "var(--accent-blue)" : "rgba(255, 255, 255, 0.85)",
+              color: showPastFeed ? "white" : "#1c1917",
+              border: `1px solid ${showPastFeed ? "var(--accent-blue)" : "rgba(255, 255, 255, 0.95)"}`,
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(120, 80, 60, 0.04)",
               cursor: "pointer",
               fontSize: "13px",
-              fontWeight: 600,
+              fontWeight: 700,
               transition: "all 0.2s"
             }}
           >
@@ -612,14 +618,15 @@ export default function LiveFeedWidget({
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              padding: "8px 12px",
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "6px",
+              padding: "8px 14px",
+              background: "rgba(255, 255, 255, 0.85)",
+              border: "1px solid rgba(255, 255, 255, 0.95)",
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(120, 80, 60, 0.04)",
               cursor: "pointer",
-              color: "var(--text-primary)",
+              color: "#1c1917",
               fontSize: "13px",
-              fontWeight: 600,
+              fontWeight: 700,
             }}
           >
             {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
@@ -675,7 +682,7 @@ export default function LiveFeedWidget({
       )}
 
       {/* Cards Area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px", background: "#f8fafc" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px", background: "rgba(248, 250, 252, 0.4)" }}>
         {loading ? (
           <MapLoader overlay={false} message="Loading live monitoring records..." />
         ) : showPastFeed ? (

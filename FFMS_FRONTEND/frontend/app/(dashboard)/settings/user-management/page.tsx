@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { Users, Shield, Edit2, Ban, CheckCircle, Search, Mail, Phone, Lock } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function UserManagementPage() {
   const employees = useSelector((s: RootState) => s.employees.list);
@@ -18,8 +19,9 @@ export default function UserManagementPage() {
   });
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <div>
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div>
         <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Users size={24} color="var(--accent-blue)" /> User Management
         </div>
@@ -138,5 +140,6 @@ export default function UserManagementPage() {
         </div>
       </div>
     </div>
+    </GlassBackground>
   );
 }

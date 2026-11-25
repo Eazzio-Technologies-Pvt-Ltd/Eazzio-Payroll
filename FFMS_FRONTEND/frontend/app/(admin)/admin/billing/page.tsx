@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import RazorpayCheckout from "@/components/payment/RazorpayCheckout";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const PLANS = [
   {
@@ -69,8 +70,9 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-      {/* Header */}
+    <GlassBackground variant="settings">
+      <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        {/* Header */}
       <div className="text-center mb-6 animate-[fadeIn_0.5s_ease]">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
           Choose Your Plan
@@ -182,5 +184,6 @@ export default function BillingPage() {
         })}
       </div>
     </div>
+    </GlassBackground>
   );
 }

@@ -17,6 +17,7 @@ import {
   Pencil,
   Smartphone
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 interface LeaveForm {
   id: string;
@@ -303,8 +304,9 @@ export default function FormsPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Page Header */}
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Page Header */}
       <div>
         <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <FileText size={24} color="var(--accent-blue)" /> Forms & Feedback Centre
@@ -669,6 +671,7 @@ export default function FormsPage() {
           <span style={{ fontSize: "13px", fontWeight: 600 }}>{toast}</span>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

@@ -10,6 +10,7 @@ import { RootState } from "@/store";
 import { leaveApi } from "@/lib/api-client";
 import { Check, X, Calendar, User, Clock, Filter, RefreshCw } from "lucide-react";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 // Maps backend leave status to display color
 function statusColor(s: string) {
@@ -125,8 +126,9 @@ export default function LeavesPage() {
   const rejectedCount = leaves.filter((l) => l.status === "REJECTED").length;
 
   return (
-    <div className="fade-in">
-      {/* Page Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in">
+        {/* Page Header */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div className="page-title">Leave Requests</div>
@@ -368,6 +370,7 @@ export default function LeavesPage() {
           <span style={{ fontSize: "13px", fontWeight: 600 }}>{toast.msg}</span>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

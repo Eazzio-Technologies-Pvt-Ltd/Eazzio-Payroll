@@ -6,6 +6,7 @@ import {
   UserPlus, Search, Edit2, ToggleLeft, ToggleRight, X, Check,
   Users, Briefcase, TrendingUp,
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export interface Manager {
   id: string;
@@ -320,9 +321,10 @@ export default function AdminManagersPage() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <GlassBackground variant="data">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
 
-      {/* ── Stats Row ── */}
+        {/* ── Stats Row ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
         {summaryStats.map((s) => (
           <div key={s.label} className="card" style={{ padding: "16px 20px", flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -506,7 +508,8 @@ export default function AdminManagersPage() {
           <span style={{ fontSize: "13px", fontWeight: 600 }}>{toast.message}</span>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }
 

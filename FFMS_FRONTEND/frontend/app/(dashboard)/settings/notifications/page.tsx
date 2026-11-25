@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Briefcase
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function NotificationSettingsPage() {
   const [settings, setSettings] = useState({
@@ -28,8 +29,9 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "900px" }}>
-      <div>
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "900px" }}>
+        <div>
         <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-primary)" }}>Notification Settings</h1>
         <p style={{ fontSize: "14px", color: "var(--text-muted)", marginTop: "4px" }}>
           Configure operational rules for automated alert dispatches and admin email subscriptions.
@@ -152,6 +154,7 @@ export default function NotificationSettingsPage() {
         </button>
       </div>
     </div>
+    </GlassBackground>
   );
 }
 

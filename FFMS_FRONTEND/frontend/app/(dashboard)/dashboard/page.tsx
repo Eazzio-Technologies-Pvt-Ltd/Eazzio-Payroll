@@ -23,6 +23,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 import {
   ResponsiveContainer,
   PieChart,
@@ -116,50 +117,52 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto" }}>
-        {/* Skeleton Row 1 — KPI Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton-card" style={{ height: 116, padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div className="skeleton-line" style={{ width: "40%" }} />
-                <div className="skeleton-box" style={{ width: "32px", height: "32px", borderRadius: "8px" }} />
+      <GlassBackground variant="overview">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto" }}>
+          {/* Skeleton Row 1 — KPI Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="skeleton-card" style={{ height: 116, padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="skeleton-line" style={{ width: "40%" }} />
+                  <div className="skeleton-box" style={{ width: "32px", height: "32px", borderRadius: "8px" }} />
+                </div>
+                <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
               </div>
-              <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Skeleton Row 2 — Overview */}
-        <div style={{ display: "grid", gridTemplateColumns: "5fr 4fr 3fr", gap: 20 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton-card" style={{ height: 320, padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div className="skeleton-line" style={{ width: "30%", height: "18px" }} />
-              <div className="skeleton-box" style={{ width: "100%", flex: 1 }} />
-            </div>
-          ))}
-        </div>
+          {/* Skeleton Row 2 — Overview */}
+          <div style={{ display: "grid", gridTemplateColumns: "5fr 4fr 3fr", gap: 20 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="skeleton-card" style={{ height: 320, padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="skeleton-line" style={{ width: "30%", height: "18px" }} />
+                <div className="skeleton-box" style={{ width: "100%", flex: 1 }} />
+              </div>
+            ))}
+          </div>
 
-        {/* Skeleton Row 3 — Map & Activity */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          {[1, 2].map(i => (
-            <div key={i} className="skeleton-card" style={{ height: 420, padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div className="skeleton-line" style={{ width: "40%", height: "18px" }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
-                {[1, 2, 3, 4, 5].map(j => (
-                  <div key={j} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                    <div className="skeleton-circle" style={{ width: "40px", height: "40px", flexShrink: 0 }} />
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <div className="skeleton-line" style={{ width: "80%" }} />
-                      <div className="skeleton-line" style={{ width: "50%" }} />
+          {/* Skeleton Row 3 — Map & Activity */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            {[1, 2].map(i => (
+              <div key={i} className="skeleton-card" style={{ height: 420, padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div className="skeleton-line" style={{ width: "40%", height: "18px" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
+                  {[1, 2, 3, 4, 5].map(j => (
+                    <div key={j} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                      <div className="skeleton-circle" style={{ width: "40px", height: "40px", flexShrink: 0 }} />
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <div className="skeleton-line" style={{ width: "80%" }} />
+                        <div className="skeleton-line" style={{ width: "50%" }} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </GlassBackground>
     );
   }
 
@@ -174,9 +177,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <GlassBackground variant="overview" showAdjustButton>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
 
-      {/* ════ ROW 1 — KPI Cards ════ */}
+        {/* ════ ROW 1 — KPI Cards ════ */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
         <KpiCard icon={<Users size={22} />} iconBg="#eff6ff" iconColor="#3b82f6" label="TOTAL EMPLOYEES" value={employees.length} trend="up" trendText={`${employees.length} registered`} />
         <KpiCard icon={<UserCheck size={22} />} iconBg="#ecfdf5" iconColor="#10b981" label="PRESENT TODAY" value={todayStats.totalCheckedIn} trend="up" trendText={`${Math.round(stats?.attendanceRate || 0)}% attendance rate`} />
@@ -365,6 +369,7 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+    </GlassBackground>
   );
 }
 
@@ -374,15 +379,14 @@ export default function DashboardPage() {
 
 function Card({ children, noPad }: { children: React.ReactNode; noPad?: boolean }) {
   return (
-    <div style={{
-      background: "#f8f8faff",
-      borderRadius: 16,
-      border: "1px solid #6d90d1ff",
-      boxShadow: "0 2px 12px rgba(48, 117, 228, 0.08)",
-      padding: noPad ? 0 : 24,
-      display: "flex",
-      flexDirection: "column",
-    }}>
+    <div
+      className="card gw-glass"
+      style={{
+        padding: noPad ? 0 : 24,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {children}
     </div>
   );
@@ -394,11 +398,15 @@ function KpiCard({ icon, iconBg, iconColor, label, value, trend, trendText }: {
 }) {
   const isUp = trend === "up";
   return (
-    <div style={{
-      background: "#f8f8faff", borderRadius: 16, border: "1px solid #92b3f1ff",
-      boxShadow: "0 2px 12px rgba(48, 117, 228, 0.08)", padding: "20px 24px",
-      display: "flex", flexDirection: "column", gap: 12,
-    }}>
+    <div
+      className="card gw-glass"
+      style={{
+        padding: "20px 24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 48, height: 48, borderRadius: "50%", background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", color: iconColor, flexShrink: 0 }}>
           {icon}

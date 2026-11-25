@@ -8,6 +8,7 @@ import { Plus, Search, Trash2, Pencil, X, Coins, FileText, Calculator, Printer, 
 import Link from "next/link";
 import { geofenceApi, attendanceApi, tasksApi, travelApi, advanceApi, expensesApi, shiftApi } from "@/lib/api-client";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const ROLES = ["FIELD_STAFF", "MANAGER", "ADMIN"];
 const DEFAULT_TERRITORIES = ["Mumbai North", "Mumbai South", "Thane", "Pune", "Navi Mumbai", "Nashik"];
@@ -764,8 +765,9 @@ export default function EmployeesPage() {
   const isAdmin = mounted && user?.role?.toUpperCase() === "ADMIN";
 
   return (
-    <div>
-      {/* Header */}
+    <GlassBackground variant="data">
+      <div>
+        {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
           <div className="page-title">{activeTab === "roster" ? "Employees" : "Payroll System"}</div>
@@ -1553,7 +1555,8 @@ export default function EmployeesPage() {
         </div>
       )}
 
-    </div>
+      </div>
+    </GlassBackground>
   );
 }
 

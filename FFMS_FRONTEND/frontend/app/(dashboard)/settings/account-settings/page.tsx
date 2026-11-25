@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { User, Mail, Phone, Briefcase, Lock, Save, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const DESIGNATIONS = [
   "Super Admin",
@@ -113,8 +114,9 @@ export default function AccountSettingsPage() {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "900px" }}>
-      <div>
+    <GlassBackground variant="settings">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "900px" }}>
+        <div>
         <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-primary)" }}>Account Settings</h1>
         <p style={{ fontSize: "14px", color: "var(--text-muted)", marginTop: "4px" }}>
           Update your personal details, designation, and manage account security.
@@ -315,5 +317,6 @@ export default function AccountSettingsPage() {
 
       </div>
     </div>
+    </GlassBackground>
   );
 }

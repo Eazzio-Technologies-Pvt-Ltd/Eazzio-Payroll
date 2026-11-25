@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   HelpCircle
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function ExpenseAuditsPage() {
   const [summary, setSummary] = useState<any>(null);
@@ -57,8 +58,9 @@ export default function ExpenseAuditsPage() {
     : { name: "None", amount: 0 };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Page Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Page Header */}
       <div>
         <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Wallet size={24} color="var(--accent-blue)" /> Executive Expense Audits
@@ -193,5 +195,6 @@ export default function ExpenseAuditsPage() {
 
       </div>
     </div>
+    </GlassBackground>
   );
 }

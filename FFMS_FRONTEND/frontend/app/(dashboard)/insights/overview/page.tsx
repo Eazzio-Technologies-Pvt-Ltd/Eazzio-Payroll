@@ -15,6 +15,7 @@ import {
   Activity,
   Layers
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function InsightsOverviewPage() {
   const employees = useSelector((s: RootState) => s.employees.list);
@@ -34,8 +35,9 @@ export default function InsightsOverviewPage() {
   const criticalAlerts = notifications.filter(n => n.priority === "high" && !n.read).length;
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Page Header */}
+    <GlassBackground variant="overview" showAdjustButton>
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Page Header */}
       <div>
         <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <TrendingUp size={24} color="var(--accent-blue)" /> Operations Overview & Insights
@@ -221,5 +223,6 @@ export default function InsightsOverviewPage() {
 
       </div>
     </div>
+    </GlassBackground>
   );
 }

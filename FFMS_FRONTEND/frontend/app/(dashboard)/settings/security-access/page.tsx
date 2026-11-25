@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ShieldAlert, Save, Key, Smartphone, Globe, Lock } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function SecurityAccessPage() {
     const [saved, setSaved] = useState(false);
@@ -12,8 +13,9 @@ export default function SecurityAccessPage() {
     }
 
     return (
-        <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <GlassBackground variant="settings">
+            <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
                     <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <ShieldAlert size={24} color="var(--accent-blue)" /> Security & Access
@@ -110,5 +112,6 @@ export default function SecurityAccessPage() {
 
             </div>
         </div>
+        </GlassBackground>
     );
 }

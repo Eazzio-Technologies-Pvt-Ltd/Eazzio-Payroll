@@ -13,6 +13,7 @@ import {
   TrendingUp,
   ChevronRight
 } from "lucide-react";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function AttendanceAnalyticsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -98,8 +99,9 @@ export default function AttendanceAnalyticsPage() {
   }, [employees, attendance]);
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Page Header */}
+    <GlassBackground variant="data">
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {/* Page Header */}
       <div>
         <div className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <BarChart3 size={24} color="var(--accent-blue)" /> Attendance Analytics & Trends
@@ -246,5 +248,6 @@ export default function AttendanceAnalyticsPage() {
 
       </div>
     </div>
+    </GlassBackground>
   );
 }

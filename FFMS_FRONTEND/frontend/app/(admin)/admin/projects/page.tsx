@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { projectsApi, usersApi, tasksApi, ApiProject } from "@/lib/api-client";
 import { FolderPlus, Search, Edit2, X, Check, RefreshCw, Briefcase, CheckCircle2, PauseCircle, Clock4, Plus, Trash2 } from "lucide-react";
 import TasksView from "@/components/tasks/TasksView";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 const statusColors: Record<string, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
   ACTIVE: { bg: "#dcfce7", text: "#16a34a", icon: <CheckCircle2 size={13} />, label: "Active" },
@@ -211,62 +212,66 @@ export default function AdminProjectsPage() {
 
   if (activeTab === "tasks") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
-        {tabSwitcher}
-        <TasksView />
-      </div>
+      <GlassBackground variant="data">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+          {tabSwitcher}
+          <TasksView />
+        </div>
+      </GlassBackground>
     );
   }
 
   if (loading) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
-        {tabSwitcher}
-        {/* Stats Row Skeleton (5 columns) */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="skeleton-card" style={{ height: 78, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div className="skeleton-circle" style={{ width: "42px", height: "42px", flexShrink: 0 }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-                <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
-                <div className="skeleton-line" style={{ width: "80%", height: "12px" }} />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Table Card Skeleton */}
-        <div className="skeleton-card" style={{ height: 500, padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "200px" }}>
-              <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
-              <div className="skeleton-line" style={{ width: "40%", height: "14px" }} />
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div className="skeleton-box" style={{ width: 220, height: 38, borderRadius: 9999 }} />
-              <div className="skeleton-box" style={{ width: 140, height: 38, borderRadius: 9999 }} />
-              <div className="skeleton-box" style={{ width: 140, height: 38, borderRadius: 6 }} />
-            </div>
-          </div>
-          
-          {/* Table Rows */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
-            <div className="skeleton-box" style={{ width: "100%", height: "40px" }} />
+      <GlassBackground variant="data">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+          {tabSwitcher}
+          {/* Stats Row Skeleton (5 columns) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
-                <div className="skeleton-circle" style={{ width: "28px", height: "28px", flexShrink: 0 }} />
-                <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
-                <div className="skeleton-line" style={{ width: "10%", height: "14px" }} />
-                <div className="skeleton-line" style={{ width: "10%", height: "14px" }} />
-                <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
-                <div className="skeleton-line" style={{ flex: 1, height: "14px" }} />
+              <div key={i} className="skeleton-card" style={{ height: 78, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+                <div className="skeleton-circle" style={{ width: "42px", height: "42px", flexShrink: 0 }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                  <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
+                  <div className="skeleton-line" style={{ width: "80%", height: "12px" }} />
+                </div>
               </div>
             ))}
           </div>
+
+          {/* Table Card Skeleton */}
+          <div className="skeleton-card" style={{ height: 500, padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "200px" }}>
+                <div className="skeleton-line" style={{ width: "60%", height: "24px" }} />
+                <div className="skeleton-line" style={{ width: "40%", height: "14px" }} />
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <div className="skeleton-box" style={{ width: 220, height: 38, borderRadius: 9999 }} />
+                <div className="skeleton-box" style={{ width: 140, height: 38, borderRadius: 9999 }} />
+                <div className="skeleton-box" style={{ width: 140, height: 38, borderRadius: 6 }} />
+              </div>
+            </div>
+            
+            {/* Table Rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+              <div className="skeleton-box" style={{ width: "100%", height: "40px" }} />
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
+                  <div className="skeleton-circle" style={{ width: "28px", height: "28px", flexShrink: 0 }} />
+                  <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
+                  <div className="skeleton-line" style={{ width: "10%", height: "14px" }} />
+                  <div className="skeleton-line" style={{ width: "10%", height: "14px" }} />
+                  <div className="skeleton-line" style={{ width: "15%", height: "14px" }} />
+                  <div className="skeleton-line" style={{ flex: 1, height: "14px" }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </GlassBackground>
     );
   }
 
@@ -279,8 +284,9 @@ export default function AdminProjectsPage() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
-      {tabSwitcher}
+    <GlassBackground variant="data">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "4px 4px 40px", maxWidth: 1600, margin: "0 auto", fontFamily: "Inter, system-ui, sans-serif" }}>
+        {tabSwitcher}
 
       {/* ── Stats ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
@@ -516,6 +522,7 @@ export default function AdminProjectsPage() {
           <span style={{ fontSize: "13px", fontWeight: 600 }}>{toast.message}</span>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }

@@ -9,6 +9,7 @@ import { addNotification } from "@/store/slices/notificationSlice";
 import { fetchAttendance } from "@/store/slices/attendanceSlice";
 import { LeaveReportModal } from "@/components/LeaveReportModal";
 import CloudinaryImage from "@/components/common/CloudinaryImage";
+import { GlassBackground } from "@/components/ui/glass-background";
 
 export default function AttendancePage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -86,8 +87,9 @@ export default function AttendancePage() {
   );
 
   return (
-    <div style={{ opacity: loading ? 0.75 : 1, transition: "opacity 0.15s" }}>
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <GlassBackground variant="data">
+      <div style={{ opacity: loading ? 0.75 : 1, transition: "opacity 0.15s" }}>
+        <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div className="page-title">Attendance & Leaves</div>
           <div className="page-subtitle">Today — {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
@@ -265,6 +267,7 @@ export default function AttendancePage() {
           <span style={{ fontSize: "13px", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>{toast}</span>
         </div>
       )}
-    </div>
+      </div>
+    </GlassBackground>
   );
 }
