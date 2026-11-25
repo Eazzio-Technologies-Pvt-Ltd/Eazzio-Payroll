@@ -15,12 +15,14 @@
   --accent-red: #ba1a1a;
   --accent-purple: #8b5cf6;
 
-  --sidebar-bg: #081d39;
+  --navbar-bg: #172B45;
+  --sidebar-bg: #12263F;
+  --sidebar-hover-bg: #203B5B;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-text: #ffffff;
   --sidebar-text-muted: rgba(255, 255, 255, 0.5);
   --sidebar-text-inactive: rgba(255, 255, 255, 0.7);
-  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-active-bg: #3B82F6;
   --sidebar-icon-border: rgba(255, 255, 255, 0.15);
 }
 /* Force CSS reload */
@@ -298,6 +300,15 @@ select.input { cursor: pointer; }
   transition: all 0.15s ease;
   cursor: pointer;
   text-decoration: none;
+}
+
+.sidebar-link:hover {
+  background: var(--sidebar-hover-bg) !important;
+}
+
+#topbar-search::placeholder,
+#admin-topbar-search::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .sidebar-link.inactive {
@@ -791,22 +802,22 @@ select.input { cursor: pointer; }
 }
 
 /* Dark Navy Sidebar and Header Glass Accents (Rule: keep dark navy, subtle glass touches only) */
-[data-ui="glass"] aside {
-  background: rgba(8, 29, 57, 0.95) !important;
+[data-ui="glass"] aside:not([aria-label="UI Theme Switcher"]) {
+  background: var(--sidebar-bg) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-ui="glass"] header {
-  background: rgba(8, 29, 57, 0.95) !important;
+  background: var(--navbar-bg) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 [data-ui="glass"] .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--sidebar-hover-bg) !important;
 }
 
 /* Map Containers: Strictly Keep Solid & Unblurred */

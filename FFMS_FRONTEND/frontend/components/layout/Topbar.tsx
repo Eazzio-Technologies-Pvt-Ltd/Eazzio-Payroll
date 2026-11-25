@@ -332,8 +332,8 @@ export default function Topbar() {
   return (
     <header style={{
       height: "70px",
-      background: "var(--bg-secondary)",
-      borderBottom: "1px solid var(--border)",
+      background: "var(--navbar-bg)",
+      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: isMobile ? "0 16px" : "0 28px",
       position: "sticky", top: 0, zIndex: 50,
@@ -346,9 +346,9 @@ export default function Topbar() {
             aria-label="Toggle navigation menu"
             style={{
               background: "none",
-              border: "1px solid var(--border)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
               cursor: "pointer",
-              color: "var(--text-primary)",
+              color: "white",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -362,8 +362,8 @@ export default function Topbar() {
           </button>
         )}
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.title}</h1>
-          {!isMobile && <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
+          <h1 style={{ fontSize: isMobile ? "16px" : "20px", fontWeight: 600, color: "white", margin: 0, fontFamily: "var(--font-hanken), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.title}</h1>
+          {!isMobile && <p style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.7)", margin: 0, fontFamily: "'Inter', sans-serif" }}>{info.subtitle}</p>}
         </div>
       </div>
 
@@ -372,7 +372,7 @@ export default function Topbar() {
         {/* Search bar with dropdown — hidden on mobile */}
         {!isMobile && (
           <div ref={searchRef} style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", zIndex: 1 }} />
+            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "rgba(255, 255, 255, 0.6)", zIndex: 1 }} />
             <input
               id="topbar-search"
               placeholder="Search..."
@@ -381,12 +381,12 @@ export default function Topbar() {
               onFocus={() => setIsFocused(true)}
               onKeyDown={handleSearchKeyDown}
               style={{
-                background: "#f1f5f9", border: "none",
+                background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.2)",
                 borderRadius: "9999px", padding: "10px 16px 10px 40px",
-                color: "var(--text-primary)", fontSize: "13px", outline: "none",
+                color: "white", fontSize: "13px", outline: "none",
                 width: "320px", fontFamily: "Inter, sans-serif",
                 transition: "all 0.15s ease",
-                boxShadow: isFocused ? "0 0 0 2px #2563eb" : "none",
+                boxShadow: isFocused ? "0 0 0 2px rgba(255, 255, 255, 0.5)" : "none",
               }}
             />
 
@@ -499,17 +499,17 @@ export default function Topbar() {
             cursor: "pointer", position: "relative",
             transition: "background 0.15s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#203B5B")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           title="Notification Settings"
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
-            <Bell size={18} color={pathname === "/notifications" ? "#2563eb" : "#475569"} />
+            <Bell size={18} color={pathname === "/notifications" ? "#3B82F6" : "rgba(255, 255, 255, 0.85)"} />
             {unreadCount > 0 && (
               <span style={{
                 position: "absolute", top: "7px", right: "7px",
                 width: "8px", height: "8px", borderRadius: "50%",
-                background: "#ef4444", border: "1.5px solid white"
+                background: "#ef4444", border: "1.5px solid #172B45"
               }} />
             )}
           </div>
