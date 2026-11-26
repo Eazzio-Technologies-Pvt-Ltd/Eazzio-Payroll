@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import { DM_Sans } from "next/font/google";
 
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800"] });
+const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export function BentoCard({
   dark = false,

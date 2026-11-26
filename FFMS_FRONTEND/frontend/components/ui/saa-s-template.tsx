@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { DM_Sans } from "next/font/google";
 
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "700", "800", "900"] });
+const dmSans = DM_Sans({ subsets: ["latin"] });
 
 // Inline Button Component
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
