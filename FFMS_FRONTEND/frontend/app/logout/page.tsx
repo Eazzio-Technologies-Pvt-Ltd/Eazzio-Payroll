@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
+import { authApi } from "@/lib/api-client";
 
 export default function LogoutPage() {
   const dispatch = useDispatch();
+  const router = useRouter();
 
   useEffect(() => {
+    void authApi.logout().catch(() => {});
+
     // 1. Dispatch logout to clear Redux state
     dispatch(logout());
 
@@ -20,9 +25,9 @@ export default function LogoutPage() {
     localStorage.removeItem("ff_is_logged_in");
     localStorage.removeItem("ff_user_profile");
 
-    // 4. Force a full page reload to the login page to ensure clean state
-    window.location.href = "/login";
-  }, [dispatch]);
+    // 4. Replace current history entry with login page
+    router.replace("/login");
+  }, [dispatch, router]);
 
   return (
     <div style={{
