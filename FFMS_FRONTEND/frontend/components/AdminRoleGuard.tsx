@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/store";
+import { logout } from "@/store/slices/authSlice";
 
 /**
  * AdminRoleGuard — mounted in the admin layout.
@@ -15,10 +16,28 @@ import { RootState } from "@/store";
  */
 export default function AdminRoleGuard({ children }: { children: React.ReactNode }) {
   const { isLoggedIn, user, token } = useSelector((s: RootState) => s.auth);
+  const dispatch = useDispatch();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      const hasToken = Boolean(localStorage.getItem("auth_token"));
+      const hasCookie = document.cookie
+        .split(";")
+        .some((c) => c.trim().startsWith("auth_token="));
+      if (!hasToken || !hasCookie) {
+        dispatch(logout());
+        router.replace("/login");
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [dispatch, router]);
 
   useEffect(() => {
     if (!isLoggedIn || !token) {

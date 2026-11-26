@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { updateProfile, logout } from "@/store/slices/authSlice";
+import { authApi } from "@/lib/api-client";
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Welcome back, Admin 👋" },
@@ -324,10 +325,11 @@ export default function Topbar() {
   };
 
   const handleLogout = () => {
+    void authApi.logout().catch(() => {});
     dispatch(logout());
     document.cookie = "auth_token=; path=/; max-age=0; SameSite=Lax";
     document.cookie = "ff_user_role=; path=/; max-age=0; SameSite=Lax";
-    window.location.href = "/login";
+    router.replace("/login");
   };
   return (
     <header style={{

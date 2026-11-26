@@ -21,9 +21,20 @@ const ADMIN_ROUTES_PREFIX = "/admin";
 const DASHBOARD_ROUTES_PREFIX = "/dashboard";
 const PROTECTED_PREFIXES = [
   "/dashboard", "/employees", "/tasks", "/attendance", "/geofencing",
-  "/activities", "/expenses", "/map", "/playback", "/insights",
-  "/forms", "/feedback", "/reports", "/notifications", "/settings",
+  "/activities", "/expenses", "/leaves", "/managers", "/map",
+  "/my-projects", "/playback", "/projects", "/insights", "/forms",
+  "/feedback", "/reports", "/notifications", "/settings",
 ];
+
+function withNoStore(response: NextResponse): NextResponse {
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -55,13 +66,13 @@ export function proxy(request: NextRequest) {
   // Admin routes — only ADMIN role allowed
   if (pathname.startsWith(ADMIN_ROUTES_PREFIX)) {
     if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return withNoStore(NextResponse.redirect(new URL("/login", request.url)));
     }
     if (role !== "ADMIN") {
       // Non-admin trying to access /admin → send to their dashboard
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return withNoStore(NextResponse.redirect(new URL("/dashboard", request.url)));
     }
-    return NextResponse.next();
+    return withNoStore(NextResponse.next());
   }
 
   // Protected dashboard routes — any authenticated user
@@ -73,9 +84,9 @@ export function proxy(request: NextRequest) {
     if (!isLoggedIn) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return withNoStore(NextResponse.redirect(loginUrl));
     }
-    return NextResponse.next();
+    return withNoStore(NextResponse.next());
   }
 
   return NextResponse.next();

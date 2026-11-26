@@ -27,6 +27,50 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  async headers() {
+    const noStoreHeaders = [
+      {
+        key: "Cache-Control",
+        value: "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+      {
+        key: "Pragma",
+        value: "no-cache",
+      },
+      {
+        key: "Expires",
+        value: "0",
+      },
+    ];
+
+    const protectedSources = [
+      "/admin/:path*",
+      "/dashboard/:path*",
+      "/employees/:path*",
+      "/tasks/:path*",
+      "/attendance/:path*",
+      "/geofencing/:path*",
+      "/activities/:path*",
+      "/expenses/:path*",
+      "/leaves/:path*",
+      "/managers/:path*",
+      "/map/:path*",
+      "/my-projects/:path*",
+      "/playback/:path*",
+      "/projects/:path*",
+      "/insights/:path*",
+      "/forms/:path*",
+      "/feedback/:path*",
+      "/reports/:path*",
+      "/notifications/:path*",
+      "/settings/:path*",
+    ];
+
+    return protectedSources.map((source) => ({
+      source,
+      headers: noStoreHeaders,
+    }));
+  },
 };
 
 export default nextConfig;

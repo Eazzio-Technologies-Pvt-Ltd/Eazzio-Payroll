@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { logout } from "@/store/slices/authSlice";
+import { authApi } from "@/lib/api-client";
 import { useMobileSidebar } from "./MobileSidebarContext";
 import {
   Gauge,
@@ -845,8 +846,9 @@ export default function Sidebar() {
         <div style={{ padding: isExpanded ? "16px 12px" : "16px 0", borderTop: "1px solid var(--sidebar-border)", transition: "padding 0.25s ease" }}>
           <div
             onClick={() => {
+              void authApi.logout().catch(() => {});
               dispatch(logout());
-              router.push("/login");
+              router.replace("/login");
             }}
             style={{
               display: "flex",
